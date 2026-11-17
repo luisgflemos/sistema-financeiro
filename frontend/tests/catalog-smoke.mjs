@@ -44,6 +44,13 @@ try {
   await page.getByLabel("Filtrar por situação").selectOption("active");
   await page.getByText("Nenhum resultado").waitFor();
 
+  const menu = page.getByRole("navigation", { name: "Menu principal" });
+  const group = menu.getByText("Cadastros", { exact: true });
+  await group.click();
+  assert.equal(await menu.getByRole("button").count(), 0);
+  await group.click();
+  assert.equal(await menu.getByRole("button").count(), 4);
+
   await open("Classificações");
   assert.equal(
     await page.getByRole("navigation").getByText("Subclasses").count(),

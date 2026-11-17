@@ -133,22 +133,27 @@ function App({ onLogout }: { onLogout?: () => void }) {
     <div className="workspace">
       <aside className="sidebar">
         <Brand />
-        <nav aria-label="Cadastros">
-          {catalogIds.map((id) => (
-            <button
-              key={id}
-              type="button"
-              aria-current={catalog === id ? "page" : undefined}
-              disabled={!organizationId || loading}
-              onClick={() => {
-                setCatalog(id);
-                setCreating(false);
-              }}
-            >
-              <CatalogIcon id={id} />
-              {catalogs[id].label}
-            </button>
-          ))}
+        <nav aria-label="Menu principal">
+          <details className="nav-group" open>
+            <summary>Cadastros</summary>
+            <div className="nav-items">
+                {catalogIds.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-current={catalog === id ? "page" : undefined}
+                    disabled={!organizationId || loading}
+                    onClick={() => {
+                      setCatalog(id);
+                      setCreating(false);
+                    }}
+                  >
+                    <CatalogIcon id={id} />
+                    {catalogs[id].label}
+                  </button>
+                ))}
+            </div>
+          </details>
         </nav>
       </aside>
       <main>
