@@ -32,7 +32,11 @@ class BankAccountInput(BaseModel):
 
 class BankAccount(BankAccountInput):
     code: RequiredText
-    account_number_masked: str
+    bank_code: str | None
+    branch: str | None
+    account_number_masked: str | None
+    holder_name: str | None
+    label: str | None = None
     id: UUID
     organization_id: UUID
 
@@ -156,7 +160,9 @@ def update_account(
             previous = require_account(connection, organization_id, account_id, lock=True)
             values = payload.model_dump()
             values["code"] = payload.code or previous.code
-            current = BankAccount(id=account_id, organization_id=organization_id, **values)
+            current = BankAccount(
+                id=account_id, organization_id=organization_id, label=previous.label, **values
+            )
             if current != previous:
                 connection.execute(
                     text(

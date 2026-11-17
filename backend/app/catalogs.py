@@ -40,6 +40,7 @@ class CategoryInput(DatedCatalog):
 
 class Category(CategoryInput):
     code: RequiredText
+    kind: Literal["REVENUE", "EXPENSE", "NEUTRAL"] | None
     id: UUID
     organization_id: UUID
 

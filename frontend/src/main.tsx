@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
 import { Brand } from "./brand";
+import { CatalogImport } from "./catalog-import";
 import { CatalogPage } from "./catalog-page";
 import { catalogIds, catalogs } from "./catalogs";
 import { SessionGate } from "./session";
@@ -93,6 +94,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
   const [organizationId, setOrganizationId] = useState("");
   const [catalog, setCatalog] = useState<CatalogId>("bank-accounts");
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -127,6 +129,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
     localStorage.setItem("autovisao.organization", id);
     setOrganizationId(id);
     setCreating(false);
+    setImporting(false);
   }
 
   return (
@@ -146,6 +149,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
                   onClick={() => {
                     setCatalog(id);
                     setCreating(false);
+                    setImporting(false);
                   }}
                 >
                   <CatalogIcon id={id} />
@@ -176,6 +180,11 @@ function App({ onLogout }: { onLogout?: () => void }) {
             {organizationId && !creating && (
               <button type="button" onClick={() => setCreating(true)}>
                 Nova organização
+              </button>
+            )}
+            {organizationId && !creating && !importing && (
+              <button type="button" onClick={() => setImporting(true)}>
+                Importar cadastros
               </button>
             )}
             {onLogout && (
@@ -215,6 +224,15 @@ function App({ onLogout }: { onLogout?: () => void }) {
                 onCancel={organizationId ? () => setCreating(false) : undefined}
               />
             </>
+          ) : importing ? (
+            <CatalogImport
+              organizationId={organizationId}
+              organizationName={
+                organizations.find((item) => item.id === organizationId)
+                  ?.name ?? "Organização"
+              }
+              onClose={() => setImporting(false)}
+            />
           ) : (
             <CatalogPage
               key={`${organizationId}/${catalog}`}

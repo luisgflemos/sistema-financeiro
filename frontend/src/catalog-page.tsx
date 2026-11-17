@@ -129,6 +129,17 @@ export function CatalogPage({
     String(a[sortField]).localeCompare(String(b[sortField]), "pt-BR"),
   );
 
+  function title(record: RecordData) {
+    return String(record[catalog.titleField] ?? record.label ?? record.code);
+  }
+
+  function pending(record: RecordData) {
+    return (
+      (id === "bank-accounts" && !record.holder_name) ||
+      (id === "categories" && !record.kind)
+    );
+  }
+
   function format(record: RecordData, name: string) {
     const field = catalog.fields.find((item) => item.name === name);
     const value = record[name];
@@ -244,7 +255,7 @@ export function CatalogPage({
                                 {String(record.name)}
                               </button>
                             ) : (
-                              String(record[catalog.titleField])
+                              title(record)
                             )}
                           </th>
                           {columns.map((column) => (
@@ -258,7 +269,11 @@ export function CatalogPage({
                                 record.active ? "status active" : "status"
                               }
                             >
-                              {record.active ? "Ativo" : "Inativo"}
+                              {record.active
+                                  ? "Ativo"
+                                  : pending(record)
+                                    ? "A completar"
+                                    : "Inativo"}
                             </span>
                           </td>
                           <td>
@@ -267,7 +282,7 @@ export function CatalogPage({
                               className="text-button"
                               disabled={saving}
                               onClick={() => begin(record)}
-                              aria-label={`Editar ${record[catalog.titleField]}`}
+                              aria-label={`Editar ${title(record)}`}
                             >
                               Editar
                             </button>
