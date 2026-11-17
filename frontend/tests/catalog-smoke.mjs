@@ -24,7 +24,9 @@ try {
     await page.getByText("Cadastro salvo.", { exact: true }).waitFor();
   }
 
-  await page.getByRole("heading", { name: "Contas bancárias", level: 1 }).waitFor();
+  await page
+    .getByRole("heading", { name: "Contas bancárias", level: 1 })
+    .waitFor();
   await fill({
     Código: "conta-01",
     Titular: "Titular sintético",
@@ -71,7 +73,9 @@ try {
   await open("Clientes e fornecedores");
   await page.getByRole("row", { name: /Fornecedor sintético/ }).waitFor();
   assert.equal(
-    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
     true,
     "A página deve caber na largura de um celular",
   );

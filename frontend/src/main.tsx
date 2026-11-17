@@ -62,7 +62,11 @@ function OrganizationForm({
           )}
         </div>
       </fieldset>
-      {error && <p role="alert" className="error">{error}</p>}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
     </form>
   );
 }
@@ -112,8 +116,12 @@ function App() {
     <div className="workspace">
       <aside className="sidebar">
         <div className="brand">
-          <span className="monogram" aria-hidden="true">AV</span>
-          <span>Auto Visão <small>Financeiro</small></span>
+          <span className="monogram" aria-hidden="true">
+            AV
+          </span>
+          <span>
+            Auto Visão <small>Financeiro</small>
+          </span>
         </div>
         <nav aria-label="Cadastros">
           {catalogIds.map((id) => (
@@ -161,7 +169,9 @@ function App() {
             <p role="status">Carregando organizações…</p>
           ) : error ? (
             <>
-              <p role="alert" className="error">{error}</p>
+              <p role="alert" className="error">
+                {error}
+              </p>
               <button
                 type="button"
                 onClick={() => {
