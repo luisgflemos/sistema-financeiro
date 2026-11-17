@@ -270,10 +270,10 @@ export function CatalogPage({
                               }
                             >
                               {record.active
-                                  ? "Ativo"
-                                  : pending(record)
-                                    ? "A completar"
-                                    : "Inativo"}
+                                ? "Ativo"
+                                : pending(record)
+                                  ? "A completar"
+                                  : "Inativo"}
                             </span>
                           </td>
                           <td>

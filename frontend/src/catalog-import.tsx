@@ -7,7 +7,10 @@ type CatalogData = {
   cost_centers: string[];
 };
 
-type Counts = Record<"accounts" | "categories" | "subcategories" | "cost_centers", number>;
+type Counts = Record<
+  "accounts" | "categories" | "subcategories" | "cost_centers",
+  number
+>;
 
 function isCatalogData(value: unknown): value is CatalogData {
   if (!value || typeof value !== "object") return false;
@@ -68,15 +71,17 @@ export function CatalogImport({
     }
   }
 
-  const totals = result ?? (data && {
-    accounts: data.accounts.length,
-    categories: data.categories.length,
-    subcategories: data.categories.reduce(
-      (total, row) => total + row.subcategories.length,
-      0,
-    ),
-    cost_centers: data.cost_centers.length,
-  });
+  const totals =
+    result ??
+    (data && {
+      accounts: data.accounts.length,
+      categories: data.categories.length,
+      subcategories: data.categories.reduce(
+        (total, row) => total + row.subcategories.length,
+        0,
+      ),
+      cost_centers: data.cost_centers.length,
+    });
 
   return (
     <>
