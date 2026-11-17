@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
+import { Brand } from "./brand";
 import { CatalogPage } from "./catalog-page";
 import { catalogIds, catalogs } from "./catalogs";
 import type { CatalogId } from "./catalogs";
+import { SessionGate } from "./session";
 import "./style.css";
 
 type Organization = { id: string; name: string };
@@ -86,7 +88,7 @@ function CatalogIcon({ id }: { id: CatalogId }) {
   return <Icon aria-hidden="true" size={18} strokeWidth={1.75} />;
 }
 
-function App() {
+function App({ onLogout }: { onLogout?: () => void }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organizationId, setOrganizationId] = useState("");
   const [catalog, setCatalog] = useState<CatalogId>("bank-accounts");
@@ -130,15 +132,7 @@ function App() {
   return (
     <div className="workspace">
       <aside className="sidebar">
-        <div className="brand">
-          <span className="brand-symbol" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <span />
-          </span>
-          <span>Finare</span>
-        </div>
+        <Brand />
         <nav aria-label="Cadastros">
           {catalogIds.map((id) => (
             <button
@@ -177,6 +171,11 @@ function App() {
             {organizationId && !creating && (
               <button type="button" onClick={() => setCreating(true)}>
                 Nova organização
+              </button>
+            )}
+            {onLogout && (
+              <button type="button" onClick={onLogout}>
+                Sair
               </button>
             )}
           </div>
@@ -225,4 +224,6 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <SessionGate>{(onLogout) => <App onLogout={onLogout} />}</SessionGate>,
+);

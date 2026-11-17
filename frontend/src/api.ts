@@ -5,6 +5,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
+    if (response.status === 401 && path !== "/login") {
+      window.dispatchEvent(new Event("finare:session-expired"));
+    }
     const body = await response.json().catch(() => null);
     const detail = body?.detail;
     if (typeof detail === "string") throw new Error(detail);

@@ -43,8 +43,8 @@ A interface e os endpoints são destinados ao ambiente local. O UUID delimita os
    POSTGRES_DB=${{Postgres.PGDATABASE}}
    ```
 
-3. No mesmo serviço, defina `FINARE_ACCESS_USER` com seu usuário e `FINARE_ACCESS_PASSWORD` com uma senha exclusiva de pelo menos 8 caracteres. Guarde a senha em um gerenciador e cadastre-a diretamente no Railway. O navegador solicita essas credenciais para abrir a interface e a API.
-4. Aplique as alterações. O `railway.toml` executa `alembic upgrade head` antes de iniciar a aplicação e verifica a disponibilidade em `/health`.
+3. No mesmo serviço, defina `FINARE_ACCESS_USER` com seu usuário e `FINARE_ACCESS_PASSWORD` com uma senha exclusiva de pelo menos 8 caracteres. Guarde a senha em um gerenciador e cadastre-a diretamente no Railway. A tela **Entrar na Finare** solicita essas credenciais para abrir os cadastros. A sessão dura até 8 horas ou até o serviço reiniciar. Use **Sair** para encerrá-la.
+4. Aplique as alterações. A imagem executa `alembic upgrade head` antes de iniciar a aplicação. O `railway.toml` verifica a disponibilidade em `/health`.
 5. Após o deploy ficar saudável, use **Settings → Networking → Public Networking → Generate Domain** somente no serviço da aplicação. Abra a URL HTTPS em uma janela privada, confirme a solicitação de login e teste o acesso.
 
 ## Verificar
