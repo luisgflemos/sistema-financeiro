@@ -44,17 +44,27 @@ try {
   await page.getByLabel("Filtrar por situação").selectOption("active");
   await page.getByText("Nenhum resultado").waitFor();
 
-  await open("Subclasses");
-  await page.getByRole("button", { name: "Abrir classificações" }).click();
+  await open("Classificações");
+  assert.equal(
+    await page.getByRole("navigation").getByText("Subclasses").count(),
+    0,
+  );
   await fill({ Código: "receitas", Nome: "Receitas de teste" });
   await page.getByLabel("Natureza", { exact: true }).selectOption("REVENUE");
   await save();
-  await open("Subclasses");
-  await page
-    .getByLabel("Classificação", { exact: true })
-    .selectOption({ label: "receitas · Receitas de teste" });
-  await fill({ Código: "servicos", Nome: "Serviços sintéticos" });
-  await save();
+  await page.getByRole("button", { name: "Receitas de teste", exact: true }).click();
+  const sub = page.getByRole("region", {
+    name: "Subclassificações de Receitas de teste",
+  });
+  await sub.getByRole("button", { name: "+ Nova subclassificação" }).click();
+  await sub.getByLabel("Código", { exact: true }).fill("servicos");
+  await sub.getByLabel("Nome", { exact: true }).fill("Serviços sintéticos");
+  await sub.getByRole("button", { name: "Salvar cadastro" }).click();
+  await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
+  await page.reload();
+  await open("Classificações");
+  await page.getByRole("button", { name: "Receitas de teste", exact: true }).click();
+  await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
 
   await open("Centros de custos");
   await fill({ Código: "sede", Nome: "Sede de teste" });

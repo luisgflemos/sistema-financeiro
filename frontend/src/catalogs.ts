@@ -98,23 +98,16 @@ export const catalogs: Record<CatalogId, Catalog> = {
     ],
   },
   subcategories: {
-    label: "Subclasses",
-    singular: "subclasse",
+    label: "Subclassificações",
+    singular: "subclassificação",
     titleField: "name",
     fields: [
-      {
-        name: "category_id",
-        label: "Classificação",
-        reference: "categories",
-        required: true,
-      },
       code,
       name,
       ...dates,
     ],
     columns: [
       { name: "code", label: "Código" },
-      { name: "category_id", label: "Classificação" },
     ],
   },
   "cost-centers": {
@@ -159,4 +152,9 @@ export const catalogs: Record<CatalogId, Catalog> = {
   },
 };
 
-export const catalogIds = Object.keys(catalogs) as CatalogId[];
+export const catalogIds = [
+  "bank-accounts",
+  "categories",
+  "cost-centers",
+  "parties",
+] as const satisfies readonly CatalogId[];

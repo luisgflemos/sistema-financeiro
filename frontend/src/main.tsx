@@ -1,5 +1,5 @@
 import "@fontsource-variable/inter";
-import { CreditCard, FolderTree, Layers3, Network, Users } from "lucide-react";
+import { CreditCard, Layers3, Network, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
@@ -16,7 +16,6 @@ type Organization = { id: string; name: string };
 const catalogIcons = {
   "bank-accounts": CreditCard,
   categories: Layers3,
-  subcategories: FolderTree,
   "cost-centers": Network,
   parties: Users,
 };
@@ -215,7 +214,6 @@ function App({ onLogout }: { onLogout?: () => void }) {
               key={`${organizationId}/${catalog}`}
               id={catalog}
               organizationId={organizationId}
-              onOpenCatalog={setCatalog}
             />
           )}
         </div>

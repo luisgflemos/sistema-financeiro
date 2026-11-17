@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./api";
 import { catalogs } from "./catalogs";
@@ -9,22 +9,24 @@ type Draft = Record<string, string | boolean>;
 export function CatalogPage({
   id,
   organizationId,
-  onOpenCatalog,
+  category,
 }: {
   id: CatalogId;
   organizationId: string;
-  onOpenCatalog: (id: CatalogId) => void;
+  category?: RecordData;
 }) {
   const catalog = catalogs[id];
+  const { fields, columns } = catalog;
+  const uid = useId();
   const base = `/organizations/${organizationId}`;
   const path = `${base}/${id}`;
   const blank = () =>
     Object.fromEntries([
-      ...catalog.fields.map((field) => [field.name, field.defaultValue ?? ""]),
+      ...fields.map((field) => [field.name, field.defaultValue ?? ""]),
       ["active", true],
     ]) as Draft;
   const [records, setRecords] = useState<RecordData[]>([]);
-  const [references, setReferences] = useState<RecordData[]>([]);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [editing, setEditing] = useState<RecordData | null>(null);
   const [draft, setDraft] = useState<Draft>(blank);
   const [filter, setFilter] = useState("all");
@@ -35,7 +37,8 @@ export function CatalogPage({
   const [saveError, setSaveError] = useState("");
   const [notice, setNotice] = useState("");
   const formTitle = useRef<HTMLHeadingElement>(null);
-  const reference = catalog.fields.find((field) => field.reference)?.reference;
+  const categoryId = category?.id;
+  const needsCategory = !!category && !category.active && !editing;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,15 +46,13 @@ export function CatalogPage({
 
     async function load() {
       try {
-        const [items, linked] = await Promise.all([
-          api<RecordData[]>(path, options),
-          reference && reference !== id
-            ? api<RecordData[]>(`${base}/${reference}`, options)
-            : Promise.resolve([]),
-        ]);
+        const items = await api<RecordData[]>(path, options);
         if (controller.signal.aborted) return;
-        setRecords(items);
-        setReferences(linked);
+        setRecords(
+          categoryId
+            ? items.filter((item) => item.category_id === categoryId)
+            : items,
+        );
       } catch {
         if (!controller.signal.aborted) {
           setLoadError("Não foi possível carregar os cadastros.");
@@ -63,7 +64,7 @@ export function CatalogPage({
 
     void load();
     return () => controller.abort();
-  }, [attempt, base, id, path, reference]);
+  }, [attempt, categoryId, path]);
 
   function begin(record?: RecordData) {
     setEditing(record ?? null);
@@ -71,7 +72,7 @@ export function CatalogPage({
       record
         ? {
             ...Object.fromEntries(
-              catalog.fields.map((field) => [
+              fields.map((field) => [
                 field.name,
                 record[field.name] ?? "",
               ]),
@@ -87,7 +88,7 @@ export function CatalogPage({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const values = catalog.fields.map((field) => {
+    const values = fields.map((field) => {
       const value = String(draft[field.name] ?? "").trim();
       return [field.name, value || null];
     });
@@ -102,6 +103,7 @@ export function CatalogPage({
           method: editing ? "PUT" : "POST",
           body: JSON.stringify({
             ...Object.fromEntries(values),
+            ...(categoryId ? { category_id: categoryId } : {}),
             active: draft.active,
           }),
         },
@@ -122,11 +124,6 @@ export function CatalogPage({
     }
   }
 
-  const linkedRecords = reference === id ? records : references;
-  const needsCategory =
-    id === "subcategories" &&
-    !editing &&
-    !linkedRecords.some((item) => item.active);
   const visible = records.filter(
     (record) => filter === "all" || record.active === (filter === "active"),
   );
@@ -140,7 +137,7 @@ export function CatalogPage({
     const value = record[name];
     if (!value) return "—";
     if (field?.reference) {
-      const linked = linkedRecords.find((item) => item.id === value);
+      const linked = records.find((item) => item.id === value);
       return linked ? String(linked.name) : "—";
     }
     return (
@@ -152,14 +149,14 @@ export function CatalogPage({
   return (
     <>
       <div className="page-heading">
-        <h1>{catalog.label}</h1>
+        {category ? <h3>{catalog.label}</h3> : <h1>{catalog.label}</h1>}
         <button
           type="button"
           className="primary"
           onClick={() => begin()}
           disabled={loading || saving || !!loadError || needsCategory}
         >
-          Novo cadastro
+          {category ? "+ Nova subclassificação" : "Novo cadastro"}
         </button>
       </div>
       {loading ? (
@@ -181,10 +178,10 @@ export function CatalogPage({
           </button>
         </>
       ) : (
-        <div className="catalog-grid">
-          <section className="panel listing" aria-labelledby="records-title">
+        <div className={category ? "catalog-grid nested-grid" : "catalog-grid"}>
+          <section className="panel listing" aria-labelledby={`${uid}-records`}>
             <div className="panel-header">
-              <h2 id="records-title">
+              <h2 id={`${uid}-records`}>
                 Registros <span>{records.length}</span>
               </h2>
               <select
@@ -208,19 +205,19 @@ export function CatalogPage({
                   {records.length
                     ? "Selecione outra situação para ver os registros."
                     : needsCategory
-                      ? "Uma classificação ativa é necessária para cadastrar a primeira subclasse."
+                      ? "Esta classificação está inativa."
                       : "Preencha o formulário para adicionar o primeiro registro."}
                 </p>
               </div>
             ) : (
               <div className="table-scroll">
-                <table aria-labelledby="records-title">
+                <table aria-labelledby={`${uid}-records`}>
                   <thead>
                     <tr>
                       <th scope="col">
                         {id === "bank-accounts" ? "Titular" : "Nome"}
                       </th>
-                      {catalog.columns.map((column) => (
+                      {columns.map((column) => (
                         <th key={column.name} scope="col">
                           {column.label}
                         </th>
@@ -233,11 +230,25 @@ export function CatalogPage({
                   </thead>
                   <tbody>
                     {visible.map((record) => (
-                      <tr key={record.id}>
+                      <Fragment key={record.id}>
+                      <tr>
                         <th scope="row">
-                          {String(record[catalog.titleField])}
+                          {id === "categories" ? (
+                            <button
+                              type="button"
+                              className="text-button category-toggle"
+                              aria-expanded={expanded === record.id}
+                              onClick={() =>
+                                setExpanded(expanded === record.id ? null : record.id)
+                              }
+                            >
+                              {String(record.name)}
+                            </button>
+                          ) : (
+                            String(record[catalog.titleField])
+                          )}
                         </th>
-                        {catalog.columns.map((column) => (
+                        {columns.map((column) => (
                           <td key={column.name}>
                             {format(record, column.name)}
                           </td>
@@ -263,37 +274,40 @@ export function CatalogPage({
                           </button>
                         </td>
                       </tr>
+                      {expanded === record.id && (
+                        <tr className="nested-row">
+                          <td colSpan={columns.length + 3}>
+                            <section aria-label={`Subclassificações de ${record.name}`}>
+                              <CatalogPage
+                                id="subcategories"
+                                organizationId={organizationId}
+                                category={record}
+                              />
+                            </section>
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
           </section>
-          <section className="panel editor" aria-labelledby="editor-title">
-            <h2 id="editor-title" ref={formTitle} tabIndex={-1}>
+          <section className="panel editor" aria-labelledby={`${uid}-editor`}>
+            <h2 id={`${uid}-editor`} ref={formTitle} tabIndex={-1}>
               {editing ? "Editar cadastro" : `Adicionar ${catalog.singular}`}
             </h2>
             {needsCategory ? (
-              <>
-                <p>
-                  Cadastre ou reative uma classificação antes de adicionar uma
-                  subclasse.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => onOpenCatalog("categories")}
-                >
-                  Abrir classificações
-                </button>
-              </>
+              <p>Reative a classificação para cadastrar uma subclassificação.</p>
             ) : (
               <form onSubmit={submit}>
                 <fieldset disabled={saving}>
                   <div className="fields">
-                    {catalog.fields.map((field) => {
+                    {fields.map((field) => {
                       const value = String(draft[field.name] ?? "");
                       const options = field.reference
-                        ? linkedRecords
+                        ? records
                             .filter(
                               (item) =>
                                 item.id !== editing?.id &&
@@ -306,10 +320,10 @@ export function CatalogPage({
                         : field.options;
                       return (
                         <div className="field" key={field.name}>
-                          <label htmlFor={field.name}>{field.label}</label>
+                          <label htmlFor={`${uid}-${field.name}`}>{field.label}</label>
                           {options ? (
                             <select
-                              id={field.name}
+                              id={`${uid}-${field.name}`}
                               required={field.required}
                               value={value}
                               onChange={(event) =>
@@ -330,7 +344,7 @@ export function CatalogPage({
                             </select>
                           ) : (
                             <input
-                              id={field.name}
+                              id={`${uid}-${field.name}`}
                               value={value}
                               type={field.type ?? "text"}
                               required={field.required}

@@ -546,3 +546,26 @@ td:first-child {
     font-size: 2rem;
   }
 }
+
+.category-toggle {
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.nested-row > td {
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.nested-row .page-heading {
+  margin-bottom: 1rem;
+}
+
+.nested-row h3 {
+  margin: 0;
+}
+
+.nested-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
