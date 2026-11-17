@@ -12,7 +12,10 @@ function App() {
     async function checkHealth() {
       try {
         const response = await fetch("/api/health", {
-          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(5000)]),
+          signal: AbortSignal.any([
+            controller.signal,
+            AbortSignal.timeout(5000),
+          ]),
         });
         if (!response.ok) throw new Error("Serviço indisponível");
 
