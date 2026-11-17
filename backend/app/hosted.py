@@ -17,8 +17,10 @@ from app.main import health, lifespan
 async def hosted_lifespan(app: FastAPI):
     username = os.environ.get("FINARE_ACCESS_USER", "finare")
     password = os.environ.get("FINARE_ACCESS_PASSWORD", "")
-    if not username or ":" in username or len(password) < 16:
-        raise RuntimeError("Configure FINARE_ACCESS_USER e FINARE_ACCESS_PASSWORD no serviço.")
+    if not username or ":" in username:
+        raise RuntimeError("Configure FINARE_ACCESS_USER com um nome sem dois-pontos.")
+    if len(password) < 8:
+        raise RuntimeError("Configure FINARE_ACCESS_PASSWORD com pelo menos 8 caracteres.")
     app.state.credentials = (username.encode(), password.encode())
     async with lifespan(api):
         app.state.database = api.state.database

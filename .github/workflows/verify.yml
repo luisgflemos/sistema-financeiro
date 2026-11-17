@@ -38,14 +38,14 @@ jobs:
           docker build -t finare-hosted .
           docker run --rm --network finare-ci_default --env-file .env -e POSTGRES_HOST=db finare-hosted alembic upgrade head
           docker run -d --name finare-hosted --network finare-ci_default --env-file .env \
-            -e POSTGRES_HOST=db -e FINARE_ACCESS_USER=teste -e FINARE_ACCESS_PASSWORD=senha-sintetica-de-teste \
+            -e POSTGRES_HOST=db -e FINARE_ACCESS_USER=teste -e FINARE_ACCESS_PASSWORD=Teste8ok \
             -p 127.0.0.1:5273:8000 finare-hosted
           curl --fail --retry 10 --retry-all-errors --retry-delay 1 http://127.0.0.1:5273/health
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5273/)" = 401
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5273/api/organizations)" = 401
           test "$(curl -s -u teste:senha-incorreta -o /dev/null -w '%{http_code}' http://127.0.0.1:5273/)" = 401
-          curl --fail -u teste:senha-sintetica-de-teste http://127.0.0.1:5273/ | grep 'Finare | Cadastros'
-          curl --fail -u teste:senha-sintetica-de-teste http://127.0.0.1:5273/api/organizations | grep 'Organização sintética'
+          curl --fail -u teste:Teste8ok http://127.0.0.1:5273/ | grep 'Finare | Cadastros'
+          curl --fail -u teste:Teste8ok http://127.0.0.1:5273/api/organizations | grep 'Organização sintética'
       - name: Reaplicar migração no banco descartável
         run: |
           docker compose exec -T api alembic downgrade base
