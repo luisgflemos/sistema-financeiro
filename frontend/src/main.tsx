@@ -1,3 +1,5 @@
+import "@fontsource-variable/inter";
+import { CreditCard, FolderTree, Layers3, Network, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
@@ -8,6 +10,14 @@ import type { CatalogId } from "./catalogs";
 import "./style.css";
 
 type Organization = { id: string; name: string };
+
+const catalogIcons = {
+  "bank-accounts": CreditCard,
+  categories: Layers3,
+  subcategories: FolderTree,
+  "cost-centers": Network,
+  parties: Users,
+};
 
 function OrganizationForm({
   onCreate,
@@ -71,6 +81,11 @@ function OrganizationForm({
   );
 }
 
+function CatalogIcon({ id }: { id: CatalogId }) {
+  const Icon = catalogIcons[id];
+  return <Icon aria-hidden="true" size={18} strokeWidth={1.75} />;
+}
+
 function App() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organizationId, setOrganizationId] = useState("");
@@ -116,12 +131,13 @@ function App() {
     <div className="workspace">
       <aside className="sidebar">
         <div className="brand">
-          <span className="monogram" aria-hidden="true">
-            AV
+          <span className="brand-symbol" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
           </span>
-          <span>
-            Auto Visão <small>Financeiro</small>
-          </span>
+          <span>Finare</span>
         </div>
         <nav aria-label="Cadastros">
           {catalogIds.map((id) => (
@@ -135,6 +151,7 @@ function App() {
                 setCreating(false);
               }}
             >
+              <CatalogIcon id={id} />
               {catalogs[id].label}
             </button>
           ))}

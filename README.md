@@ -1,4 +1,4 @@
-# Auto Visão Financeiro
+# Finare
 
 Aplicação em desenvolvimento para conciliação bancária e fluxo de caixa. A interface permite preencher e consultar os cadastros da Etapa 1. O escopo funcional está no [roadmap](ROADMAP.md).
 

@@ -5,6 +5,8 @@ const browser = await chromium.launch({ channel: "chrome" });
 try {
   const page = await browser.newPage();
   await page.goto("http://127.0.0.1:5173");
+  assert.equal(await page.title(), "Finare | Cadastros");
+  await page.getByText("Finare", { exact: true }).waitFor();
   await page.getByLabel("Nome da organização").fill("Organização sintética");
   await page.getByRole("button", { name: "Criar organização" }).click();
 

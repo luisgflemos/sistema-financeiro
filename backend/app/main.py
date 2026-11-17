@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
         app.state.database.dispose()
 
 
-app = FastAPI(title="Auto Visão Financeiro", lifespan=lifespan)
+app = FastAPI(title="Finare", lifespan=lifespan)
 app.include_router(bank_accounts_router)
 app.include_router(catalogs_router)
 app.include_router(organizations_router)
