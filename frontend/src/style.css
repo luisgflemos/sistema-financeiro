@@ -1,31 +1,389 @@
 :root {
-  color-scheme: light;
-  font-family: "Source Sans 3", system-ui, sans-serif;
-  color: #152823;
-  background: #edf4f1;
+  font-family: Inter, "Segoe UI", sans-serif;
+  color: #1b2940;
+  background: #f5f7fb;
+  font-synthesis: none;
+  --ink: #1b2940;
+  --muted: #52637a;
+  --line: #dce3ec;
+  --primary: #2454ac;
+  --nav: #14233d;
 }
 
-main {
-  max-width: 42rem;
-  margin: clamp(2rem, 12vh, 8rem) auto;
-  padding: 2rem;
+* {
+  box-sizing: border-box;
 }
 
-h1 {
-  line-height: 1.1;
+body {
+  margin: 0;
+  min-width: 280px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+input:not([type="checkbox"]),
+select {
+  min-height: 2.6rem;
+  border: 1px solid #bfcadd;
+  border-radius: 0.45rem;
+  background: white;
+  color: var(--ink);
+  padding: 0.55rem 0.75rem;
 }
 
 button {
-  background: #164d3d;
-  color: white;
-  border: 0;
-  border-radius: 0.375rem;
-  padding: 0.7rem 1rem;
-  font: inherit;
+  font-weight: 600;
   cursor: pointer;
 }
 
-button:focus-visible {
-  outline: 0.2rem solid #164d3d;
-  outline-offset: 0.2rem;
+button:hover:not(:disabled) {
+  background: #f0f4fa;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 3px solid #5a91ed;
+  outline-offset: 3px;
+}
+
+.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.primary:hover:not(:disabled) {
+  background: #173e87;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--nav);
+  padding: 1.6rem 1rem;
+  color: white;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0 0.5rem 2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.brand small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #b9c9e3;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.monogram {
+  display: grid;
+  place-items: center;
+  min-width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.55rem;
+  color: #172d55;
+  background: #c8dbff;
+  font-size: 0.85rem;
+}
+
+nav {
+  display: grid;
+  gap: 0.25rem;
+}
+
+nav button {
+  width: 100%;
+  text-align: left;
+  color: #dce7f8;
+  background: transparent;
+  border-color: transparent;
+  font-size: 0.88rem;
+}
+
+nav button[aria-current="page"],
+nav button:hover:not(:disabled) {
+  color: white;
+  background: #294775;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  min-height: 4.5rem;
+  padding: 0.75rem clamp(1rem, 3vw, 2.5rem);
+  background: white;
+  border-bottom: 1px solid var(--line);
+  font-weight: 700;
+}
+
+.organization-tools,
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.organization-tools select {
+  max-width: min(15rem, 100%);
+}
+
+.content {
+  max-width: 100rem;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.65rem, 3vw, 2.4rem);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.25;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(17rem, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.panel {
+  min-width: 0;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  box-shadow: 0 2px 6px #1b294008;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.panel-header span {
+  margin-left: 0.45rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.editor,
+.setup {
+  padding: 1.2rem;
+}
+
+.setup {
+  max-width: 30rem;
+  margin-top: 1.25rem;
+}
+
+.editor h2 {
+  margin-bottom: 1rem;
+}
+
+p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fields {
+  display: grid;
+  gap: 0.8rem;
+}
+
+label,
+.field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+label input,
+.field input,
+.field select {
+  width: 100%;
+  font-weight: 400;
+}
+
+label.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 1rem 0;
+}
+
+.checkbox input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.setup .actions {
+  margin-top: 1rem;
+}
+
+.empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  border-top: 1px solid var(--line);
+}
+
+.empty p {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+thead {
+  color: #40516a;
+  background: #f3f6fa;
+}
+
+th,
+td {
+  border-top: 1px solid var(--line);
+  padding: 0.6rem 0.75rem;
+}
+
+th:first-child,
+td:first-child {
+  padding-left: 1rem;
+}
+
+.status {
+  display: inline-block;
+  color: #4b596d;
+  background: #eef2f7;
+  border-radius: 1rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.status.active {
+  color: #215738;
+  background: #e1f4e9;
+}
+
+.text-button {
+  min-height: 2rem;
+  border: 0;
+  color: var(--primary);
+  padding: 0.2rem 0.4rem;
+}
+
+.notice {
+  margin-bottom: 0;
+  color: #215738;
+}
+
+.notice:empty {
+  margin: 0;
+}
+
+.error {
+  color: #8d2630;
+  background: #fff0f1;
+  border-radius: 0.45rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 1050px) {
+  .catalog-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    padding: 0.8rem 1rem;
+  }
+
+  .brand {
+    padding: 0 0 0.6rem;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  nav button {
+    width: auto;
+    min-height: 2.3rem;
+    padding: 0.4rem 0.65rem;
+  }
 }

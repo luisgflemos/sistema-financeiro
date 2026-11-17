@@ -1,4 +1,4 @@
-name: Verificar Etapa 0
+name: Verificar aplicação
 
 on: [push, pull_request]
 
@@ -26,11 +26,28 @@ jobs:
           docker compose exec -T api pytest
           docker compose exec -T web npm run check
           docker compose exec -T web npm run build
+      - name: Testar cadastros no navegador
+        working-directory: frontend
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.51.1
+          node tests/catalog-smoke.mjs
       - name: Reaplicar migração no banco descartável
         run: |
           docker compose exec -T api alembic downgrade base
           docker compose exec -T api alembic upgrade head
           docker compose exec -T api pytest
+      - name: Ler diferenças de formatação
+        if: failure()
+        run: |
+          docker compose exec -T api ruff format --diff . || true
+          docker compose exec -T web node --input-type=module -e '
+          import prettier from "prettier";
+          import {readFileSync} from "node:fs";
+          for (const path of ["src/main.tsx", "src/catalog-page.tsx", "src/catalogs.ts", "tests/catalog-smoke.mjs"]) {
+            const source = readFileSync(path, "utf8");
+            const output = await prettier.format(source, { filepath: path });
+            if (source !== output) console.log("FORMAT " + path + " " + Buffer.from(output).toString("base64"));
+          }'
       - name: Diagnosticar falha
         if: failure()
         run: docker compose logs --no-color

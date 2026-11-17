@@ -1,6 +1,6 @@
 # Auto Visão Financeiro
 
-Aplicação em desenvolvimento para conciliação bancária e fluxo de caixa. A interface exibe o estado da API e da conexão com o banco. O escopo funcional está no [roadmap](ROADMAP.md).
+Aplicação em desenvolvimento para conciliação bancária e fluxo de caixa. A interface permite preencher e consultar os cadastros da Etapa 1. O escopo funcional está no [roadmap](ROADMAP.md).
 
 ## Executar localmente
 
@@ -14,13 +14,9 @@ Abra [a interface](http://localhost:5173) ou [a documentação da API](http://lo
 
 ## Cadastros da Etapa 1
 
-No ambiente local, crie uma organização sintética uma vez e guarde o UUID retornado:
+Abra [a interface](http://localhost:5173), crie uma organização de teste ou selecione uma existente e escolha um cadastro no menu. Preencha o formulário e selecione **Salvar cadastro**. Para alterar um registro, use **Editar** na listagem. A opção **Cadastro ativo** permite desativar ou reativar o registro.
 
-```sh
-docker compose exec -T api python -m app.create_organization "Organização de teste"
-```
-
-Na [documentação interativa da API](http://localhost:8000/docs), use o UUID no caminho `/organizations/{organization_id}` dos cadastros:
+A [documentação interativa da API](http://localhost:8000/docs) descreve os recursos disponíveis no caminho `/organizations/{organization_id}`:
 
 | Recurso | Caminho | Campos e vínculos |
 | --- | --- | --- |
@@ -32,7 +28,7 @@ Na [documentação interativa da API](http://localhost:8000/docs), use o UUID no
 
 O número da conta deve conter pelo menos dois asteriscos e apenas os últimos quatro dígitos ou menos, por exemplo `**1234`. Códigos de conta, classificação e centro de custos são únicos dentro da organização. O código da subclasse é único dentro da classificação. O `PUT` substitui os campos editáveis. O `DELETE` desativa o cadastro e preserva seu histórico. As listagens aceitam o filtro opcional `active`. Alterações são auditadas na mesma transação.
 
-Os endpoints são destinados ao ambiente local. O UUID delimita os registros consultados e alterados. A identidade do operador e as permissões dependem da futura integração de autenticação. Use dados sintéticos neste ambiente.
+A interface e os endpoints são destinados ao ambiente local. O UUID delimita os registros consultados e alterados. A identidade do operador e as permissões dependem da futura integração de autenticação. Use dados sintéticos neste ambiente.
 
 ## Verificar
 
