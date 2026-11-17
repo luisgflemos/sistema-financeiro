@@ -30,6 +30,23 @@ O número da conta deve conter pelo menos dois asteriscos e apenas os últimos q
 
 A interface e os endpoints são destinados ao ambiente local. O UUID delimita os registros consultados e alterados. A identidade do operador e as permissões dependem da futura integração de autenticação. Use dados sintéticos neste ambiente.
 
+## Publicar no Railway
+
+1. No mesmo projeto do serviço `Postgres`, crie um serviço para a aplicação e conecte a raiz da branch `main` deste repositório. O `Dockerfile` da raiz gera a interface e a serve junto com a API.
+2. Na aba **Variables** do serviço da aplicação, defina as referências abaixo. Use o nome real do serviço PostgreSQL caso seja diferente de `Postgres`.
+
+   ```dotenv
+   POSTGRES_HOST=${{Postgres.PGHOST}}
+   POSTGRES_PORT=${{Postgres.PGPORT}}
+   POSTGRES_USER=${{Postgres.PGUSER}}
+   POSTGRES_PASSWORD=${{Postgres.PGPASSWORD}}
+   POSTGRES_DB=${{Postgres.PGDATABASE}}
+   ```
+
+3. No mesmo serviço, defina `FINARE_ACCESS_USER` com seu usuário e `FINARE_ACCESS_PASSWORD` com uma senha exclusiva de pelo menos 16 caracteres. Guarde a senha em um gerenciador e cadastre-a diretamente no Railway. O navegador solicita essas credenciais para abrir a interface e a API.
+4. Aplique as alterações. O `railway.toml` executa `alembic upgrade head` antes de iniciar a aplicação e verifica a disponibilidade em `/health`.
+5. Após o deploy ficar saudável, use **Settings → Networking → Public Networking → Generate Domain** somente no serviço da aplicação. Abra a URL HTTPS em uma janela privada, confirme a solicitação de login e teste o acesso.
+
 ## Verificar
 
 Com o ambiente em execução:
