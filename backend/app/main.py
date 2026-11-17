@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.bank_accounts import router as bank_accounts_router
+from app.catalogs import router as catalogs_router
 from app.db import create_database_engine
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Auto Visão Financeiro", lifespan=lifespan)
 app.include_router(bank_accounts_router)
+app.include_router(catalogs_router)
 
 
 @app.get("/health")

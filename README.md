@@ -12,7 +12,7 @@ docker compose up --build
 
 Abra [a interface](http://localhost:5173) ou [a documentação da API](http://localhost:8000/docs). O Compose aguarda o PostgreSQL e executa a migração antes de iniciar a API. Os serviços HTTP são publicados na interface de loopback. O banco usa um volume local.
 
-## Cadastro de contas bancárias
+## Cadastros da Etapa 1
 
 No ambiente local, crie uma organização sintética uma vez e guarde o UUID retornado:
 
@@ -20,7 +20,17 @@ No ambiente local, crie uma organização sintética uma vez e guarde o UUID ret
 docker compose exec -T api python -m app.create_organization "Organização de teste"
 ```
 
-Na [documentação interativa da API](http://localhost:8000/docs), use os endpoints de contas bancárias com esse UUID. O número da conta deve conter pelo menos dois asteriscos e apenas os últimos quatro dígitos ou menos, por exemplo `**1234`. O código deve ser único dentro da organização. O `PUT` substitui os campos editáveis. O `DELETE` desativa a conta e preserva seu histórico. A listagem aceita o filtro opcional `active`.
+Na [documentação interativa da API](http://localhost:8000/docs), use o UUID no caminho `/organizations/{organization_id}` dos cadastros:
+
+| Recurso | Caminho | Campos e vínculos |
+| --- | --- | --- |
+| Contas bancárias | `/bank-accounts` | Código, banco, agência, conta mascarada, titular e moeda |
+| Classificações | `/categories` | Código, nome, natureza e vigência opcional |
+| Subclasses | `/subcategories` | Classificação da mesma organização, código, nome e vigência opcional |
+| Centros de custos | `/cost-centers` | Código, nome e centro superior opcional, independente da conta bancária |
+| Clientes e fornecedores | `/parties` | Nome, tipo cliente/fornecedor/ambos, documento e contatos opcionais |
+
+O número da conta deve conter pelo menos dois asteriscos e apenas os últimos quatro dígitos ou menos, por exemplo `**1234`. Códigos de conta, classificação e centro de custos são únicos dentro da organização. O código da subclasse é único dentro da classificação. O `PUT` substitui os campos editáveis. O `DELETE` desativa o cadastro e preserva seu histórico. As listagens aceitam o filtro opcional `active`. Alterações são auditadas na mesma transação.
 
 Os endpoints são destinados ao ambiente local. O UUID delimita os registros consultados e alterados. A identidade do operador e as permissões dependem da futura integração de autenticação. Use dados sintéticos neste ambiente.
 
