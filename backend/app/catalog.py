@@ -8,6 +8,8 @@ from pydantic import BaseModel
 from sqlalchemy import Connection, text
 from sqlalchemy.exc import IntegrityError
 
+from app.codes import PREFIXES, next_catalog_code
+
 
 @dataclass(frozen=True)
 class Catalog:
@@ -91,6 +93,12 @@ def catalog_router(catalog: Catalog) -> APIRouter:
 
     def save(connection, organization_id, values, previous=None) -> dict:
         record_id = previous["id"] if previous else None
+        if table in PREFIXES and values["code"] is None:
+            values["code"] = (
+                previous["code"]
+                if previous
+                else next_catalog_code(connection, table, organization_id)
+            )
         if catalog.validate:
             catalog.validate(connection, organization_id, values, record_id)
         if previous and all(previous[field] == values[field] for field in fields):

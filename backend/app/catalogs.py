@@ -34,10 +34,12 @@ class DatedCatalog(NamedCatalog):
 
 
 class CategoryInput(DatedCatalog):
+    code: RequiredText | None = None
     kind: Literal["REVENUE", "EXPENSE", "NEUTRAL"]
 
 
 class Category(CategoryInput):
+    code: RequiredText
     id: UUID
     organization_id: UUID
 
@@ -51,10 +53,12 @@ class Subcategory(SubcategoryInput):
 
 
 class CostCenterInput(NamedCatalog):
+    code: RequiredText | None = None
     parent_id: UUID | None = None
 
 
 class CostCenter(CostCenterInput):
+    code: RequiredText
     id: UUID
     organization_id: UUID
 

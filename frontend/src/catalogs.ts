@@ -47,7 +47,6 @@ export const catalogs: Record<CatalogId, Catalog> = {
     singular: "conta bancária",
     titleField: "holder_name",
     fields: [
-      code,
       { name: "holder_name", label: "Titular", required: true },
       { name: "bank_code", label: "Código do banco", required: true },
       { name: "branch", label: "Agência", required: true },
@@ -78,7 +77,6 @@ export const catalogs: Record<CatalogId, Catalog> = {
     singular: "classificação",
     titleField: "name",
     fields: [
-      code,
       name,
       {
         name: "kind",
@@ -109,7 +107,6 @@ export const catalogs: Record<CatalogId, Catalog> = {
     singular: "centro de custos",
     titleField: "name",
     fields: [
-      code,
       name,
       {
         name: "parent_id",

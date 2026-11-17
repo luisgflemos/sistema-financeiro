@@ -14,7 +14,7 @@ Abra [a interface](http://localhost:5173) ou [a documentação da API](http://lo
 
 ## Cadastros da Etapa 1
 
-Abra [a interface](http://localhost:5173), crie uma organização de teste ou selecione uma existente e escolha um cadastro no menu. Preencha o formulário e selecione **Salvar cadastro**. Para alterar um registro, use **Editar** na listagem. A opção **Cadastro ativo** permite desativar ou reativar o registro.
+Abra [a interface](http://localhost:5173), crie uma organização de teste ou selecione uma existente e escolha uma opção no menu **Cadastros**. Preencha o formulário e selecione **Salvar cadastro**. Para alterar um registro, use **Editar** na listagem. A opção **Cadastro ativo** permite desativar ou reativar o registro.
 
 Em **Classificações**, clique no nome de uma classificação para consultar seus registros vinculados ou adicionar uma subclassificação.
 
@@ -28,7 +28,7 @@ A [documentação interativa da API](http://localhost:8000/docs) descreve os rec
 | Centros de custos | `/cost-centers` | Código, nome e centro superior opcional, independente da conta bancária |
 | Clientes e fornecedores | `/parties` | Nome, tipo cliente/fornecedor/ambos, documento e contatos opcionais |
 
-O número da conta deve conter pelo menos dois asteriscos e apenas os últimos quatro dígitos ou menos, por exemplo `**1234`. Códigos de conta, classificação e centro de custos são únicos dentro da organização. O código da subclasse é único dentro da classificação. O `PUT` substitui os campos editáveis. O `DELETE` desativa o cadastro e preserva seu histórico. As listagens aceitam o filtro opcional `active`. Alterações são auditadas na mesma transação.
+O número da conta deve conter pelo menos dois asteriscos e apenas os últimos quatro dígitos ou menos, por exemplo `**1234`. A Finare gera os códigos internos de contas bancárias, classificações e centros de custos. Os códigos existentes são preservados. O código da subclasse é único dentro da classificação. O `PUT` substitui os campos editáveis. O `DELETE` desativa o cadastro e preserva seu histórico. As listagens aceitam o filtro opcional `active`. Alterações são auditadas na mesma transação.
 
 A interface e os endpoints são destinados ao ambiente local. O UUID delimita os registros consultados e alterados. A identidade do operador e as permissões dependem da futura integração de autenticação. Use dados sintéticos neste ambiente.
 

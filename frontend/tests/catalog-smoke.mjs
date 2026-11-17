@@ -30,14 +30,13 @@ try {
     .getByRole("heading", { name: "Contas bancárias", level: 1 })
     .waitFor();
   await fill({
-    Código: "conta-01",
     Titular: "Titular sintético",
     "Código do banco": "000",
     Agência: "0000",
     "Conta mascarada": "**1234",
   });
   await save();
-  await page.getByRole("row", { name: /Titular sintético/ }).waitFor();
+  await page.getByRole("row", { name: /Titular sintético CTA-\d+/ }).waitFor();
   await page.getByRole("button", { name: "Editar Titular sintético" }).click();
   await page.getByRole("checkbox", { name: "Cadastro ativo" }).uncheck();
   await save();
@@ -46,17 +45,18 @@ try {
 
   const menu = page.getByRole("navigation", { name: "Menu principal" });
   const group = menu.getByText("Cadastros", { exact: true });
+  const menuItems = menu.locator(".nav-items").getByRole("button");
   await group.click();
-  assert.equal(await menu.getByRole("button").count(), 0);
+  assert.equal(await menuItems.count(), 0);
   await group.click();
-  assert.equal(await menu.getByRole("button").count(), 4);
+  assert.equal(await menuItems.count(), 4);
 
   await open("Classificações");
   assert.equal(
     await page.getByRole("navigation").getByText("Subclasses").count(),
     0,
   );
-  await fill({ Código: "receitas", Nome: "Receitas de teste" });
+  await fill({ Nome: "Receitas de teste" });
   await page.getByLabel("Natureza", { exact: true }).selectOption("REVENUE");
   await save();
   await page
@@ -78,12 +78,14 @@ try {
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
 
   await open("Centros de custos");
-  await fill({ Código: "sede", Nome: "Sede de teste" });
+  await fill({ Nome: "Sede de teste" });
   await save();
-  await fill({ Código: "unidade", Nome: "Unidade de teste" });
-  await page
-    .getByLabel("Centro superior", { exact: true })
-    .selectOption({ label: "sede · Sede de teste" });
+  await fill({ Nome: "Unidade de teste" });
+  const parents = page.getByLabel("Centro superior", { exact: true });
+  const parent = await parents
+    .getByRole("option", { name: /CC-\d+ · Sede de teste/ })
+    .getAttribute("value");
+  await parents.selectOption(parent);
   await save();
 
   await open("Clientes e fornecedores");

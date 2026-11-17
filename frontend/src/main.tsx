@@ -137,21 +137,21 @@ function App({ onLogout }: { onLogout?: () => void }) {
           <details className="nav-group" open>
             <summary>Cadastros</summary>
             <div className="nav-items">
-                {catalogIds.map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-current={catalog === id ? "page" : undefined}
-                    disabled={!organizationId || loading}
-                    onClick={() => {
-                      setCatalog(id);
-                      setCreating(false);
-                    }}
-                  >
-                    <CatalogIcon id={id} />
-                    {catalogs[id].label}
-                  </button>
-                ))}
+              {catalogIds.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-current={catalog === id ? "page" : undefined}
+                  disabled={!organizationId || loading}
+                  onClick={() => {
+                    setCatalog(id);
+                    setCreating(false);
+                  }}
+                >
+                  <CatalogIcon id={id} />
+                  {catalogs[id].label}
+                </button>
+              ))}
             </div>
           </details>
         </nav>

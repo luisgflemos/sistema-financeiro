@@ -6,6 +6,9 @@ from pydantic import BaseModel, ConfigDict, StringConstraints
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
+from app.catalog import lock_organization
+from app.codes import next_catalog_code
+
 RequiredText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 MaskedAccount = Annotated[str, StringConstraints(pattern=r"^\*{2,}[0-9]{0,4}$")]
 Currency = Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]
@@ -18,7 +21,7 @@ router = APIRouter(
 class BankAccountInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    code: RequiredText
+    code: RequiredText | None = None
     bank_code: RequiredText
     branch: RequiredText
     account_number_masked: MaskedAccount
@@ -28,6 +31,7 @@ class BankAccountInput(BaseModel):
 
 
 class BankAccount(BankAccountInput):
+    code: RequiredText
     account_number_masked: str
     id: UUID
     organization_id: UUID
@@ -110,11 +114,8 @@ def create_account(
 ) -> BankAccount:
     try:
         with request.app.state.database.begin() as connection:
-            exists = connection.scalar(
-                text("SELECT 1 FROM organizations WHERE id = :org"), {"org": organization_id}
-            )
-            if not exists:
-                raise HTTPException(404, "Organização não encontrada.")
+            lock_organization(connection, organization_id)
+            code = payload.code or next_catalog_code(connection, "bank_accounts", organization_id)
             row = (
                 connection.execute(
                     text(
@@ -130,7 +131,7 @@ def create_account(
                         RETURNING *
                         """
                     ),
-                    {"org": organization_id, **payload.model_dump()},
+                    {"org": organization_id, **payload.model_dump(), "code": code},
                 )
                 .mappings()
                 .one()
@@ -151,10 +152,11 @@ def update_account(
 ) -> BankAccount:
     try:
         with request.app.state.database.begin() as connection:
+            lock_organization(connection, organization_id)
             previous = require_account(connection, organization_id, account_id, lock=True)
-            current = BankAccount(
-                id=account_id, organization_id=organization_id, **payload.model_dump()
-            )
+            values = payload.model_dump()
+            values["code"] = payload.code or previous.code
+            current = BankAccount(id=account_id, organization_id=organization_id, **values)
             if current != previous:
                 connection.execute(
                     text(
@@ -166,7 +168,7 @@ def update_account(
                         WHERE id = :id AND organization_id = :org
                         """
                     ),
-                    {"org": organization_id, "id": account_id, **payload.model_dump()},
+                    {"org": organization_id, "id": account_id, **values},
                 )
                 audit(connection, "update", current, previous)
         return current
