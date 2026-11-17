@@ -1,0 +1,35 @@
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request, Response, status
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
+from app.db import create_database_engine
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.database = create_database_engine()
+    try:
+        yield
+    finally:
+        app.state.database.dispose()
+
+
+app = FastAPI(title="Auto Visão Financeiro", lifespan=lifespan)
+
+
+@app.get("/health")
+def health(request: Request, response: Response) -> dict[str, str]:
+    try:
+        with request.app.state.database.connect() as connection:
+            connection.execute(text("SELECT 1 FROM organizations LIMIT 1"))
+    except SQLAlchemyError:
+        logger.warning("health_database_unavailable")
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        return {"status": "unavailable"}
+
+    return {"status": "ok"}
