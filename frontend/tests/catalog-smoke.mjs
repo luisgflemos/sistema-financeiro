@@ -52,7 +52,9 @@ try {
   await fill({ Código: "receitas", Nome: "Receitas de teste" });
   await page.getByLabel("Natureza", { exact: true }).selectOption("REVENUE");
   await save();
-  await page.getByRole("button", { name: "Receitas de teste", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Receitas de teste", exact: true })
+    .click();
   const sub = page.getByRole("region", {
     name: "Subclassificações de Receitas de teste",
   });
@@ -63,7 +65,9 @@ try {
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
   await page.reload();
   await open("Classificações");
-  await page.getByRole("button", { name: "Receitas de teste", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Receitas de teste", exact: true })
+    .click();
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
 
   await open("Centros de custos");

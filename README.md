@@ -16,6 +16,8 @@ Abra [a interface](http://localhost:5173) ou [a documentação da API](http://lo
 
 Abra [a interface](http://localhost:5173), crie uma organização de teste ou selecione uma existente e escolha um cadastro no menu. Preencha o formulário e selecione **Salvar cadastro**. Para alterar um registro, use **Editar** na listagem. A opção **Cadastro ativo** permite desativar ou reativar o registro.
 
+Em **Classificações**, clique no nome de uma classificação para consultar seus registros vinculados ou adicionar uma subclassificação.
+
 A [documentação interativa da API](http://localhost:8000/docs) descreve os recursos disponíveis no caminho `/organizations/{organization_id}`:
 
 | Recurso | Caminho | Campos e vínculos |

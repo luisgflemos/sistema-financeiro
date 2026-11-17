@@ -7,9 +7,10 @@ import { api } from "./api";
 import { Brand } from "./brand";
 import { CatalogPage } from "./catalog-page";
 import { catalogIds, catalogs } from "./catalogs";
-import type { CatalogId } from "./catalogs";
 import { SessionGate } from "./session";
 import "./style.css";
+
+type CatalogId = (typeof catalogIds)[number];
 
 type Organization = { id: string; name: string };
 

@@ -101,14 +101,8 @@ export const catalogs: Record<CatalogId, Catalog> = {
     label: "Subclassificações",
     singular: "subclassificação",
     titleField: "name",
-    fields: [
-      code,
-      name,
-      ...dates,
-    ],
-    columns: [
-      { name: "code", label: "Código" },
-    ],
+    fields: [code, name, ...dates],
+    columns: [{ name: "code", label: "Código" }],
   },
   "cost-centers": {
     label: "Centros de custos",

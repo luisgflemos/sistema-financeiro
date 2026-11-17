@@ -72,10 +72,7 @@ export function CatalogPage({
       record
         ? {
             ...Object.fromEntries(
-              fields.map((field) => [
-                field.name,
-                record[field.name] ?? "",
-              ]),
+              fields.map((field) => [field.name, record[field.name] ?? ""]),
             ),
             active: record.active,
           }
@@ -231,62 +228,66 @@ export function CatalogPage({
                   <tbody>
                     {visible.map((record) => (
                       <Fragment key={record.id}>
-                      <tr>
-                        <th scope="row">
-                          {id === "categories" ? (
-                            <button
-                              type="button"
-                              className="text-button category-toggle"
-                              aria-expanded={expanded === record.id}
-                              onClick={() =>
-                                setExpanded(expanded === record.id ? null : record.id)
+                        <tr>
+                          <th scope="row">
+                            {id === "categories" ? (
+                              <button
+                                type="button"
+                                className="text-button category-toggle"
+                                aria-expanded={expanded === record.id}
+                                onClick={() =>
+                                  setExpanded(
+                                    expanded === record.id ? null : record.id,
+                                  )
+                                }
+                              >
+                                {String(record.name)}
+                              </button>
+                            ) : (
+                              String(record[catalog.titleField])
+                            )}
+                          </th>
+                          {columns.map((column) => (
+                            <td key={column.name}>
+                              {format(record, column.name)}
+                            </td>
+                          ))}
+                          <td>
+                            <span
+                              className={
+                                record.active ? "status active" : "status"
                               }
                             >
-                              {String(record.name)}
-                            </button>
-                          ) : (
-                            String(record[catalog.titleField])
-                          )}
-                        </th>
-                        {columns.map((column) => (
-                          <td key={column.name}>
-                            {format(record, column.name)}
+                              {record.active ? "Ativo" : "Inativo"}
+                            </span>
                           </td>
-                        ))}
-                        <td>
-                          <span
-                            className={
-                              record.active ? "status active" : "status"
-                            }
-                          >
-                            {record.active ? "Ativo" : "Inativo"}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="text-button"
-                            disabled={saving}
-                            onClick={() => begin(record)}
-                            aria-label={`Editar ${record[catalog.titleField]}`}
-                          >
-                            Editar
-                          </button>
-                        </td>
-                      </tr>
-                      {expanded === record.id && (
-                        <tr className="nested-row">
-                          <td colSpan={columns.length + 3}>
-                            <section aria-label={`Subclassificações de ${record.name}`}>
-                              <CatalogPage
-                                id="subcategories"
-                                organizationId={organizationId}
-                                category={record}
-                              />
-                            </section>
+                          <td>
+                            <button
+                              type="button"
+                              className="text-button"
+                              disabled={saving}
+                              onClick={() => begin(record)}
+                              aria-label={`Editar ${record[catalog.titleField]}`}
+                            >
+                              Editar
+                            </button>
                           </td>
                         </tr>
-                      )}
+                        {expanded === record.id && (
+                          <tr className="nested-row">
+                            <td colSpan={columns.length + 3}>
+                              <section
+                                aria-label={`Subclassificações de ${record.name}`}
+                              >
+                                <CatalogPage
+                                  id="subcategories"
+                                  organizationId={organizationId}
+                                  category={record}
+                                />
+                              </section>
+                            </td>
+                          </tr>
+                        )}
                       </Fragment>
                     ))}
                   </tbody>
@@ -299,7 +300,9 @@ export function CatalogPage({
               {editing ? "Editar cadastro" : `Adicionar ${catalog.singular}`}
             </h2>
             {needsCategory ? (
-              <p>Reative a classificação para cadastrar uma subclassificação.</p>
+              <p>
+                Reative a classificação para cadastrar uma subclassificação.
+              </p>
             ) : (
               <form onSubmit={submit}>
                 <fieldset disabled={saving}>
@@ -320,7 +323,9 @@ export function CatalogPage({
                         : field.options;
                       return (
                         <div className="field" key={field.name}>
-                          <label htmlFor={`${uid}-${field.name}`}>{field.label}</label>
+                          <label htmlFor={`${uid}-${field.name}`}>
+                            {field.label}
+                          </label>
                           {options ? (
                             <select
                               id={`${uid}-${field.name}`}
