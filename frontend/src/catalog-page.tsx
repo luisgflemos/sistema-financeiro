@@ -245,6 +245,7 @@ export function CatalogPage({
                     ) : availableOptions ? (
                       <select
                         id={`${uid}-${field.name}`}
+                        className={field.name === "kind" ? `nature-${value}` : undefined}
                         required={field.required}
                         value={value}
                         onChange={(event) =>
@@ -258,7 +259,11 @@ export function CatalogPage({
                           {field.required ? "Selecione" : "Nenhum"}
                         </option>
                         {availableOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
+                          <option
+                            key={option.value}
+                            value={option.value}
+                            className={field.name === "kind" ? `nature-${option.value}` : undefined}
+                          >
                             {option.label}
                           </option>
                         ))}

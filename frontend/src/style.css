@@ -845,3 +845,39 @@ button.toggle[aria-checked="true"]:hover:not(:disabled) {
 .catalog-list {
   width: 100%;
 }
+
+:root {
+  --revenue-ink: #166534;
+  --revenue-background: #dcfce7;
+  --expense-ink: #991b1b;
+  --expense-background: #fee2e2;
+  --neutral-ink: #854d0e;
+  --neutral-background: #fef3c7;
+}
+
+.nature {
+  display: inline-block;
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.nature-REVENUE,
+select.nature-REVENUE {
+  color: var(--revenue-ink);
+  background: var(--revenue-background);
+}
+
+.nature-EXPENSE,
+select.nature-EXPENSE {
+  color: var(--expense-ink);
+  background: var(--expense-background);
+}
+
+.nature-NEUTRAL,
+select.nature-NEUTRAL {
+  color: var(--neutral-ink);
+  background: var(--neutral-background);
+}

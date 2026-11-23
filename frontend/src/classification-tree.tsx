@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import { api } from "./api";
+import { NatureBadge } from "./nature";
 import { Modal } from "./modal";
 import { CatalogPage } from "./catalog-page";
 import type { RecordData } from "./catalogs";
@@ -195,13 +196,7 @@ export function ClassificationTree({
                           </th>
                           <td>{String(parent.code)}</td>
                           <td>
-                            {parent.kind === "REVENUE"
-                              ? "Receita"
-                              : parent.kind === "EXPENSE"
-                                ? "Despesa"
-                                : parent.kind === "NEUTRAL"
-                                  ? "Neutra"
-                                  : "—"}
+                            <NatureBadge value={String(parent.kind)} />
                           </td>
                           <td>{status(parent)}</td>
                           <td>
