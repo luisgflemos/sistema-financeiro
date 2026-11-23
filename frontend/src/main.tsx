@@ -235,7 +235,10 @@ function App({ onLogout }: { onLogout?: () => void }) {
               onClose={() => setImporting(false)}
             />
           ) : catalog === "categories" ? (
-            <ClassificationTree key={organizationId} organizationId={organizationId} />
+            <ClassificationTree
+              key={organizationId}
+              organizationId={organizationId}
+            />
           ) : (
             <CatalogPage
               key={`${organizationId}/${catalog}`}

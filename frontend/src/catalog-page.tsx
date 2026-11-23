@@ -179,17 +179,19 @@ export function CatalogPage({
 
   return (
     <>
-      {!editorOnly && <div className="page-heading">
-        {category ? <h3>{catalog.label}</h3> : <h1>{catalog.label}</h1>}
-        <button
-          type="button"
-          className="primary"
-          onClick={() => begin()}
-          disabled={loading || saving || !!loadError || needsCategory}
-        >
-          {category ? "+ Nova subclassificação" : "Novo cadastro"}
-        </button>
-      </div>}
+      {!editorOnly && (
+        <div className="page-heading">
+          {category ? <h3>{catalog.label}</h3> : <h1>{catalog.label}</h1>}
+          <button
+            type="button"
+            className="primary"
+            onClick={() => begin()}
+            disabled={loading || saving || !!loadError || needsCategory}
+          >
+            {category ? "+ Nova subclassificação" : "Novo cadastro"}
+          </button>
+        </div>
+      )}
       {loading ? (
         <p role="status">Carregando cadastros…</p>
       ) : loadError ? (
@@ -209,130 +211,143 @@ export function CatalogPage({
           </button>
         </>
       ) : (
-        <div className={editorOnly ? "editor-only" : category ? "catalog-grid nested-grid" : "catalog-grid"}>
-          {!editorOnly && <section className="panel listing" aria-labelledby={`${uid}-records`}>
-            <div className="panel-header">
-              <h2 id={`${uid}-records`}>
-                Registros <span>{records.length}</span>
-              </h2>
-              <select
-                aria-label="Filtrar por situação"
-                value={filter}
-                onChange={(event) => setFilter(event.target.value)}
-              >
-                <option value="all">Todas as situações</option>
-                <option value="active">Ativos</option>
-                <option value="inactive">Inativos</option>
-              </select>
-            </div>
-            {visible.length === 0 ? (
-              <div className="empty">
-                <strong>
-                  {records.length
-                    ? "Nenhum resultado"
-                    : "Nenhum registro cadastrado"}
-                </strong>
-                <p>
-                  {records.length
-                    ? "Selecione outra situação para ver os registros."
-                    : needsCategory
-                      ? "Esta classificação está inativa."
-                      : "Preencha o formulário para adicionar o primeiro registro."}
-                </p>
+        <div
+          className={
+            editorOnly
+              ? "editor-only"
+              : category
+                ? "catalog-grid nested-grid"
+                : "catalog-grid"
+          }
+        >
+          {!editorOnly && (
+            <section
+              className="panel listing"
+              aria-labelledby={`${uid}-records`}
+            >
+              <div className="panel-header">
+                <h2 id={`${uid}-records`}>
+                  Registros <span>{records.length}</span>
+                </h2>
+                <select
+                  aria-label="Filtrar por situação"
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value)}
+                >
+                  <option value="all">Todas as situações</option>
+                  <option value="active">Ativos</option>
+                  <option value="inactive">Inativos</option>
+                </select>
               </div>
-            ) : (
-              <div className="table-scroll">
-                <table aria-labelledby={`${uid}-records`}>
-                  <thead>
-                    <tr>
-                      <th scope="col">
-                        {id === "bank-accounts" ? "Nome da conta" : "Nome"}
-                      </th>
-                      {columns.map((column) => (
-                        <th key={column.name} scope="col">
-                          {column.label}
+              {visible.length === 0 ? (
+                <div className="empty">
+                  <strong>
+                    {records.length
+                      ? "Nenhum resultado"
+                      : "Nenhum registro cadastrado"}
+                  </strong>
+                  <p>
+                    {records.length
+                      ? "Selecione outra situação para ver os registros."
+                      : needsCategory
+                        ? "Esta classificação está inativa."
+                        : "Preencha o formulário para adicionar o primeiro registro."}
+                  </p>
+                </div>
+              ) : (
+                <div className="table-scroll">
+                  <table aria-labelledby={`${uid}-records`}>
+                    <thead>
+                      <tr>
+                        <th scope="col">
+                          {id === "bank-accounts" ? "Nome da conta" : "Nome"}
                         </th>
-                      ))}
-                      <th scope="col">Situação</th>
-                      <th scope="col">
-                        <span className="sr-only">Ações</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((record) => (
-                      <Fragment key={record.id}>
-                        <tr>
-                          <th scope="row">
-                            {id === "categories" ? (
-                              <button
-                                type="button"
-                                className="text-button category-toggle"
-                                aria-expanded={expanded === record.id}
-                                onClick={() =>
-                                  setExpanded(
-                                    expanded === record.id ? null : record.id,
-                                  )
+                        {columns.map((column) => (
+                          <th key={column.name} scope="col">
+                            {column.label}
+                          </th>
+                        ))}
+                        <th scope="col">Situação</th>
+                        <th scope="col">
+                          <span className="sr-only">Ações</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visible.map((record) => (
+                        <Fragment key={record.id}>
+                          <tr>
+                            <th scope="row">
+                              {id === "categories" ? (
+                                <button
+                                  type="button"
+                                  className="text-button category-toggle"
+                                  aria-expanded={expanded === record.id}
+                                  onClick={() =>
+                                    setExpanded(
+                                      expanded === record.id ? null : record.id,
+                                    )
+                                  }
+                                >
+                                  {String(record.name)}
+                                </button>
+                              ) : (
+                                title(record)
+                              )}
+                            </th>
+                            {columns.map((column) => (
+                              <td key={column.name}>
+                                {format(record, column.name)}
+                              </td>
+                            ))}
+                            <td>
+                              <span
+                                className={
+                                  record.active ? "status active" : "status"
                                 }
                               >
-                                {String(record.name)}
-                              </button>
-                            ) : (
-                              title(record)
-                            )}
-                          </th>
-                          {columns.map((column) => (
-                            <td key={column.name}>
-                              {format(record, column.name)}
+                                {record.active
+                                  ? "Ativo"
+                                  : pending(record)
+                                    ? "A completar"
+                                    : "Inativo"}
+                              </span>
                             </td>
-                          ))}
-                          <td>
-                            <span
-                              className={
-                                record.active ? "status active" : "status"
-                              }
-                            >
-                              {record.active
-                                ? "Ativo"
-                                : pending(record)
-                                  ? "A completar"
-                                  : "Inativo"}
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              className="text-button"
-                              disabled={saving}
-                              onClick={() => begin(record)}
-                              aria-label={`Editar ${title(record)}`}
-                            >
-                              Editar
-                            </button>
-                          </td>
-                        </tr>
-                        {expanded === record.id && (
-                          <tr className="nested-row">
-                            <td colSpan={columns.length + 3}>
-                              <section
-                                aria-label={`Subclassificações de ${record.name}`}
+                            <td>
+                              <button
+                                type="button"
+                                className="text-button"
+                                disabled={saving}
+                                onClick={() => begin(record)}
+                                aria-label={`Editar ${title(record)}`}
                               >
-                                <CatalogPage
-                                  id="subcategories"
-                                  organizationId={organizationId}
-                                  category={record}
-                                />
-                              </section>
+                                Editar
+                              </button>
                             </td>
                           </tr>
-                        )}
-                      </Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>}
+                          {expanded === record.id && (
+                            <tr className="nested-row">
+                              <td colSpan={columns.length + 3}>
+                                <section
+                                  aria-label={`Subclassificações de ${record.name}`}
+                                >
+                                  <CatalogPage
+                                    id="subcategories"
+                                    organizationId={organizationId}
+                                    category={record}
+                                  />
+                                </section>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
           <section className="panel editor" aria-labelledby={`${uid}-editor`}>
             <h2 id={`${uid}-editor`} ref={formTitle} tabIndex={-1}>
               {editing ? "Editar cadastro" : `Adicionar ${catalog.singular}`}

@@ -5,7 +5,11 @@ import type { RecordData } from "./catalogs";
 
 type Editor = { category?: RecordData; record?: RecordData; key: number };
 
-export function ClassificationTree({ organizationId }: { organizationId: string }) {
+export function ClassificationTree({
+  organizationId,
+}: {
+  organizationId: string;
+}) {
   const [categories, setCategories] = useState<RecordData[]>([]);
   const [children, setChildren] = useState<RecordData[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -28,7 +32,8 @@ export function ClassificationTree({ organizationId }: { organizationId: string 
         setChildren(subs);
       })
       .catch(() => {
-        if (!controller.signal.aborted) setError("Não foi possível carregar as classificações.");
+        if (!controller.signal.aborted)
+          setError("Não foi possível carregar as classificações.");
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -54,16 +59,26 @@ export function ClassificationTree({ organizationId }: { organizationId: string 
   }
 
   function status(record: RecordData) {
-    return <span className={record.active ? "status active" : "status"}>
-      {record.active ? "Ativo" : record.kind === null ? "A completar" : "Inativo"}
-    </span>;
+    return (
+      <span className={record.active ? "status active" : "status"}>
+        {record.active
+          ? "Ativo"
+          : record.kind === null
+            ? "A completar"
+            : "Inativo"}
+      </span>
+    );
   }
 
   const ordered = [...categories].sort((a, b) =>
     String(a.name).localeCompare(String(b.name), "pt-BR"),
   );
-  const visible = ordered.filter((parent) =>
-    matches(parent) || children.some((child) => child.category_id === parent.id && matches(child)),
+  const visible = ordered.filter(
+    (parent) =>
+      matches(parent) ||
+      children.some(
+        (child) => child.category_id === parent.id && matches(child),
+      ),
   );
 
   return (
@@ -74,24 +89,51 @@ export function ClassificationTree({ organizationId }: { organizationId: string 
           Nova classificação
         </button>
       </div>
-      {loading ? <p role="status">Carregando classificações…</p> : error ? (
+      {loading ? (
+        <p role="status">Carregando classificações…</p>
+      ) : error ? (
         <>
-          <p role="alert" className="error">{error}</p>
-          <button type="button" onClick={() => {
-            setError("");
-            setLoading(true);
-            setAttempt((value) => value + 1);
-          }}>Tentar novamente</button>
+          <p role="alert" className="error">
+            {error}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setError("");
+              setLoading(true);
+              setAttempt((value) => value + 1);
+            }}
+          >
+            Tentar novamente
+          </button>
         </>
       ) : (
         <div className="catalog-grid classification-grid">
-          <section className="panel listing" aria-label="Classificações e subclassificações">
+          <section
+            className="panel listing"
+            aria-label="Classificações e subclassificações"
+          >
             <div className="panel-header">
-              <h2>Classificações <span>{categories.length}</span></h2>
+              <h2>
+                Classificações <span>{categories.length}</span>
+              </h2>
               <div className="actions">
-                <button type="button" onClick={() => setExpanded(new Set(categories.map((item) => item.id)))}>Expandir tudo</button>
-                <button type="button" onClick={() => setExpanded(new Set())}>Recolher tudo</button>
-                <select aria-label="Filtrar por situação" value={filter} onChange={(event) => setFilter(event.target.value)}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpanded(new Set(categories.map((item) => item.id)))
+                  }
+                >
+                  Expandir tudo
+                </button>
+                <button type="button" onClick={() => setExpanded(new Set())}>
+                  Recolher tudo
+                </button>
+                <select
+                  aria-label="Filtrar por situação"
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value)}
+                >
                   <option value="all">Todas as situações</option>
                   <option value="active">Ativos</option>
                   <option value="inactive">Inativos</option>
@@ -100,50 +142,132 @@ export function ClassificationTree({ organizationId }: { organizationId: string 
             </div>
             <div className="table-scroll">
               <table className="classification-tree">
-                <caption className="sr-only">Classificações com suas subclassificações</caption>
-                <thead><tr>
-                  <th scope="col">Nome</th><th scope="col">Código</th>
-                  <th scope="col">Natureza</th><th scope="col">Situação</th>
-                  <th scope="col"><span className="sr-only">Ações</span></th>
-                </tr></thead>
+                <caption className="sr-only">
+                  Classificações com suas subclassificações
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Nome</th>
+                    <th scope="col">Código</th>
+                    <th scope="col">Natureza</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col">
+                      <span className="sr-only">Ações</span>
+                    </th>
+                  </tr>
+                </thead>
                 <tbody>
                   {visible.map((parent) => {
-                    const subs = children.filter((child) => child.category_id === parent.id && matches(child))
-                      .sort((a, b) => String(a.name).localeCompare(String(b.name), "pt-BR"));
+                    const subs = children
+                      .filter(
+                        (child) =>
+                          child.category_id === parent.id && matches(child),
+                      )
+                      .sort((a, b) =>
+                        String(a.name).localeCompare(String(b.name), "pt-BR"),
+                      );
                     const isOpen = expanded.has(parent.id);
-                    return <Fragment key={parent.id}>
-                      <tr className="tree-parent">
-                        <th scope="row">
-                          <button type="button" className="tree-disclosure" aria-expanded={isOpen} onClick={() => toggle(parent.id)}>
-                            <span className="tree-sign" aria-hidden="true">{isOpen ? "−" : "+"}</span>
-                            {String(parent.name)}
-                            <span className="tree-count">{subs.length}</span>
-                          </button>
-                        </th>
-                        <td>{String(parent.code)}</td>
-                        <td>{parent.kind === "REVENUE" ? "Receita" : parent.kind === "EXPENSE" ? "Despesa" : parent.kind === "NEUTRAL" ? "Neutra" : "—"}</td>
-                        <td>{status(parent)}</td>
-                        <td><button type="button" className="text-button" aria-label={`Editar ${parent.name}`} onClick={() => openEditor(parent)}>Editar</button></td>
-                      </tr>
-                      {isOpen && <>
-                        {subs.map((sub) => <tr key={sub.id} className="tree-child">
-                          <th scope="row"><span className="tree-branch" aria-hidden="true">└</span>{String(sub.name)}</th>
-                          <td>{String(sub.code)}</td><td>—</td><td>{status(sub)}</td>
-                          <td><button type="button" className="text-button" aria-label={`Editar ${sub.name} em ${parent.name}`} onClick={() => openEditor(sub, parent)}>Editar</button></td>
-                        </tr>)}
-                        <tr className="tree-child tree-add"><td colSpan={5}>
-                          <button type="button" className="text-button" disabled={!parent.active} aria-label={`Nova subclassificação em ${parent.name}`} onClick={() => openEditor(undefined, parent)}>+ Nova subclassificação</button>
-                        </td></tr>
-                      </>}
-                    </Fragment>;
+                    return (
+                      <Fragment key={parent.id}>
+                        <tr className="tree-parent">
+                          <th scope="row">
+                            <button
+                              type="button"
+                              className="tree-disclosure"
+                              aria-expanded={isOpen}
+                              onClick={() => toggle(parent.id)}
+                            >
+                              <span className="tree-sign" aria-hidden="true">
+                                {isOpen ? "−" : "+"}
+                              </span>
+                              {String(parent.name)}
+                              <span className="tree-count">{subs.length}</span>
+                            </button>
+                          </th>
+                          <td>{String(parent.code)}</td>
+                          <td>
+                            {parent.kind === "REVENUE"
+                              ? "Receita"
+                              : parent.kind === "EXPENSE"
+                                ? "Despesa"
+                                : parent.kind === "NEUTRAL"
+                                  ? "Neutra"
+                                  : "—"}
+                          </td>
+                          <td>{status(parent)}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className="text-button"
+                              aria-label={`Editar ${parent.name}`}
+                              onClick={() => openEditor(parent)}
+                            >
+                              Editar
+                            </button>
+                          </td>
+                        </tr>
+                        {isOpen && (
+                          <>
+                            {subs.map((sub) => (
+                              <tr key={sub.id} className="tree-child">
+                                <th scope="row">
+                                  <span
+                                    className="tree-branch"
+                                    aria-hidden="true"
+                                  >
+                                    └
+                                  </span>
+                                  {String(sub.name)}
+                                </th>
+                                <td>{String(sub.code)}</td>
+                                <td>—</td>
+                                <td>{status(sub)}</td>
+                                <td>
+                                  <button
+                                    type="button"
+                                    className="text-button"
+                                    aria-label={`Editar ${sub.name} em ${parent.name}`}
+                                    onClick={() => openEditor(sub, parent)}
+                                  >
+                                    Editar
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            <tr className="tree-child tree-add">
+                              <td colSpan={5}>
+                                <button
+                                  type="button"
+                                  className="text-button"
+                                  disabled={!parent.active}
+                                  aria-label={`Nova subclassificação em ${parent.name}`}
+                                  onClick={() => openEditor(undefined, parent)}
+                                >
+                                  + Nova subclassificação
+                                </button>
+                              </td>
+                            </tr>
+                          </>
+                        )}
+                      </Fragment>
+                    );
                   })}
-                  {!visible.length && <tr><td colSpan={5}>Nenhuma classificação encontrada.</td></tr>}
+                  {!visible.length && (
+                    <tr>
+                      <td colSpan={5}>Nenhuma classificação encontrada.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </section>
           <div>
-            {editor.category && <p className="editor-context">Subclassificação de <strong>{String(editor.category.name)}</strong></p>}
+            {editor.category && (
+              <p className="editor-context">
+                Subclassificação de{" "}
+                <strong>{String(editor.category.name)}</strong>
+              </p>
+            )}
             <CatalogPage
               key={editor.key}
               id={editor.category ? "subcategories" : "categories"}
@@ -154,7 +278,7 @@ export function ClassificationTree({ organizationId }: { organizationId: string 
               onSaved={(saved) => {
                 const update = (items: RecordData[]) =>
                   items.some((item) => item.id === saved.id)
-                    ? items.map((item) => item.id === saved.id ? saved : item)
+                    ? items.map((item) => (item.id === saved.id ? saved : item))
                     : [...items, saved];
                 if (editor.category) setChildren(update);
                 else setCategories(update);
