@@ -148,7 +148,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
                   onClick={() => {
                     setCatalog(id);
                     setCreating(false);
-                                  }}
+                  }}
                 >
                   <CatalogIcon id={id} />
                   {catalogs[id].label}

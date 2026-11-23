@@ -372,7 +372,11 @@ export function CatalogPage({
           {category ? <h3>{catalog.label}</h3> : <h1>{catalog.label}</h1>}
           <div className="actions">
             {id !== "subcategories" && (
-              <button type="button" className="primary" onClick={() => setImportOpen(true)}>
+              <button
+                type="button"
+                className="primary"
+                onClick={() => setImportOpen(true)}
+              >
                 Importar
               </button>
             )}
