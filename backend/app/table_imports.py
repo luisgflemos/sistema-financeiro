@@ -129,6 +129,8 @@ def read_source(source: Source):
                 if selected not in sheets:
                     raise HTTPException(422, "A aba escolhida não existe.")
                 sheet = book[selected]
+                if sheet.max_row and sheet.max_row > MAX_ROWS + source.header_row:
+                    raise HTTPException(422, "A aba excede o limite de linhas. Divida o arquivo em cargas menores.")
                 if sheet.max_column and sheet.max_column > 100:
                     raise HTTPException(422, "Use uma tabela com até 100 colunas.")
                 rows = []
