@@ -50,25 +50,6 @@ jobs:
           docker compose exec -T -e POSTGRES_DB=migration_check api alembic downgrade base
           docker compose exec -T -e POSTGRES_DB=migration_check api alembic upgrade head
           docker compose exec -T api pytest
-      - name: Formatação da importação
-        if: failure()
-        run: |
-          docker compose exec -T api python -c '
-          import base64, pathlib, subprocess
-          for path in ["app/table_imports.py", "tests/test_table_imports.py", "app/main.py"]:
-              source = pathlib.Path(path).read_text()
-              result = subprocess.run(["ruff", "format", "--stdin-filename", path, "-"], input=source, text=True, capture_output=True)
-              if result.returncode == 0 and result.stdout != source:
-                  print("FORMAT backend/" + path + " " + base64.b64encode(result.stdout.encode()).decode())
-          '
-          docker compose exec -T web node --input-type=module -e '
-          import prettier from "prettier";
-          import {readFileSync} from "node:fs";
-          for (const path of ["src/table-import.tsx", "src/catalog-page.tsx", "src/classification-tree.tsx", "tests/catalog-smoke.mjs"]) {
-            const source = readFileSync(path, "utf8");
-            const output = await prettier.format(source, { filepath: path });
-            if (source !== output) console.log("FORMAT frontend/" + path + " " + Buffer.from(output).toString("base64"));
-          }'
       - name: Diagnosticar falha
         if: failure()
         run: |
