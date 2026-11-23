@@ -13,9 +13,7 @@ from app.table_imports import FIELDS
 def import_endpoint(catalog_client):
     client, connection = catalog_client
     organization = connection.scalar(
-        text(
-            "INSERT INTO organizations (name) VALUES ('Importação sintética') RETURNING id"
-        )
+        text("INSERT INTO organizations (name) VALUES ('Importação sintética') RETURNING id")
     )
     return client, connection, f"/organizations/{organization}/table-imports"
 
@@ -104,9 +102,7 @@ def test_xlsx_custom_mapping_and_subcategory_link(import_endpoint):
     preview = client.post(f"{endpoint}/categories/preview", json=source)
     assert preview.json()["total"] == 1
     mapped = {**source, "mapping": {"name": 0, "kind": 1, "sub_name": 2}}
-    assert (
-        client.post(f"{endpoint}/categories/commit", json=mapped).json()["errors"] == 0
-    )
+    assert client.post(f"{endpoint}/categories/commit", json=mapped).json()["errors"] == 0
     assert (
         connection.scalar(
             text(
@@ -153,9 +149,7 @@ def test_fixed_values_apply_to_every_row(import_endpoint, active):
         text("SELECT type, active FROM parties WHERE display_name LIKE 'Cliente fixo%'")
     ).all()
     assert rows == [("CUSTOMER", active == "Sim")] * 2
-    assert (
-        client.post(f"{endpoint}/parties/commit", json=mapped).json()["duplicates"] == 2
-    )
+    assert client.post(f"{endpoint}/parties/commit", json=mapped).json()["duplicates"] == 2
 
 
 def test_reject_conflicting_or_invalid_fixed_values(import_endpoint):
@@ -169,7 +163,5 @@ def test_reject_conflicting_or_invalid_fixed_values(import_endpoint):
         assert response.status_code == 422
     mapped["mapping"] = {"display_name": 0}
     mapped["constants"] = {"type": "Inválido"}
-    assert (
-        client.post(f"{endpoint}/parties/validate", json=mapped).json()["errors"] == 1
-    )
+    assert client.post(f"{endpoint}/parties/validate", json=mapped).json()["errors"] == 1
     assert client.post(f"{endpoint}/parties/commit", json=mapped).status_code == 422
