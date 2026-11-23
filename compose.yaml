@@ -5,6 +5,8 @@ x-backend: &backend
     POSTGRES_USER: ${POSTGRES_USER:?copie .env.example para .env}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?copie .env.example para .env}
     POSTGRES_HOST: db
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
 
 services:
   db:
@@ -14,7 +16,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 3s
       timeout: 3s
       retries: 20

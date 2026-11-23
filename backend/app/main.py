@@ -10,7 +10,10 @@ from app.catalog_import import router as catalog_import_router
 from app.catalogs import router as catalogs_router
 from app.db import create_database_engine
 from app.organizations import router as organizations_router
+from app.recognition import router as recognition_router
+from app.statements import router as statements_router
 from app.table_imports import router as table_imports_router
+from app.transactions import router as transactions_router
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +33,9 @@ app.include_router(catalogs_router)
 app.include_router(catalog_import_router)
 app.include_router(organizations_router)
 app.include_router(table_imports_router)
+app.include_router(statements_router)
+app.include_router(transactions_router)
+app.include_router(recognition_router)
 
 
 @app.get("/health")

@@ -1,5 +1,11 @@
 import "@fontsource-variable/inter";
-import { CreditCard, Layers3, Network, Users } from "lucide-react";
+import {
+  CreditCard,
+  Layers3,
+  Network,
+  Users,
+  ArrowLeftRight,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
@@ -9,8 +15,10 @@ import { Brand } from "./brand";
 import { ClassificationTree } from "./classification-tree";
 import { CatalogPage } from "./catalog-page";
 import { catalogIds, catalogs } from "./catalogs";
+import { TransactionsPage } from "./transactions-page";
 import { SessionGate } from "./session";
 import "./style.css";
+import "./transactions.css";
 
 type CatalogId = (typeof catalogIds)[number];
 
@@ -93,7 +101,9 @@ function CatalogIcon({ id }: { id: CatalogId }) {
 function App({ onLogout }: { onLogout?: () => void }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organizationId, setOrganizationId] = useState("");
-  const [catalog, setCatalog] = useState<CatalogId>("bank-accounts");
+  const [catalog, setCatalog] = useState<CatalogId | "transactions">(
+    "bank-accounts",
+  );
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -156,11 +166,25 @@ function App({ onLogout }: { onLogout?: () => void }) {
               ))}
             </div>
           </details>
+          <button
+            type="button"
+            aria-current={catalog === "transactions" ? "page" : undefined}
+            disabled={!organizationId || loading}
+            onClick={() => {
+              setCatalog("transactions");
+              setCreating(false);
+            }}
+          >
+            <ArrowLeftRight size={18} aria-hidden="true" />
+            Transações
+          </button>
         </nav>
       </aside>
       <main>
         <header className="toolbar">
-          <span className="toolbar-title">Cadastros</span>
+          <span className="toolbar-title">
+            {catalog === "transactions" ? "Transações" : "Cadastros"}
+          </span>
           <div className="organization-tools">
             {organizations.length > 0 && (
               <select
@@ -228,6 +252,11 @@ function App({ onLogout }: { onLogout?: () => void }) {
                 Nova organização
               </button>
             </>
+          ) : catalog === "transactions" ? (
+            <TransactionsPage
+              key={organizationId}
+              organizationId={organizationId}
+            />
           ) : catalog === "categories" ? (
             <ClassificationTree
               key={organizationId}
