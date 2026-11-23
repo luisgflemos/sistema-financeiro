@@ -30,8 +30,7 @@ try {
     .getByRole("heading", { name: "Contas bancárias", level: 1 })
     .waitFor();
   await fill({
-    "Nome da conta / unidade": "Conta sintética",
-    Titular: "Titular sintético",
+    "Nome da conta": "Conta sintética",
     Agência: "0000",
     "Conta mascarada": "**1234",
   });

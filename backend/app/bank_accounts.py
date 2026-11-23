@@ -32,7 +32,7 @@ class BankAccountInput(BaseModel):
     bank_code: RequiredText
     branch: RequiredText
     account_number_masked: MaskedAccount
-    holder_name: RequiredText
+    holder_name: RequiredText | None = None
     currency: Currency = "BRL"
     active: bool = True
 

@@ -137,7 +137,8 @@ export function CatalogPage({
 
   function pending(record: RecordData) {
     return (
-      (id === "bank-accounts" && !record.holder_name) ||
+      (id === "bank-accounts" &&
+        (!record.bank_code || !record.branch || !record.account_number_masked)) ||
       (id === "categories" && !record.kind)
     );
   }
@@ -225,7 +226,7 @@ export function CatalogPage({
                   <thead>
                     <tr>
                       <th scope="col">
-                        {id === "bank-accounts" ? "Conta / unidade" : "Nome"}
+                        {id === "bank-accounts" ? "Nome da conta" : "Nome"}
                       </th>
                       {columns.map((column) => (
                         <th key={column.name} scope="col">
