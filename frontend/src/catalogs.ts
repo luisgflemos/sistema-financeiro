@@ -58,7 +58,6 @@ export const catalogs: Record<CatalogId, Catalog> = {
       {
         name: "holder_document",
         label: "CPF/CNPJ do titular",
-        
       },
       { name: "branch", label: "Agência", required: true },
       {
@@ -86,7 +85,6 @@ export const catalogs: Record<CatalogId, Catalog> = {
         label: "Conta mascarada",
         placeholder: "Preenchida automaticamente",
         readOnly: true,
-
       },
       {
         name: "currency",

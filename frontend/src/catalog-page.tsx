@@ -86,10 +86,12 @@ export function CatalogPage({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const values = fields.filter((field) => !field.readOnly).map((field) => {
-      const value = String(draft[field.name] ?? "").trim();
-      return [field.name, value || null];
-    });
+    const values = fields
+      .filter((field) => !field.readOnly)
+      .map((field) => {
+        const value = String(draft[field.name] ?? "").trim();
+        return [field.name, value || null];
+      });
     setSaving(true);
     setSaveError("");
     setNotice("");
@@ -330,7 +332,8 @@ export function CatalogPage({
                   <div className="fields">
                     {fields.map((field) => {
                       const value =
-                        field.name === "account_number_masked" && draft.account_number
+                        field.name === "account_number_masked" &&
+                        draft.account_number
                           ? "**" + String(draft.account_number).slice(-4)
                           : String(draft[field.name] ?? "");
                       const options = field.reference

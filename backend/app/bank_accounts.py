@@ -36,7 +36,6 @@ class BankAccountInput(BaseModel):
     currency: Currency = "BRL"
     active: bool = True
 
-
     @field_validator("holder_document", mode="before")
     @classmethod
     def normalize_document(cls, value):
