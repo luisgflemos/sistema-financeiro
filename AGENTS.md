@@ -58,3 +58,7 @@ Criar uma aplicação web simples, rápida, acessível e auditável onde o **ext
 - Regras de fechamento mensal, permissões e integrações futuras.
 
 **Nota:** estes documentos são especificações iniciais geradas a partir da conversa de definição funcional. Não são prova de execução de código nem de existência prévia de um repositório.
+
+## Seleções da interface
+
+Novas caixas de seleção devem permitir filtrar por trechos do nome ou código, com busca sem distinção de acentos e suporte a teclado. Reutilizar o componente SearchSelect.

@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./api";
+import { SearchSelect } from "./search-select";
 import { catalogs } from "./catalogs";
 import type { CatalogId, RecordData } from "./catalogs";
 
@@ -352,7 +353,18 @@ export function CatalogPage({
                           <label htmlFor={`${uid}-${field.name}`}>
                             {field.label}
                           </label>
-                          {availableOptions ? (
+                          {availableOptions &&
+                          (field.name === "bank_code" || field.name === "currency") ? (
+                            <SearchSelect
+                              id={`${uid}-${field.name}`}
+                              value={value}
+                              options={availableOptions}
+                              required={field.required}
+                              onChange={(selected) =>
+                                setDraft({ ...draft, [field.name]: selected })
+                              }
+                            />
+                          ) : availableOptions ? (
                             <select
                               id={`${uid}-${field.name}`}
                               required={field.required}

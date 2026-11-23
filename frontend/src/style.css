@@ -675,3 +675,36 @@ button.toggle:hover:not(:disabled) {
 button.toggle[aria-checked="true"]:hover:not(:disabled) {
   background: var(--primary);
 }
+
+.search-select {
+  position: relative;
+}
+
+.search-options {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: white;
+  box-shadow: 0 8px 24px #0b1f3b20;
+}
+
+.search-options [role="option"] {
+  padding: 0.75rem;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.search-options [role="option"]:hover,
+.search-options .highlighted {
+  background: #e1f4e9;
+}
+
+.search-options p {
+  padding: 0 0.75rem;
+}
