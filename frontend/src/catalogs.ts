@@ -157,7 +157,7 @@ export const catalogs: Record<CatalogId, Catalog> = {
     singular: "cliente ou fornecedor",
     titleField: "display_name",
     fields: [
-      { name: "display_name", label: "Nome", required: true },
+      { name: "display_name", label: "Nome do Cliente", required: true },
       {
         name: "type",
         label: "Tipo",
