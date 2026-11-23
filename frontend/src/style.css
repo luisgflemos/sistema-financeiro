@@ -1442,3 +1442,47 @@ select.nature-NEUTRAL {
   margin: 0.5rem 0 0;
   padding-left: 1.25rem;
 }
+
+.search-options [role="option"].import-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  border-left: 4px solid;
+  border-bottom: 1px solid #d5e2db;
+}
+.import-choice > svg {
+  flex: none;
+}
+.import-choice strong,
+.import-choice small {
+  display: block;
+}
+.import-choice strong {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.import-choice small {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 400;
+}
+.search-options .import-choice-skip {
+  color: #713f12;
+  background: #fffbeb;
+  border-left-color: #b45309;
+}
+.search-options .import-choice-fixed {
+  color: #14532d;
+  background: #dcfce7;
+  border-left-color: #15803d;
+}
+.search-options .import-choice-skip.highlighted,
+.search-options .import-choice-skip:hover {
+  background: #fef3c7;
+}
+.search-options .import-choice-fixed.highlighted,
+.search-options .import-choice-fixed:hover {
+  background: #bbf7d0;
+}

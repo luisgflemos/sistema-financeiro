@@ -176,7 +176,7 @@ try {
   await page.getByLabel("Tipo *", { exact: true }).fill("valor fixo");
   await page
     .getByRole("option", {
-      name: "Usar valor fixo para todos os registros",
+      name: "Importar com valor fixo",
       exact: true,
     })
     .click();
@@ -185,7 +185,7 @@ try {
   await page.getByLabel("Ativo", { exact: true }).fill("valor fixo");
   await page
     .getByRole("option", {
-      name: "Usar valor fixo para todos os registros",
+      name: "Importar com valor fixo",
       exact: true,
     })
     .click();

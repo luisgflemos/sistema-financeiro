@@ -393,13 +393,17 @@ export function TableImport({
                               : String(mapping[field.name])
                         }
                         options={[
-                          { value: "", label: "Não importar esta coluna" },
+                          {
+                            value: "",
+                            label: "Não importar",
+                            emphasis: "skip",
+                          },
                           ...(fixedOptions(field.name).length
                             ? [
                                 {
                                   value: "fixed",
-                                  label:
-                                    "Usar valor fixo para todos os registros",
+                                  label: "Importar com valor fixo",
+                                  emphasis: "fixed" as const,
                                 },
                               ]
                             : []),

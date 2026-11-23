@@ -1,3 +1,4 @@
+import { CircleMinus, Layers } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Option } from "./catalogs";
 
@@ -17,7 +18,7 @@ export function SearchSelect({
 }: {
   id: string;
   value: string;
-  options: Option[];
+  options: (Option & { emphasis?: "skip" | "fixed" })[];
   required?: boolean;
   onChange: (value: string) => void;
 }) {
@@ -107,11 +108,35 @@ export function SearchSelect({
                 id={`${id}-option-${index}`}
                 role="option"
                 aria-selected={option.value === value}
-                className={highlighted === index ? "highlighted" : undefined}
+                aria-label={option.label}
+                className={[
+                  highlighted === index ? "highlighted" : "",
+                  option.emphasis
+                    ? `import-choice import-choice-${option.emphasis}`
+                    : "",
+                ].join(" ")}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => choose(option)}
               >
-                {option.label}
+                {option.emphasis ? (
+                  <>
+                    {option.emphasis === "fixed" ? (
+                      <Layers size={20} aria-hidden="true" />
+                    ) : (
+                      <CircleMinus size={20} aria-hidden="true" />
+                    )}
+                    <span>
+                      <strong>{option.label}</strong>
+                      <small>
+                        {option.emphasis === "fixed"
+                          ? "Defina um único valor para todas as linhas"
+                          : "Sem coluna associada a este campo"}
+                      </small>
+                    </span>
+                  </>
+                ) : (
+                  option.label
+                )}
               </div>
             ))
           ) : (
