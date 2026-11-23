@@ -185,7 +185,11 @@ function App({ onLogout }: { onLogout?: () => void }) {
               </button>
             )}
             {organizationId && !creating && !importing && (
-              <button type="button" className="toolbar-primary" onClick={() => setImporting(true)}>
+              <button
+                type="button"
+                className="toolbar-primary"
+                onClick={() => setImporting(true)}
+              >
                 Importar cadastros
               </button>
             )}
