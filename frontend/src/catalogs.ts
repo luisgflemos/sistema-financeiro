@@ -158,6 +158,8 @@ export const catalogs: Record<CatalogId, Catalog> = {
     titleField: "display_name",
     fields: [
       { name: "display_name", label: "Nome", required: true },
+      { name: "legal_name", label: "Razão social" },
+      { name: "trade_name", label: "Nome fantasia" },
       {
         name: "type",
         label: "Tipo",

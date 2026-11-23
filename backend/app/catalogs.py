@@ -70,6 +70,8 @@ class CostCenter(CostCenterInput):
 class PartyInput(CatalogInput):
     type: Literal["CUSTOMER", "SUPPLIER", "BOTH"]
     display_name: RequiredText
+    legal_name: RequiredText | None = None
+    trade_name: RequiredText | None = None
     tax_id: RequiredText | None = None
     contact_email: RequiredText | None = None
     contact_phone: RequiredText | None = None
@@ -156,7 +158,7 @@ router.include_router(
             PartyInput,
             Party,
             order_by="display_name",
-            private_fields=frozenset({"display_name", "tax_id", "contact_email", "contact_phone"}),
+            private_fields=frozenset({"display_name", "legal_name", "trade_name", "tax_id", "contact_email", "contact_phone"}),
         )
     )
 )

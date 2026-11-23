@@ -30,7 +30,12 @@ def organizations(catalog_client):
             "parties",
             "parties",
             {"display_name": "Contraparte sintética", "type": "CUSTOMER"},
-            {"type": "BOTH", "contact_email": "teste@example.test"},
+            {
+                "type": "BOTH",
+                "contact_email": "teste@example.test",
+                "legal_name": "Empresa sintética Ltda.",
+                "trade_name": "Empresa sintética",
+            },
         ),
     ],
 )
@@ -61,6 +66,9 @@ def test_catalog_lifecycle(catalog_client, organizations, path, entity, payload,
     ).all()
     assert sorted(event.action for event in audit) == ["create", "deactivate", "update"]
     if entity == "parties":
+        stored = client.get(url).json()
+        assert stored["legal_name"] == change["legal_name"]
+        assert stored["trade_name"] == change["trade_name"]
         assert all("contact_email" not in event.new_json for event in audit)
 
 
