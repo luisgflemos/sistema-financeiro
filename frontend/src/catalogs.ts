@@ -169,6 +169,7 @@ export const catalogs: Record<CatalogId, Catalog> = {
         ],
       },
       { name: "tax_id", label: "CPF ou CNPJ" },
+      { name: "contact_name", label: "Contato" },
       { name: "contact_email", label: "E-mail", type: "email" },
       { name: "contact_phone", label: "Telefone", type: "tel" },
     ],

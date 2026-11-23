@@ -60,6 +60,7 @@ FIELDS = {
         ("display_name", "Nome do Cliente", True, ["nome", "cliente", "fornecedor"]),
         ("type", "Tipo", True, ["cliente fornecedor", "tipo de cadastro"]),
         ("tax_id", "CPF ou CNPJ", False, ["cpf", "cnpj", "documento", "cpf cnpj"]),
+        ("contact_name", "Contato", False, ["nome contato", "pessoa de contato"]),
         ("contact_email", "E-mail", False, ["email"]),
         ("contact_phone", "Telefone", False, ["celular", "fone"]),
         ("active", "Ativo", False, ["situacao", "status"]),
