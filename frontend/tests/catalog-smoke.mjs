@@ -74,7 +74,10 @@ try {
   await page
     .getByRole("button", { name: "Nova subclassificação em Receitas de teste" })
     .click();
-  assert.equal(await page.getByLabel("Código", { exact: true }).getAttribute("readonly"), "");
+  assert.equal(
+    await page.getByLabel("Código", { exact: true }).getAttribute("readonly"),
+    "",
+  );
   await page.getByLabel("Nome", { exact: true }).fill("Serviços sintéticos");
   await page.getByRole("button", { name: "Salvar cadastro" }).click();
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();

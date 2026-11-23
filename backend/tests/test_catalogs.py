@@ -72,7 +72,9 @@ def test_subcategory_scope_and_validity(catalog_client, organizations):
     assert client.post(f"{first}/categories", json=invalid_period).status_code == 422
     created_category = client.post(f"{first}/categories", json=category)
     assert created_category.status_code == 201
-    assert client.post(f"{first}/categories", json={**category, "code": "manual"}).status_code == 422
+    assert (
+        client.post(f"{first}/categories", json={**category, "code": "manual"}).status_code == 422
+    )
     payload = {
         "name": "Despesa mensal",
         "category_id": created_category.json()["id"],
@@ -81,7 +83,9 @@ def test_subcategory_scope_and_validity(catalog_client, organizations):
     assert client.post(f"{other}/subcategories", json=payload).status_code == 422
     created = client.post(f"{first}/subcategories", json=payload)
     assert created.status_code == 201
-    assert client.post(f"{first}/subcategories", json={**payload, "code": "manual"}).status_code == 422
+    assert (
+        client.post(f"{first}/subcategories", json={**payload, "code": "manual"}).status_code == 422
+    )
     record_id = created.json()["id"]
     url = f"{first}/subcategories/{record_id}"
     assert client.get(f"{other}/subcategories/{record_id}").status_code == 404
