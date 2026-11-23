@@ -120,7 +120,7 @@ export function ClassificationTree({
       <div className="page-heading">
         <h1>Classificações</h1>
         <div className="actions">
-          <button type="button" onClick={() => setImportOpen(true)}>
+          <button type="button" className="primary" onClick={() => setImportOpen(true)}>
             Importar
           </button>
           <button

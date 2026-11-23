@@ -6,7 +6,6 @@ import { createRoot } from "react-dom/client";
 import { api } from "./api";
 import { Modal } from "./modal";
 import { Brand } from "./brand";
-import { TableImport } from "./table-import";
 import { ClassificationTree } from "./classification-tree";
 import { CatalogPage } from "./catalog-page";
 import { catalogIds, catalogs } from "./catalogs";
@@ -96,9 +95,6 @@ function App({ onLogout }: { onLogout?: () => void }) {
   const [organizationId, setOrganizationId] = useState("");
   const [catalog, setCatalog] = useState<CatalogId>("bank-accounts");
   const [creating, setCreating] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [importBusy, setImportBusy] = useState(false);
-  const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -133,7 +129,6 @@ function App({ onLogout }: { onLogout?: () => void }) {
     localStorage.setItem("autovisao.organization", id);
     setOrganizationId(id);
     setCreating(false);
-    setImporting(false);
   }
 
   return (
@@ -153,8 +148,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
                   onClick={() => {
                     setCatalog(id);
                     setCreating(false);
-                    setImporting(false);
-                  }}
+                                  }}
                 >
                   <CatalogIcon id={id} />
                   {catalogs[id].label}
@@ -186,15 +180,6 @@ function App({ onLogout }: { onLogout?: () => void }) {
                 Nova organização
               </button>
             )}
-            {organizationId && !creating && !importing && (
-              <button
-                type="button"
-                className="toolbar-primary"
-                onClick={() => setImporting(true)}
-              >
-                Importar cadastros
-              </button>
-            )}
             {onLogout && (
               <button type="button" onClick={onLogout}>
                 Sair
@@ -210,26 +195,6 @@ function App({ onLogout }: { onLogout?: () => void }) {
                 selectOrganization(organization.id);
               }}
               onCancel={() => setCreating(false)}
-            />
-          </Modal>
-        )}
-        {importing && organizationId && (
-          <Modal
-            title={`Importar ${catalogs[catalog].label}`}
-            busy={importBusy}
-            onClose={() => {
-              setImporting(false);
-              setRevision((value) => value + 1);
-            }}
-          >
-            <TableImport
-              kind={catalog}
-              organizationId={organizationId}
-              onBusyChange={setImportBusy}
-              onDone={() => {
-                setImporting(false);
-                setRevision((value) => value + 1);
-              }}
             />
           </Modal>
         )}
@@ -265,12 +230,12 @@ function App({ onLogout }: { onLogout?: () => void }) {
             </>
           ) : catalog === "categories" ? (
             <ClassificationTree
-              key={`${organizationId}/${revision}`}
+              key={organizationId}
               organizationId={organizationId}
             />
           ) : (
             <CatalogPage
-              key={`${organizationId}/${catalog}/${revision}`}
+              key={`${organizationId}/${catalog}`}
               id={catalog}
               organizationId={organizationId}
             />
