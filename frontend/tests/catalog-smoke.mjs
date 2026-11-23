@@ -30,14 +30,15 @@ try {
     .getByRole("heading", { name: "Contas bancárias", level: 1 })
     .waitFor();
   await fill({
+    "Nome da conta / unidade": "Conta sintética",
     Titular: "Titular sintético",
-    "Código do banco": "000",
     Agência: "0000",
     "Conta mascarada": "**1234",
   });
+  await page.getByLabel("Banco", { exact: true }).selectOption("001");
   await save();
-  await page.getByRole("row", { name: /Titular sintético CTA-\d+/ }).waitFor();
-  await page.getByRole("button", { name: "Editar Titular sintético" }).click();
+  await page.getByRole("row", { name: /Conta sintética CTA-\d+/ }).waitFor();
+  await page.getByRole("button", { name: "Editar Conta sintética" }).click();
   await page.getByRole("checkbox", { name: "Cadastro ativo" }).uncheck();
   await save();
   await page.getByLabel("Filtrar por situação").selectOption("active");
