@@ -16,6 +16,17 @@ def upgrade():
         )
     """)
     op.execute("""
+        CREATE TABLE statement_rows (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            import_file_id uuid NOT NULL REFERENCES import_files(id),
+            source_row integer NOT NULL CHECK (source_row > 0),
+            transaction_id uuid REFERENCES bank_transactions(id),
+            decision text NOT NULL CHECK (decision IN ('new', 'duplicate', 'skip')),
+            original_data jsonb NOT NULL,
+            UNIQUE(import_file_id, source_row)
+        )
+    """)
+    op.execute("""
         CREATE TABLE transaction_identifications (
             id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
             transaction_id uuid NOT NULL REFERENCES bank_transactions(id),
@@ -57,6 +68,7 @@ def upgrade():
     """)
     for table in (
         "statement_contents",
+        "statement_rows",
         "transaction_identifications",
         "transaction_suggestions",
     ):
@@ -69,4 +81,5 @@ def upgrade():
 def downgrade():
     op.drop_table("transaction_suggestions")
     op.drop_table("transaction_identifications")
+    op.drop_table("statement_rows")
     op.drop_table("statement_contents")

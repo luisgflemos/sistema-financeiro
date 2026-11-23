@@ -12,6 +12,8 @@ O usuário seleciona/arrasta até dez arquivos, confere as contas e importa o lo
 
 Datas, histórico, valor, documento, saldo, número da linha, hash e bytes originais são preservados. Dinheiro usa Decimal e NUMERIC. A sequência dos saldos do layout validado, em ordem decrescente, é conferida antes da gravação.
 
+A visão de cada extrato preserva todas as linhas daquele arquivo. Linhas reconhecidas em arquivos anteriores apontam para o mesmo lançamento canônico, sem nova movimentação financeira. A identificação desse lançamento aparece em todos os extratos relacionados. Linhas descartadas por decisão manual sem correspondência única continuam disponíveis apenas para consulta.
+
 Documento não é identificador bancário único neste layout. Ocorrências legítimas iguais dentro do mesmo arquivo são mantidas. Mesmo arquivo/conta não é duplicado.
 
 Em arquivos diferentes, a ferramenta compara conta, data, valor, descrição normalizada, documento, saldo e assinaturas dos movimentos vizinhos. Uma correspondência única, apoiada pela sequência bancária e sem reutilizar uma ocorrência para duas linhas, é tratada automaticamente como já existente. Se todas as ocorrências anteriores já foram localizadas e existe uma posição bancária adicional, ela é mantida como movimento novo. Esses critérios são determinísticos; IA generativa não decide exclusão de movimentos financeiros.

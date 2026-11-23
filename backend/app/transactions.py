@@ -216,14 +216,36 @@ def list_transactions(
         AND (t.raw_description ILIKE :query OR COALESCE(t.raw_counterparty, '') ILIKE :query)
     """
     if state == "pending":
-        conditions += " AND i.id IS NULL"
+        conditions += " AND i.id IS NULL AND t.editable"
     elif state == "identified":
         conditions += " AND i.id IS NOT NULL"
     elif state == "suggested":
         conditions += " AND i.id IS NULL AND s.id IS NOT NULL"
-    joins = (
+    source_table = "(SELECT b.*, TRUE AS editable FROM bank_transactions b)"
+    if statement_id:
+        # Visão do arquivo: uma representação por linha, ligada ao movimento canônico quando conhecido.
+        source_table = """
+            (SELECT COALESCE(b.id, r.id) AS id, f.bank_account_id AS account_id,
+                r.import_file_id, r.source_row,
+                CAST(r.original_data->>'posted_on' AS date) AS posted_on,
+                r.original_data->>'direction' AS direction,
+                CAST(r.original_data->>'amount' AS numeric) AS amount,
+                'BRL'::text AS currency, r.original_data->>'description' AS raw_description,
+                NULL::text AS raw_counterparty,
+                jsonb_build_object(
+                    'data', r.original_data->>'posted_on',
+                    'historico', r.original_data->>'description',
+                    'documento', r.original_data->>'document',
+                    'saldo', r.original_data->>'balance'
+                ) AS raw_payload,
+                r.transaction_id IS NOT NULL AS editable
+            FROM statement_rows r JOIN import_files f ON f.id=r.import_file_id
+            LEFT JOIN bank_transactions b ON b.id=r.transaction_id
+            WHERE r.import_file_id=:statement)
         """
-        FROM bank_transactions t JOIN bank_accounts a ON a.id = t.account_id
+    joins = (
+        f"""
+        FROM {source_table} t JOIN bank_accounts a ON a.id = t.account_id
     """
         + LATEST
         + """
@@ -243,13 +265,13 @@ def list_transactions(
         rows = connection.execute(
             text(
                 """
-            SELECT t.id, t.account_id, t.import_file_id, t.source_row,
+            SELECT t.id, t.account_id, t.import_file_id, t.source_row, t.editable,
                 (SELECT f.file_name FROM import_files f WHERE f.id=t.import_file_id) AS file_name,
                 a.label AS account_label, t.posted_on, t.direction,
                 t.amount, t.currency, t.raw_description, t.raw_payload,
                 COALESCE(i.version, 0) AS version, i.party_id, i.category_id, i.subcategory_id,
                 i.cost_center_id, i.movement_kind, i.notes, i.method,
-                CASE WHEN i.id IS NOT NULL THEN 'identified'
+                CASE WHEN NOT t.editable THEN 'duplicate' WHEN i.id IS NOT NULL THEN 'identified'
                     WHEN s.id IS NOT NULL THEN 'suggested' ELSE 'pending' END AS state,
                 s.id AS suggestion_id, s.payload AS suggestion, s.reason, s.confidence,
                 (SELECT c.name FROM categories c WHERE c.id = i.category_id) AS category_name,

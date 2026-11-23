@@ -189,12 +189,39 @@ def test_overlapping_bank_sequence_is_resolved_automatically(statements):
     assert result["new"] == 0
     assert result["files"][0]["duplicates"] == 4
     assert result["files"][0]["pending"] == 0
-    assert (
-        client.post(base + "/statements/commit", json={**overlap, "token": result["token"]}).json()[
-            "imported"
-        ]
-        == 0
+    committed = client.post(base + "/statements/commit", json={**overlap, "token": result["token"]})
+    assert committed.status_code == 200
+    assert committed.json()["imported"] == 0
+    source_view = client.get(
+        base + "/transactions",
+        params={"state": "all", "statement_id": committed.json()["file_ids"][0]},
+    ).json()
+    assert source_view["total"] == 4
+    assert all(row["editable"] for row in source_view["rows"])
+    assert count_movements(connection, base) == 4
+
+
+def test_overlapping_files_in_one_batch_share_canonical_movements(statements):
+    client, connection, base, _ = statements
+    payload = {"files": [source(), source(trailing=True)]}
+    preview = client.post(base + "/statements/preview", json=payload).json()
+    assert preview["ready"]
+    assert preview["new"] == 4
+    committed = client.post(
+        base + "/statements/commit", json={**payload, "token": preview["token"]}
     )
+    assert committed.status_code == 200
+    file_ids = committed.json()["file_ids"]
+    assert len(file_ids) == 2
+    identities = []
+    for file_id in file_ids:
+        view = client.get(
+            base + "/transactions", params={"state": "all", "statement_id": file_id}
+        ).json()
+        assert view["total"] == 4
+        assert all(row["editable"] for row in view["rows"])
+        identities.append({row["id"] for row in view["rows"]})
+    assert identities[0] == identities[1]
     assert count_movements(connection, base) == 4
 
 

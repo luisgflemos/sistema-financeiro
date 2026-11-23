@@ -178,6 +178,7 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
             raise HTTPException(409, "Os dados mudaram. Confira uma nova prévia antes de importar.")
         actor_id = actor(connection)
         file_ids = []
+        movement_refs = {}
         batch = connection.scalar(
             text("""
             INSERT INTO import_batches(organization_id, imported_by, status)
@@ -185,7 +186,7 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
         """),
             {"org": organization_id, "actor": actor_id},
         )
-        for upload, statement, account, rows, repeated in files:
+        for file_index, (upload, statement, account, rows, repeated) in enumerate(files):
             if repeated:
                 existing_id = connection.scalar(
                     text(
@@ -224,41 +225,73 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
             )
             file_ids.append(str(file_id))
             for row in rows:
-                if row["status"] != "new":
-                    continue
+                target = None
+                if row["status"] == "new":
+                    target = connection.scalar(
+                        text("""
+                            INSERT INTO bank_transactions(
+                                account_id, import_file_id, source_row, posted_on, direction,
+                                amount, currency, raw_description, raw_payload, fingerprint
+                            ) VALUES (:account, :file, :row, :date, :direction, :amount, :currency,
+                                :description, CAST(:raw AS jsonb), :fingerprint) RETURNING id
+                        """),
+                        {
+                            "account": account["id"],
+                            "file": file_id,
+                            "row": row["row"],
+                            "date": row["posted_on"],
+                            "direction": row["direction"],
+                            "amount": row["amount"],
+                            "currency": account["currency"],
+                            "description": row["description"],
+                            "fingerprint": row["fingerprint"],
+                            "raw": json.dumps(
+                                {
+                                    "data": row["posted_on"],
+                                    "historico": row["description"],
+                                    "documento": row["document"],
+                                    "valor": ("-" if row["direction"] == "DEBIT" else "")
+                                    + row["amount"],
+                                    "saldo": row["balance"],
+                                    "signature": row["signature"],
+                                    "previous_signature": row["previous_signature"],
+                                    "next_signature": row["next_signature"],
+                                }
+                            ),
+                        },
+                    )
+                    movement_refs[f"batch:{file_index}:{row['row']}"] = target
+                elif row.get("matched_ref"):
+                    ref = row["matched_ref"]
+                    target = movement_refs.get(ref) if ref.startswith("batch:") else UUID(ref)
                 connection.execute(
                     text("""
-                    INSERT INTO bank_transactions(
-                        account_id, import_file_id, source_row, posted_on, direction,
-                        amount, currency, raw_description, raw_payload, fingerprint
-                    ) VALUES (:account, :file, :row, :date, :direction, :amount, :currency,
-                        :description, CAST(:raw AS jsonb), :fingerprint)
+                    INSERT INTO statement_rows(
+                        import_file_id, source_row, transaction_id, decision, original_data
+                    ) VALUES (:file, :row, :transaction, :decision, CAST(:data AS jsonb))
                 """),
                     {
-                        "account": account["id"],
                         "file": file_id,
                         "row": row["row"],
-                        "date": row["posted_on"],
-                        "direction": row["direction"],
-                        "amount": row["amount"],
-                        "currency": account["currency"],
-                        "description": row["description"],
-                        "fingerprint": row["fingerprint"],
-                        "raw": json.dumps(
+                        "transaction": target,
+                        "decision": row["status"],
+                        "data": json.dumps(
                             {
-                                "data": row["posted_on"],
-                                "historico": row["description"],
-                                "documento": row["document"],
-                                "valor": ("-" if row["direction"] == "DEBIT" else "")
-                                + row["amount"],
-                                "saldo": row["balance"],
-                                "signature": row["signature"],
-                                "previous_signature": row["previous_signature"],
-                                "next_signature": row["next_signature"],
+                                key: row[key]
+                                for key in (
+                                    "posted_on",
+                                    "description",
+                                    "document",
+                                    "direction",
+                                    "amount",
+                                    "balance",
+                                    "reason",
+                                )
                             }
                         ),
                     },
                 )
+
         connection.execute(
             text("""
             INSERT INTO audit_events(organization_id, actor_id, entity_type, entity_id, action, new_json)

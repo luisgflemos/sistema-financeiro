@@ -23,6 +23,7 @@ def classify_rows(rows, previous, decisions, repeated=False):
     confirmed_refs = set(confirmed.values())
     result = []
     for row in rows:
+        matched_ref = None
         candidates = previous.get(row["fingerprint"], [])
         refs = {item["id"] for item in candidates}
         same_position = any(item.get("signature") == row["signature"] for item in candidates)
@@ -30,6 +31,7 @@ def classify_rows(rows, previous, decisions, repeated=False):
         if repeated:
             status, reason = "duplicate", "Arquivo já importado para esta conta."
         elif row["row"] in confirmed:
+            matched_ref = confirmed[row["row"]]
             status, reason = (
                 "duplicate",
                 "Mesmo movimento confirmado pelos dados, saldo e sequência do extrato.",
@@ -42,6 +44,16 @@ def classify_rows(rows, previous, decisions, repeated=False):
                 "Ocorrência adicional: as anteriores já foram localizadas neste extrato.",
             )
         elif decision == "skip":
+            positions = [
+                item["id"] for item in candidates if item.get("signature") == row["signature"]
+            ]
+            matched_ref = (
+                positions[0]
+                if len(positions) == 1
+                else next(iter(refs))
+                if len(refs) == 1
+                else None
+            )
             status, reason = "skip", "O operador confirmou que o movimento já estava importado."
         elif decision == "new":
             status, reason = "new", "O operador confirmou que é outra ocorrência do movimento."
@@ -50,5 +62,13 @@ def classify_rows(rows, previous, decisions, repeated=False):
                 "review",
                 "Há movimentos semelhantes, mas saldo ou sequência não confirmam a identidade.",
             )
-        result.append({**row, "status": status, "reason": reason, "candidates": sorted(refs)})
+        result.append(
+            {
+                **row,
+                "status": status,
+                "reason": reason,
+                "candidates": sorted(refs),
+                "matched_ref": matched_ref,
+            }
+        )
     return result
