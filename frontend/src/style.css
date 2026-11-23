@@ -708,3 +708,61 @@ button.toggle[aria-checked="true"]:hover:not(:disabled) {
 .search-options p {
   padding: 0 0.75rem;
 }
+
+.classification-grid {
+  grid-template-columns: minmax(0, 1.8fr) minmax(18rem, 1fr);
+}
+
+.tree-parent {
+  background: #f1f6f5;
+}
+
+.tree-disclosure {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.tree-sign {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 1.4rem;
+  height: 1.4rem;
+  border: 1px solid #8aa99a;
+  border-radius: 0.25rem;
+  color: #146c3b;
+  background: white;
+}
+
+.tree-count {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.tree-child th:first-child,
+.tree-add td:first-child {
+  padding-left: 3rem;
+}
+
+.tree-child th {
+  font-weight: 400;
+}
+
+.tree-branch {
+  color: #77958a;
+  margin-right: 0.75rem;
+}
+
+.editor-context {
+  margin-top: 0;
+}
+
+@media (max-width: 1100px) {
+  .classification-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

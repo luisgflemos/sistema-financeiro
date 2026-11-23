@@ -68,21 +68,24 @@ try {
   await page.getByLabel("Natureza", { exact: true }).selectOption("REVENUE");
   await save();
   await page
-    .getByRole("button", { name: "Receitas de teste", exact: true })
+    .getByRole("button", { name: /^Receitas de teste/ })
     .click();
-  const sub = page.getByRole("region", {
-    name: "Subclassificações de Receitas de teste",
-  });
-  await sub.getByRole("button", { name: "+ Nova subclassificação" }).click();
-  await sub.getByLabel("Código", { exact: true }).fill("servicos");
+  const sub = page.getByRole("region", { name: "Classificações e subclassificações" });
+  await page.getByRole("button", { name: "Nova subclassificação em Receitas de teste" }).click();
+  await page.getByLabel("Código", { exact: true }).fill("servicos");
   await sub.getByLabel("Nome", { exact: true }).fill("Serviços sintéticos");
-  await sub.getByRole("button", { name: "Salvar cadastro" }).click();
+  await page.getByRole("button", { name: "Salvar cadastro" }).click();
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
   await page.reload();
   await open("Classificações");
   await page
-    .getByRole("button", { name: "Receitas de teste", exact: true })
+    .getByRole("button", { name: /^Receitas de teste/ })
     .click();
+  await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
+
+  await page.getByRole("button", { name: "Recolher tudo", exact: true }).click();
+  assert.equal(await sub.getByRole("row", { name: /Serviços sintéticos/ }).count(), 0);
+  await page.getByRole("button", { name: "Expandir tudo", exact: true }).click();
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
 
   await open("Centro de Custos");

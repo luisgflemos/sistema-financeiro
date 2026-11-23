@@ -11,10 +11,16 @@ export function CatalogPage({
   id,
   organizationId,
   category,
+  editorOnly = false,
+  initialRecord,
+  onSaved,
 }: {
   id: CatalogId;
   organizationId: string;
   category?: RecordData;
+  editorOnly?: boolean;
+  initialRecord?: RecordData;
+  onSaved?: (record: RecordData) => void;
 }) {
   const catalog = catalogs[id];
   const { fields, columns } = catalog;
@@ -42,6 +48,10 @@ export function CatalogPage({
   const needsCategory = !!category && !category.active && !editing;
 
   useEffect(() => {
+    if (editorOnly) {
+      setLoading(false);
+      return;
+    }
     const controller = new AbortController();
     const options = { signal: controller.signal };
 
@@ -65,7 +75,7 @@ export function CatalogPage({
 
     void load();
     return () => controller.abort();
-  }, [attempt, categoryId, path]);
+  }, [attempt, categoryId, path, editorOnly]);
 
   function begin(record?: RecordData) {
     setEditing(record ?? null);
@@ -83,6 +93,10 @@ export function CatalogPage({
     setNotice("");
     formTitle.current?.focus();
   }
+
+  useEffect(() => {
+    if (editorOnly && initialRecord) begin(initialRecord);
+  }, [editorOnly, initialRecord]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -117,6 +131,7 @@ export function CatalogPage({
       setDraft(blank());
       setFilter("all");
       setNotice("Cadastro salvo.");
+      onSaved?.(saved);
     } catch (problem) {
       setSaveError((problem as Error).message);
     } finally {
@@ -164,7 +179,7 @@ export function CatalogPage({
 
   return (
     <>
-      <div className="page-heading">
+      {!editorOnly && <div className="page-heading">
         {category ? <h3>{catalog.label}</h3> : <h1>{catalog.label}</h1>}
         <button
           type="button"
@@ -174,7 +189,7 @@ export function CatalogPage({
         >
           {category ? "+ Nova subclassificação" : "Novo cadastro"}
         </button>
-      </div>
+      </div>}
       {loading ? (
         <p role="status">Carregando cadastros…</p>
       ) : loadError ? (
@@ -194,8 +209,8 @@ export function CatalogPage({
           </button>
         </>
       ) : (
-        <div className={category ? "catalog-grid nested-grid" : "catalog-grid"}>
-          <section className="panel listing" aria-labelledby={`${uid}-records`}>
+        <div className={editorOnly ? "editor-only" : category ? "catalog-grid nested-grid" : "catalog-grid"}>
+          {!editorOnly && <section className="panel listing" aria-labelledby={`${uid}-records`}>
             <div className="panel-header">
               <h2 id={`${uid}-records`}>
                 Registros <span>{records.length}</span>
@@ -317,7 +332,7 @@ export function CatalogPage({
                 </table>
               </div>
             )}
-          </section>
+          </section>}
           <section className="panel editor" aria-labelledby={`${uid}-editor`}>
             <h2 id={`${uid}-editor`} ref={formTitle} tabIndex={-1}>
               {editing ? "Editar cadastro" : `Adicionar ${catalog.singular}`}

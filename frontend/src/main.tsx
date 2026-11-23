@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { api } from "./api";
 import { Brand } from "./brand";
 import { CatalogImport } from "./catalog-import";
+import { ClassificationTree } from "./classification-tree";
 import { CatalogPage } from "./catalog-page";
 import { catalogIds, catalogs } from "./catalogs";
 import { SessionGate } from "./session";
@@ -233,6 +234,8 @@ function App({ onLogout }: { onLogout?: () => void }) {
               }
               onClose={() => setImporting(false)}
             />
+          ) : catalog === "categories" ? (
+            <ClassificationTree key={organizationId} organizationId={organizationId} />
           ) : (
             <CatalogPage
               key={`${organizationId}/${catalog}`}
