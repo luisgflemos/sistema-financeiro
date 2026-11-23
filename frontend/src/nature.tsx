@@ -6,5 +6,7 @@ export const natureLabels: Record<string, string> = {
 
 export function NatureBadge({ value }: { value: string }) {
   if (!natureLabels[value]) return <>—</>;
-  return <span className={`nature nature-${value}`}>{natureLabels[value]}</span>;
+  return (
+    <span className={`nature nature-${value}`}>{natureLabels[value]}</span>
+  );
 }
