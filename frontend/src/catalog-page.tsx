@@ -130,7 +130,9 @@ export function CatalogPage({
   );
 
   function title(record: RecordData) {
-    return String(record[catalog.titleField] ?? record.holder_name ?? record.code);
+    return String(
+      record[catalog.titleField] ?? record.holder_name ?? record.code,
+    );
   }
 
   function pending(record: RecordData) {
@@ -336,9 +338,12 @@ export function CatalogPage({
                               label: `${item.code} · ${item.name}`,
                             }))
                         : field.options;
-                      const availableOptions = options && value && !options.some((item) => item.value === value)
-                        ? [...options, { value, label: value }]
-                        : options;
+                      const availableOptions =
+                        options &&
+                        value &&
+                        !options.some((item) => item.value === value)
+                          ? [...options, { value, label: value }]
+                          : options;
                       return (
                         <div className="field" key={field.name}>
                           <label htmlFor={`${uid}-${field.name}`}>
@@ -409,16 +414,16 @@ export function CatalogPage({
                       </label>
                     </fieldset>
                   ) : (
-                  <label className="checkbox">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(draft.active)}
-                      onChange={(event) =>
-                        setDraft({ ...draft, active: event.target.checked })
-                      }
-                    />
-                    Cadastro ativo
-                  </label>
+                    <label className="checkbox">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(draft.active)}
+                        onChange={(event) =>
+                          setDraft({ ...draft, active: event.target.checked })
+                        }
+                      />
+                      Cadastro ativo
+                    </label>
                   )}
                   <div className="actions">
                     <button className="primary">

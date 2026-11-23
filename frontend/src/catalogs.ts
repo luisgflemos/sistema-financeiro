@@ -48,11 +48,29 @@ export const catalogs: Record<CatalogId, Catalog> = {
     fields: [
       { name: "label", label: "Nome da conta / unidade", required: true },
       { name: "holder_name", label: "Titular", required: true },
-      { name: "bank_code", label: "Banco", required: true, defaultValue: "033", options: banks },
-      { name: "holder_document", label: "CPF/CNPJ do titular", pattern: "[0-9]{11}|[0-9]{14}" },
+      {
+        name: "bank_code",
+        label: "Banco",
+        required: true,
+        defaultValue: "033",
+        options: banks,
+      },
+      {
+        name: "holder_document",
+        label: "CPF/CNPJ do titular",
+        pattern: "[0-9]{11}|[0-9]{14}",
+      },
       { name: "branch", label: "Agência", required: true },
-      { name: "account_number", label: "Número da conta", pattern: "[0-9]{1,20}" },
-      { name: "account_digit", label: "Dígito da conta", pattern: "[0-9Xx]{1,2}" },
+      {
+        name: "account_number",
+        label: "Número da conta",
+        pattern: "[0-9]{1,20}",
+      },
+      {
+        name: "account_digit",
+        label: "Dígito da conta",
+        pattern: "[0-9Xx]{1,2}",
+      },
       {
         name: "account_type",
         label: "Tipo de conta",

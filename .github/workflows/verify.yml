@@ -51,6 +51,7 @@ jobs:
       - name: Formatação da interface
         if: failure()
         run: |
+          docker compose exec -T api ruff format --diff . || true
           docker compose exec -T web node --input-type=module -e '
           import prettier from "prettier";
           import {readFileSync} from "node:fs";
