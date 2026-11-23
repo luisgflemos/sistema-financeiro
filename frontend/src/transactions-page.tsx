@@ -546,15 +546,19 @@ export function TransactionsPage({
               setPage(1);
               setQuery("");
               setAccount("");
-              setStatementId(fileIds.length === 1 ? fileIds[0] : "");
+              setStatementId(
+                count > 0 && fileIds.length === 1 ? fileIds[0] : "",
+              );
               setStart("");
               setEnd("");
               setDirection("");
               setNotice(
-                count + " movimentos importados. Prontos para identificar.",
+                count
+                  ? count + " movimentos importados. Prontos para identificar."
+                  : "Nenhum movimento novo. Os registros existentes foram preservados.",
               );
               setRefresh((value) => value + 1);
-              if (aiEnabled) void recognize();
+              if (aiEnabled && count > 0) void recognize();
             }}
           />
         </Modal>

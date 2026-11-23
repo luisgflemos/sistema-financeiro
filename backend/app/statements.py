@@ -255,7 +255,17 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
                 "org": organization_id,
                 "actor": actor_id,
                 "id": batch,
-                "data": json.dumps({"files": len(files), "new_movements": result["new"]}),
+                "data": json.dumps(
+                    {
+                        "files": len(files),
+                        "new_movements": result["new"],
+                        "submitted_decisions": [
+                            {"sha256": statement.digest, "rows": upload.decisions}
+                            for upload, statement, _, _, _ in files
+                            if upload.decisions
+                        ],
+                    }
+                ),
             },
         )
         return {

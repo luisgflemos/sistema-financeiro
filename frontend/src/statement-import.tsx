@@ -10,6 +10,7 @@ type Upload = {
   decisions: Record<string, "new" | "skip">;
 };
 type Row = {
+  document: string;
   row: number;
   posted_on: string;
   description: string;
@@ -265,10 +266,30 @@ export function StatementImport({
                     </span>
                   </div>
                   {item.pending > 0 && (
-                    <p className="statement-review-note">
-                      Possíveis repetições em outro extrato. Confira as linhas
-                      destacadas abaixo.
-                    </p>
+                    <div className="statement-review-note">
+                      <p>
+                        Possíveis repetições em outro extrato. Confira as linhas
+                        destacadas abaixo.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const decisions = { ...file.decisions };
+                          for (const row of item.rows)
+                            if (row.status === "review")
+                              decisions[String(row.row)] = "skip";
+                          const next = files.map((entry, position) =>
+                            position === index
+                              ? { ...entry, decisions }
+                              : entry,
+                          );
+                          setFiles(next);
+                          void analyze(next);
+                        }}
+                      >
+                        Marcar {item.pending} como já importados
+                      </button>
+                    </div>
                   )}
                   <details open={item.pending > 0}>
                     <summary>
@@ -282,7 +303,9 @@ export function StatementImport({
                           <tr>
                             <th>Data</th>
                             <th>Histórico</th>
+                            <th>Documento</th>
                             <th>Valor</th>
+                            <th>Saldo</th>
                             <th>Conferência</th>
                           </tr>
                         </thead>
@@ -298,6 +321,7 @@ export function StatementImport({
                               <tr key={row.row}>
                                 <td>{brazilDate(row.posted_on)}</td>
                                 <td>{row.description}</td>
+                                <td>{row.document || "—"}</td>
                                 <td
                                   className={
                                     row.direction === "CREDIT"
@@ -308,6 +332,7 @@ export function StatementImport({
                                   {row.direction === "DEBIT" ? "− " : "+ "}
                                   {brl(row.amount)}
                                 </td>
+                                <td>{brl(row.balance)}</td>
                                 <td>
                                   {row.status === "review" ||
                                   file.decisions[String(row.row)] ? (

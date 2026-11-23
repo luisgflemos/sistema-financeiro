@@ -83,6 +83,10 @@
   background: #fffbeb;
   color: #854d0e;
 }
+.statement-review-note p {
+  margin: 0 0 0.5rem;
+  color: inherit;
+}
 .statement-file summary {
   cursor: pointer;
   font-size: 0.875rem;

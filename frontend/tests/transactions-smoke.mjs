@@ -84,6 +84,27 @@ try {
     path: "import-layout-transactions.png",
     fullPage: true,
   });
+  await page
+    .getByRole("button", { name: "Importar Extratos", exact: true })
+    .click();
+  await page.getByLabel("Arquivos de extrato", { exact: true }).setInputFiles({
+    name: "sobreposto.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(csv + "\n"),
+  });
+  await page
+    .getByRole("button", { name: "Marcar 2 como já importados", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Importar e identificar", exact: true })
+    .click();
+  await page
+    .getByText(
+      "Nenhum movimento novo. Os registros existentes foram preservados.",
+      { exact: true },
+    )
+    .waitFor();
+  await page.getByText("PIX CLIENTE SINTETICO", { exact: true }).waitFor();
   const row = page
     .getByRole("row")
     .filter({ hasText: "PIX CLIENTE SINTETICO" });
