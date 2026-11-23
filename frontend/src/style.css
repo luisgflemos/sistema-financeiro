@@ -553,15 +553,17 @@ td:first-child {
   padding: clamp(1.5rem, 4vw, 2.5rem);
 }
 
-.login-icon {
-  display: grid;
-  place-items: center;
-  width: 3rem;
-  height: 3rem;
-  margin-bottom: 1.5rem;
-  border-radius: 0.75rem;
-  color: #146c3b;
-  background: var(--mint);
+.login-panel .brand {
+  margin-bottom: 2rem;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  font-size: 2.25rem;
+}
+
+.login-panel .brand-symbol {
+  flex-basis: 3.25rem;
+  height: 2.75rem;
 }
 
 .login-panel .fields {

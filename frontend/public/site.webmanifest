@@ -1,0 +1,16 @@
+{
+  "name": "Finare",
+  "short_name": "Finare",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0b1f3b",
+  "icons": [
+    {
+      "src": "/finare.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

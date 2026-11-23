@@ -1,4 +1,3 @@
-import { LockKeyhole } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { api } from "./api";
@@ -28,9 +27,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
 
   return (
     <form onSubmit={submit}>
-      <div className="login-icon" aria-hidden="true">
-        <LockKeyhole size={22} strokeWidth={1.75} />
-      </div>
+      <Brand />
       <h1 id="login-title">Entrar na Finare</h1>
       <p>Use suas credenciais para acessar o sistema.</p>
       <fieldset className="fields" disabled={saving}>
