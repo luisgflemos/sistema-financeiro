@@ -138,7 +138,9 @@ export function CatalogPage({
   function pending(record: RecordData) {
     return (
       (id === "bank-accounts" &&
-        (!record.bank_code || !record.branch || !record.account_number_masked)) ||
+        (!record.bank_code ||
+          !record.branch ||
+          !record.account_number_masked)) ||
       (id === "categories" && !record.kind)
     );
   }
@@ -399,7 +401,9 @@ export function CatalogPage({
                       aria-checked={Boolean(draft.active)}
                       aria-label="Cadastro ativo"
                       className="toggle"
-                      onClick={() => setDraft({ ...draft, active: !draft.active })}
+                      onClick={() =>
+                        setDraft({ ...draft, active: !draft.active })
+                      }
                     >
                       <span />
                     </button>
