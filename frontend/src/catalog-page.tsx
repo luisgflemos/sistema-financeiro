@@ -345,27 +345,38 @@ export function CatalogPage({
         </p>
       )}
       {importOpen && id !== "subcategories" && (
-        <Modal title={`Importar ${catalog.label}`} onClose={() => setImportOpen(false)}>
-          <TableImport kind={id} organizationId={organizationId} onDone={() => {
-            setImportOpen(false);
-            setLoading(true);
-            setAttempt((value) => value + 1);
-          }} />
+        <Modal
+          title={`Importar ${catalog.label}`}
+          onClose={() => setImportOpen(false)}
+        >
+          <TableImport
+            kind={id}
+            organizationId={organizationId}
+            onDone={() => {
+              setImportOpen(false);
+              setLoading(true);
+              setAttempt((value) => value + 1);
+            }}
+          />
         </Modal>
       )}
       {!editorOnly && (
         <div className="page-heading">
           {category ? <h3>{catalog.label}</h3> : <h1>{catalog.label}</h1>}
           <div className="actions">
-          {id !== "subcategories" && <button type="button" onClick={() => setImportOpen(true)}>Importar</button>}
-          <button
-            type="button"
-            className="primary"
-            onClick={() => begin()}
-            disabled={loading || saving || !!loadError || needsCategory}
-          >
-            {category ? "+ Nova subclassificação" : "Novo cadastro"}
-          </button>
+            {id !== "subcategories" && (
+              <button type="button" onClick={() => setImportOpen(true)}>
+                Importar
+              </button>
+            )}
+            <button
+              type="button"
+              className="primary"
+              onClick={() => begin()}
+              disabled={loading || saving || !!loadError || needsCategory}
+            >
+              {category ? "+ Nova subclassificação" : "Novo cadastro"}
+            </button>
           </div>
         </div>
       )}

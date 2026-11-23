@@ -105,6 +105,8 @@ export function ClassificationTree({
       )}
       <div className="page-heading">
         <h1>Classificações</h1>
+        <div className="actions">
+        <button type="button" onClick={() => setImportOpen(true)}>Importar</button>
         <button type="button" className="primary" onClick={() => openEditor()}>
           Nova classificação
         </button>

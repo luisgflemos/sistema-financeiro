@@ -23,8 +23,10 @@ def csv_source(headers, rows):
     writer = csv.writer(output, delimiter=";")
     writer.writerow(headers)
     writer.writerows(rows)
-    return {"file_name": "sintetico.csv",
-            "content": base64.b64encode(output.getvalue().encode("utf-8-sig")).decode()}
+    return {
+        "file_name": "sintetico.csv",
+        "content": base64.b64encode(output.getvalue().encode("utf-8-sig")).decode(),
+    }
 
 
 @pytest.mark.parametrize(
@@ -38,7 +40,7 @@ def csv_source(headers, rows):
 )
 def test_preview_validate_commit_and_retry(import_endpoint, kind, rows, table):
     client, connection, endpoint = import_endpoint
-    headers = [label for _, label, _, _ in FIELDS[kind]][:len(rows[0])]
+    headers = [label for _, label, _, _ in FIELDS[kind]][: len(rows[0])]
     source = csv_source(headers, rows)
     preview = client.post(f"{endpoint}/{kind}/preview", json=source)
     assert preview.status_code == 200
@@ -83,17 +85,26 @@ def test_xlsx_custom_mapping_and_subcategory_link(import_endpoint):
     sheet.append(["Grupo sintético", "Receita", "Detalhe sintético"])
     output = io.BytesIO()
     book.save(output)
-    source = {"file_name": "sintetico.xlsx", "header_row": 2, "sheet": "Dados",
-              "content": base64.b64encode(output.getvalue()).decode()}
+    source = {
+        "file_name": "sintetico.xlsx",
+        "header_row": 2,
+        "sheet": "Dados",
+        "content": base64.b64encode(output.getvalue()).decode(),
+    }
     preview = client.post(f"{endpoint}/categories/preview", json=source)
     assert preview.json()["total"] == 1
     mapped = {**source, "mapping": {"name": 0, "kind": 1, "sub_name": 2}}
     assert client.post(f"{endpoint}/categories/commit", json=mapped).json()["errors"] == 0
-    assert connection.scalar(text(
-        "SELECT count(*) FROM subcategories AS sub JOIN categories AS parent "
-        "ON parent.id = sub.category_id WHERE parent.name = 'Grupo sintético' "
-        "AND sub.name = 'Detalhe sintético'"
-    )) == 1
+    assert (
+        connection.scalar(
+            text(
+                "SELECT count(*) FROM subcategories AS sub JOIN categories AS parent "
+                "ON parent.id = sub.category_id WHERE parent.name = 'Grupo sintético' "
+                "AND sub.name = 'Detalhe sintético'"
+            )
+        )
+        == 1
+    )
 
 
 def test_templates_are_readable(import_endpoint):

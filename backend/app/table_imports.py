@@ -134,7 +134,9 @@ def read_source(source: Source):
                 rows = []
                 for row in sheet.iter_rows(max_row=MAX_ROWS + source.header_row + 2):
                     if any(item.data_type == "f" for item in row):
-                        raise HTTPException(422, "Converta as fórmulas em valores antes de importar.")
+                        raise HTTPException(
+                            422, "Converta as fórmulas em valores antes de importar."
+                        )
                     rows.append([cell(item.value) for item in row])
             finally:
                 book.close()
@@ -145,12 +147,14 @@ def read_source(source: Source):
 
     if len(rows) < source.header_row:
         raise HTTPException(422, "A linha de cabeçalho não foi encontrada.")
-    headers = [cell(value) or f"Coluna {i + 1}" for i, value in enumerate(rows[source.header_row - 1])]
+    headers = [
+        cell(value) or f"Coluna {i + 1}" for i, value in enumerate(rows[source.header_row - 1])
+    ]
     if not headers or len(headers) > 100:
         raise HTTPException(422, "Use uma tabela com até 100 colunas.")
     data = [
         (index, [cell(value) for value in row])
-        for index, row in enumerate(rows[source.header_row:], source.header_row + 1)
+        for index, row in enumerate(rows[source.header_row :], source.header_row + 1)
         if any(cell(value) for value in row)
     ]
     if not data or len(data) > MAX_ROWS:
@@ -164,7 +168,8 @@ def preview(kind: Kind, payload: Source):
     mapping = {}
     for field, label, _, aliases in FIELDS[kind]:
         matches = [
-            i for i, header in enumerate(headers)
+            i
+            for i, header in enumerate(headers)
             if key(header) in {key(field), key(label), *(key(alias) for alias in aliases)}
         ]
         if len(matches) == 1 and matches[0] not in mapping.values():
@@ -174,8 +179,10 @@ def preview(kind: Kind, payload: Source):
         "headers": headers,
         "sample": [row for _, row in rows[:5]],
         "total": len(rows),
-        "fields": [{"name": name, "label": label, "required": required}
-                   for name, label, required, _ in FIELDS[kind]],
+        "fields": [
+            {"name": name, "label": label, "required": required}
+            for name, label, required, _ in FIELDS[kind]
+        ],
         "mapping": mapping,
     }
 
@@ -225,7 +232,8 @@ def insert_record(connection, organization_id, table, model, values, parent=None
             text("SELECT * FROM parties WHERE organization_id = :org"), {"org": organization_id}
         ).mappings()
         same_document = [
-            dict(row) for row in documents
+            dict(row)
+            for row in documents
             if re.sub(r"\D", "", row["tax_id"] or "") == data["tax_id"]
         ]
         if len(same_document) > 1:
@@ -240,14 +248,14 @@ def insert_record(connection, organization_id, table, model, values, parent=None
             {"org": organization_id},
         ).mappings()
         if any(
-            row["bank_code"] == data["bank_code"] and row["branch"] == data["branch"]
+            row["bank_code"] == data["bank_code"]
+            and row["branch"] == data["branch"]
             and row["account_number"] == data["account_number"]
             for row in candidates
         ):
             raise ValueError("Esta agência e conta já estão cadastradas com outro nome.")
     if existing:
-        compared = [field for field, value in data.items()
-                    if value is not None and field != "code"]
+        compared = [field for field, value in data.items() if value is not None and field != "code"]
         if table == "parties" and existing.get("tax_id"):
             existing["tax_id"] = re.sub(r"\D", "", existing["tax_id"])
         if any(existing[field] != data[field] for field in compared):
@@ -260,36 +268,63 @@ def insert_record(connection, organization_id, table, model, values, parent=None
         data["organization_id"] = organization_id
     columns = ", ".join(data)
     placeholders = ", ".join(f":{name}" for name in data)
-    current = dict(connection.execute(
-        text(f"INSERT INTO {table} ({columns}) VALUES ({placeholders}) RETURNING *"), data
-    ).mappings().one())
-    catalog = Catalog("", table, "", model, model, private_fields=frozenset(
-        {"holder_document", "account_number", "account_digit", "holder_name",
-         "tax_id", "contact_email", "contact_phone", "display_name"}
-    ))
+    current = dict(
+        connection.execute(
+            text(f"INSERT INTO {table} ({columns}) VALUES ({placeholders}) RETURNING *"), data
+        )
+        .mappings()
+        .one()
+    )
+    catalog = Catalog(
+        "",
+        table,
+        "",
+        model,
+        model,
+        private_fields=frozenset(
+            {
+                "holder_document",
+                "account_number",
+                "account_digit",
+                "holder_name",
+                "tax_id",
+                "contact_email",
+                "contact_phone",
+                "display_name",
+            }
+        ),
+    )
     record_audit(connection, catalog, organization_id, "import", current)
     return current, True
 
 
 def row_values(kind, row, mapping):
-    values = {
-        field: row[index] if index < len(row) else ""
-        for field, index in mapping.items()
-    }
+    values = {field: row[index] if index < len(row) else "" for field, index in mapping.items()}
     for field, _, required, _ in FIELDS[kind]:
         if required and not values.get(field):
             raise ValueError("Preencha o campo obrigatório: " + field)
     values["active"] = boolean(values.get("active", ""))
     values = {field: value for field, value in values.items() if value != ""}
     if kind == "categories":
-        values["kind"] = translate(values["kind"], {
-            "REVENUE": ["Receita"], "EXPENSE": ["Despesa"], "NEUTRAL": ["Neutra"],
-        }, "Natureza")
+        values["kind"] = translate(
+            values["kind"],
+            {
+                "REVENUE": ["Receita"],
+                "EXPENSE": ["Despesa"],
+                "NEUTRAL": ["Neutra"],
+            },
+            "Natureza",
+        )
     if kind == "parties":
-        values["type"] = translate(values["type"], {
-            "CUSTOMER": ["Cliente"], "SUPPLIER": ["Fornecedor"],
-            "BOTH": ["Ambos", "Cliente e fornecedor"],
-        }, "Tipo")
+        values["type"] = translate(
+            values["type"],
+            {
+                "CUSTOMER": ["Cliente"],
+                "SUPPLIER": ["Fornecedor"],
+                "BOTH": ["Ambos", "Cliente e fornecedor"],
+            },
+            "Tipo",
+        )
         if values.get("tax_id"):
             values["tax_id"] = re.sub(r"\D", "", values["tax_id"])
     if kind == "bank-accounts":
@@ -297,22 +332,31 @@ def row_values(kind, row, mapping):
             raise ValueError("Banco deve conter o código numérico de três dígitos.")
         values["bank_code"] = values["bank_code"].zfill(3)
         if "-" in values["account_number"] and not values.get("account_digit"):
-            values["account_number"], values["account_digit"] = values["account_number"].rsplit("-", 1)
+            values["account_number"], values["account_digit"] = values["account_number"].rsplit(
+                "-", 1
+            )
         values.setdefault("currency", "BRL")
         values["currency"] = values["currency"].upper()
         if values.get("account_type"):
-            values["account_type"] = translate(values["account_type"], {
-                "CHECKING": ["Conta corrente"], "SAVINGS": ["Poupança"],
-                "PAYMENT": ["Conta de pagamento"],
-            }, "Tipo de conta")
+            values["account_type"] = translate(
+                values["account_type"],
+                {
+                    "CHECKING": ["Conta corrente"],
+                    "SAVINGS": ["Poupança"],
+                    "PAYMENT": ["Conta de pagamento"],
+                },
+                "Tipo de conta",
+            )
     return values
 
 
 def process(connection, organization_id, kind, payload):
     _, headers, rows = read_source(payload)
     fields = {field for field, _, _, _ in FIELDS[kind]}
-    if any(field not in fields or index < 0 or index >= len(headers)
-           for field, index in payload.mapping.items()):
+    if any(
+        field not in fields or index < 0 or index >= len(headers)
+        for field, index in payload.mapping.items()
+    ):
         raise HTTPException(422, "Mapeamento inválido.")
     if len(set(payload.mapping.values())) != len(payload.mapping):
         raise HTTPException(422, "Associe cada coluna a apenas um campo.")
@@ -336,13 +380,25 @@ def process(connection, organization_id, kind, payload):
                 sub_created = False
                 if kind == "categories" and sub_name:
                     _, sub_created = insert_record(
-                        connection, organization_id, "subcategories", SubcategoryInput,
-                        {"name": sub_name, "description": sub_description,
-                         "category_id": current["id"], "active": values["active"]},
+                        connection,
+                        organization_id,
+                        "subcategories",
+                        SubcategoryInput,
+                        {
+                            "name": sub_name,
+                            "description": sub_description,
+                            "category_id": current["id"],
+                            "active": values["active"],
+                        },
                         current["id"],
                     )
-                result.append({"row": number, "status": "new" if created or sub_created else "duplicate",
-                               "message": "Novo cadastro" if created or sub_created else "Já cadastrado"})
+                result.append(
+                    {
+                        "row": number,
+                        "status": "new" if created or sub_created else "duplicate",
+                        "message": "Novo cadastro" if created or sub_created else "Já cadastrado",
+                    }
+                )
         except ValidationError as error:
             messages = [str(item["loc"][0]) + ": " + item["msg"] for item in error.errors()]
             result.append({"row": number, "status": "error", "message": "; ".join(messages)})
@@ -350,11 +406,19 @@ def process(connection, organization_id, kind, payload):
             message = str(error.detail) if isinstance(error, HTTPException) else str(error)
             result.append({"row": number, "status": "error", "message": message})
         except IntegrityError:
-            result.append({"row": number, "status": "error",
-                           "message": "O registro conflita com os dados existentes."})
-    return {"rows": result, "new": sum(row["status"] == "new" for row in result),
-            "duplicates": sum(row["status"] == "duplicate" for row in result),
-            "errors": sum(row["status"] == "error" for row in result)}
+            result.append(
+                {
+                    "row": number,
+                    "status": "error",
+                    "message": "O registro conflita com os dados existentes.",
+                }
+            )
+    return {
+        "rows": result,
+        "new": sum(row["status"] == "new" for row in result),
+        "duplicates": sum(row["status"] == "duplicate" for row in result),
+        "errors": sum(row["status"] == "error" for row in result),
+    }
 
 
 @router.post("/{kind}/validate")
@@ -374,7 +438,9 @@ def commit(organization_id: UUID, kind: Kind, payload: MappedSource, request: Re
         lock_organization(connection, organization_id)
         result = process(connection, organization_id, kind, payload)
         if result["errors"]:
-            raise HTTPException(422, "Há erros na carga. Valide o arquivo novamente antes de gravar.")
+            raise HTTPException(
+                422, "Há erros na carga. Valide o arquivo novamente antes de gravar."
+            )
         return result
 
 
@@ -401,5 +467,8 @@ def template(kind: Kind, format: Literal["csv", "xlsx"] = "xlsx"):
         book.save(output)
         data = output.getvalue()
         media = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    return Response(data, media_type=media,
-                    headers={"Content-Disposition": f'attachment; filename="modelo-{kind}.{format}"'})
+    return Response(
+        data,
+        media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="modelo-{kind}.{format}"'},
+    )
