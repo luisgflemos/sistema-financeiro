@@ -71,3 +71,13 @@ docker compose -p autovisao-check run --rm migrate alembic upgrade head
 ```
 
 Leia [as decisões da Etapa 0](docs/decisions/0001-base-tecnica.md) e as [regras aprovadas](REGRAS_NEGOCIO.md). O [guia do pacote de especificações](docs/especificacoes.md) registra a origem dos documentos.
+
+## Importação de cadastros por tabela
+
+As quatro telas de cadastro têm a ação **Importar**, com modelos para download em CSV e XLSX. O fluxo permite selecionar a aba e o cabeçalho, conferir uma amostra, associar colunas, validar os registros e confirmar a gravação. Classificações podem trazer uma subclassificação por linha.
+
+A importação aceita até 2.000 registros e 5 MB por arquivo. Em XLSX, converta fórmulas em valores. Use texto para agência, conta e documentos, preservando zeros à esquerda. Natureza aceita Receita/Despesa/Neutra, Tipo aceita Cliente/Fornecedor/Ambos e Ativo aceita Sim/Não. Moeda vazia usa BRL e Ativo vazio usa Sim.
+
+Códigos internos e conta mascarada são gerados pelo sistema. Registros idênticos já cadastrados são ignorados. Quando o mesmo nome ou documento tem dados diferentes, a prévia pede revisão. A carga cria novos registros e exige que todas as linhas estejam válidas. Centros superiores devem estar cadastrados ou aparecer antes dos subordinados no arquivo.
+
+Os modelos e o processamento ficam protegidos pela sessão da Finare. Os arquivos são processados em memória. Eventos de auditoria são gravados na mesma transação dos novos cadastros.

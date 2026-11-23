@@ -17,6 +17,7 @@ export function ClassificationTree({
   const [children, setChildren] = useState<RecordData[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [importOpen, setImportOpen] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [editor, setEditor] = useState<Editor>({ key: 0 });
@@ -95,21 +96,40 @@ export function ClassificationTree({
         {notice}
       </p>
       {importOpen && (
-        <Modal title="Importar Classificações" onClose={() => setImportOpen(false)}>
-          <TableImport kind="categories" organizationId={organizationId} onDone={() => {
+        <Modal
+          title="Importar Classificações"
+          busy={importBusy}
+          onClose={() => {
             setImportOpen(false);
             setLoading(true);
             setAttempt((value) => value + 1);
-          }} />
+          }}
+        >
+          <TableImport
+            kind="categories"
+            onBusyChange={setImportBusy}
+            organizationId={organizationId}
+            onDone={() => {
+              setImportOpen(false);
+              setLoading(true);
+              setAttempt((value) => value + 1);
+            }}
+          />
         </Modal>
       )}
       <div className="page-heading">
         <h1>Classificações</h1>
         <div className="actions">
-        <button type="button" onClick={() => setImportOpen(true)}>Importar</button>
-        <button type="button" className="primary" onClick={() => openEditor()}>
-          Nova classificação
-        </button>
+          <button type="button" onClick={() => setImportOpen(true)}>
+            Importar
+          </button>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => openEditor()}
+          >
+            Nova classificação
+          </button>
         </div>
       </div>
       {loading ? (

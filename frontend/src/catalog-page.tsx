@@ -37,6 +37,7 @@ export function CatalogPage({
       ["active", true],
     ]) as Draft;
   const [importOpen, setImportOpen] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [records, setRecords] = useState<RecordData[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -347,10 +348,16 @@ export function CatalogPage({
       {importOpen && id !== "subcategories" && (
         <Modal
           title={`Importar ${catalog.label}`}
-          onClose={() => setImportOpen(false)}
+          busy={importBusy}
+          onClose={() => {
+            setImportOpen(false);
+            setLoading(true);
+            setAttempt((value) => value + 1);
+          }}
         >
           <TableImport
             kind={id}
+            onBusyChange={setImportBusy}
             organizationId={organizationId}
             onDone={() => {
               setImportOpen(false);

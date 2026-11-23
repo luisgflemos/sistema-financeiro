@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "./api";
 import { SearchSelect } from "./search-select";
 import type { CatalogId } from "./catalogs";
@@ -29,10 +29,12 @@ export function TableImport({
   kind,
   organizationId,
   onDone,
+  onBusyChange,
 }: {
   kind: Kind;
   organizationId: string;
   onDone: () => void;
+  onBusyChange: (busy: boolean) => void;
 }) {
   const path = `/organizations/${organizationId}/table-imports/${kind}`;
   const [source, setSource] = useState<Source | null>(null);
@@ -116,6 +118,10 @@ export function TableImport({
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    onBusyChange(busy);
+  }, [busy, onBusyChange]);
 
   const ready = preview?.fields
     .filter((field) => field.required)

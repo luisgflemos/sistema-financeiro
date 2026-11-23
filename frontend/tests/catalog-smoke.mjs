@@ -130,7 +130,10 @@ try {
   await page
     .getByRole("button", { name: "Novo cadastro", exact: true })
     .click();
-  await fill({ "Nome do Cliente": "Fornecedor sintético", "E-mail": "teste@example.test" });
+  await fill({
+    "Nome do Cliente": "Fornecedor sintético",
+    "E-mail": "teste@example.test",
+  });
   await page.getByLabel("Tipo", { exact: true }).selectOption("SUPPLIER");
   await save();
 
@@ -138,16 +141,26 @@ try {
   await page.getByLabel("Arquivo CSV ou XLSX").setInputFiles({
     name: "clientes-erp.csv",
     mimeType: "text/csv",
-    buffer: Buffer.from("Razao ERP;Categoria ERP\nCliente ERP sintético;Cliente\n"),
+    buffer: Buffer.from(
+      "Razao ERP;Categoria ERP\nCliente ERP sintético;Cliente\n",
+    ),
   });
   await page.getByRole("heading", { name: "Associar colunas" }).waitFor();
   await page.getByLabel("Nome do Cliente *", { exact: true }).fill("Razao ERP");
-  await page.getByRole("option", { name: "1 · Razao ERP", exact: true }).click();
+  await page
+    .getByRole("option", { name: "1 · Razao ERP", exact: true })
+    .click();
   await page.getByLabel("Tipo *", { exact: true }).fill("Categoria ERP");
-  await page.getByRole("option", { name: "2 · Categoria ERP", exact: true }).click();
-  await page.getByRole("button", { name: "Validar importação", exact: true }).click();
+  await page
+    .getByRole("option", { name: "2 · Categoria ERP", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Validar importação", exact: true })
+    .click();
   await page.getByText(/Validação concluída/).waitFor();
-  await page.getByRole("button", { name: "Confirmar importação", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Confirmar importação", exact: true })
+    .click();
   await page.getByText(/Importação concluída/).waitFor();
   await page.getByRole("button", { name: "Concluir", exact: true }).click();
   await page.getByRole("row", { name: /Cliente ERP sintético/ }).waitFor();
