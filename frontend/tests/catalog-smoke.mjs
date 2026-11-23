@@ -130,7 +130,7 @@ try {
   await page
     .getByRole("button", { name: "Novo cadastro", exact: true })
     .click();
-  await fill({ Nome: "Fornecedor sintético", "E-mail": "teste@example.test" });
+  await fill({ "Razão social": "Fornecedor sintético", "E-mail": "teste@example.test" });
   await page.getByLabel("Tipo", { exact: true }).selectOption("SUPPLIER");
   await save();
 

@@ -69,12 +69,27 @@ class CostCenter(CostCenterInput):
 
 class PartyInput(CatalogInput):
     type: Literal["CUSTOMER", "SUPPLIER", "BOTH"]
-    display_name: RequiredText
+    display_name: RequiredText | None = None
+    person_type: Literal["INDIVIDUAL", "COMPANY"] = "COMPANY"
     legal_name: RequiredText | None = None
     trade_name: RequiredText | None = None
     tax_id: RequiredText | None = None
     contact_email: RequiredText | None = None
     contact_phone: RequiredText | None = None
+
+    @model_validator(mode="after")
+    def resolve_name(self):
+        if self.person_type == "INDIVIDUAL":
+            self.trade_name = self.trade_name or self.display_name
+            if not self.trade_name:
+                raise ValueError("Informe o nome fantasia.")
+            self.legal_name = None
+        else:
+            self.legal_name = self.legal_name or self.display_name
+            if not self.legal_name:
+                raise ValueError("Informe a razão social.")
+        self.display_name = self.trade_name or self.legal_name
+        return self
 
 
 class Party(PartyInput):

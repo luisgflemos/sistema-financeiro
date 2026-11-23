@@ -202,7 +202,7 @@ export function CatalogPage({
         <form onSubmit={submit}>
           <fieldset disabled={saving}>
             <div className="fields">
-              {fields.map((field) => {
+              {fields.filter((field) => !(id === "parties" && field.name === "legal_name" && draft.person_type === "INDIVIDUAL")).map((field) => {
                 const value =
                   field.name === "account_number_masked" && draft.account_number
                     ? "**" + String(draft.account_number).slice(-4)
@@ -237,7 +237,7 @@ export function CatalogPage({
                         id={`${uid}-${field.name}`}
                         value={value}
                         options={availableOptions}
-                        required={field.required}
+                        required={field.required || (id === "parties" && ((field.name === "legal_name" && draft.person_type !== "INDIVIDUAL") || (field.name === "trade_name" && draft.person_type === "INDIVIDUAL")))}
                         onChange={(selected) =>
                           setDraft({ ...draft, [field.name]: selected })
                         }

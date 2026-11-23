@@ -157,7 +157,15 @@ export const catalogs: Record<CatalogId, Catalog> = {
     singular: "cliente ou fornecedor",
     titleField: "display_name",
     fields: [
-      { name: "display_name", label: "Nome", required: true },
+      {
+        name: "person_type",
+        label: "Tipo de pessoa",
+        defaultValue: "COMPANY",
+        options: [
+          { value: "COMPANY", label: "Pessoa Jurídica" },
+          { value: "INDIVIDUAL", label: "Pessoa Física" },
+        ],
+      },
       { name: "legal_name", label: "Razão social" },
       { name: "trade_name", label: "Nome fantasia" },
       {

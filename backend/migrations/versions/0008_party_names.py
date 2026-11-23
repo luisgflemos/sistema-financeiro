@@ -12,8 +12,13 @@ depends_on = None
 def upgrade() -> None:
     op.add_column("parties", sa.Column("legal_name", sa.Text()))
     op.add_column("parties", sa.Column("trade_name", sa.Text()))
+    op.add_column(
+        "parties", sa.Column("person_type", sa.Text(), nullable=False, server_default="COMPANY")
+    )
+    op.execute("UPDATE parties SET legal_name = display_name")
 
 
 def downgrade() -> None:
+    op.drop_column("parties", "person_type")
     op.drop_column("parties", "trade_name")
     op.drop_column("parties", "legal_name")
