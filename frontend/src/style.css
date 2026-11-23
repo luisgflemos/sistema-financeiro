@@ -982,3 +982,426 @@ select.nature-NEUTRAL {
     width: 100%;
   }
 }
+
+/* Importação compartilhada pelos quatro cadastros. */
+.form-modal:has(.import-wizard) {
+  width: min(66rem, calc(100vw - 2rem));
+  padding: 0;
+}
+
+.form-modal:has(.import-wizard) > .modal-header {
+  margin: 0;
+  padding: 1.5rem 2rem;
+  background: white;
+  border-bottom: 1px solid var(--line);
+}
+
+.form-modal:has(.import-wizard) > .modal-header h2 {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+}
+
+.import-wizard {
+  background: #f8fafc;
+}
+
+.import-wizard h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.import-wizard p {
+  font-size: 0.875rem;
+}
+
+.import-steps {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 1rem 2rem;
+  list-style: none;
+  border-bottom: 1px solid var(--line);
+  background: white;
+}
+
+.import-steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.import-steps li[aria-current="step"] {
+  color: #146c3b;
+}
+
+.import-steps li.complete {
+  color: #146c3b;
+}
+
+.step-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1px solid #94a3b8;
+  border-radius: 50%;
+}
+
+[aria-current="step"] > .step-dot {
+  border-color: #146c3b;
+  background: var(--primary);
+}
+
+.import-start {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(15rem, 1fr);
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.import-upload-card,
+.import-models {
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+}
+
+.import-upload-card > p,
+.import-models > p {
+  margin: 0.5rem 0 1.25rem;
+}
+
+.import-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 2rem 1rem;
+  border: 1px dashed #8da99d;
+  border-radius: 0.5rem;
+  background: #f3fbf6;
+  text-align: center;
+}
+
+.import-dropzone.dragging {
+  border: 2px solid #168348;
+  background: #dcfce7;
+}
+
+.import-dropzone > strong {
+  font-size: 1rem;
+}
+
+.import-dropzone > span:not(.upload-symbol),
+.import-dropzone small {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.upload-symbol {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: 0.25rem;
+  border-radius: 1rem;
+  color: #146c3b;
+  background: #dcfce7;
+}
+
+.import-wizard button,
+.import-downloads a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.import-wizard .primary {
+  margin-top: 0;
+}
+
+.import-dropzone .primary {
+  margin: 0.5rem 0;
+}
+
+.import-help {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.import-side-icon {
+  display: inline-flex;
+  margin-bottom: 0.75rem;
+  color: #146c3b;
+}
+
+.import-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.import-downloads a {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #b2ccbd;
+  border-radius: 0.4rem;
+  color: #14532d;
+  background: #f0fdf4;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.import-downloads a:hover {
+  background: #dcfce7;
+}
+
+.import-guidance,
+.import-source-options,
+.import-sample {
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: white;
+}
+
+.import-guidance summary,
+.import-source-options summary,
+.import-sample summary {
+  padding: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.import-guidance dl {
+  margin: 0;
+  padding: 0 1rem 1rem;
+  font-size: 0.8rem;
+}
+
+.import-guidance dl > div + div {
+  margin-top: 0.75rem;
+}
+
+.import-guidance dt {
+  font-weight: 600;
+}
+
+.import-guidance dd {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.import-filebar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 2rem 0;
+  padding: 1rem;
+  border: 1px solid #c6dfcf;
+  border-radius: 0.5rem;
+  color: #14532d;
+  background: #edf9f1;
+}
+
+.import-filebar > svg {
+  flex: none;
+}
+
+.import-filebar > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.import-filebar strong,
+.import-filebar span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.import-filebar strong {
+  font-size: 0.9rem;
+}
+
+.import-filebar span {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.import-filebar button {
+  font-size: 0.75rem;
+}
+
+.import-working,
+.import-review {
+  padding: 1.5rem 2rem;
+}
+
+.import-source-options {
+  margin-bottom: 1.5rem;
+}
+
+.import-source-options .import-source {
+  margin: 0;
+  padding: 0 1rem 1rem;
+}
+
+.import-section {
+  overflow: visible;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: white;
+}
+
+.import-section > header {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.import-section > header p {
+  margin: 0.4rem 0 0;
+}
+
+.import-mapping {
+  margin: 0;
+  padding: 1.25rem;
+  gap: 1rem 1.5rem;
+}
+
+.import-mapping .field label {
+  font-size: 0.8rem;
+}
+
+.import-sample {
+  margin-top: 1.5rem;
+}
+
+.import-sample summary > span {
+  margin-left: 0.5rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.import-wizard table {
+  background: white;
+}
+
+.import-review-heading p {
+  margin: 0.5rem 0 1.25rem;
+}
+
+.import-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.import-totals > div {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: white;
+}
+
+.import-totals strong {
+  font-size: 1.75rem;
+}
+
+.import-totals span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.import-totals .has-errors {
+  border-color: #fecaca;
+  color: #991b1b;
+  background: #fef2f2;
+}
+
+.import-report {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
+
+.import-row-error {
+  color: #991b1b;
+  background: #fef2f2;
+}
+
+.import-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  padding: 1rem 2rem;
+  border-top: 1px solid var(--line);
+  background: white;
+}
+
+.import-footer > span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.import-wizard > .error {
+  margin: 1rem 2rem;
+}
+
+@media (max-width: 720px) {
+  .import-start {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1rem;
+  }
+
+  .form-modal:has(.import-wizard) > .modal-header,
+  .import-steps,
+  .import-working,
+  .import-review,
+  .import-footer {
+    padding: 1rem;
+  }
+
+  .import-steps {
+    gap: 1rem;
+  }
+
+  .import-filebar {
+    margin: 1rem 1rem 0;
+    flex-wrap: wrap;
+  }
+
+  .import-totals {
+    gap: 0.5rem;
+  }
+
+  .import-totals > div {
+    padding: 0.75rem;
+  }
+
+  .import-totals strong {
+    font-size: 1.4rem;
+  }
+
+  .import-models,
+  .import-upload-card {
+    padding: 1rem;
+  }
+}

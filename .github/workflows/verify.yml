@@ -33,6 +33,12 @@ jobs:
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.51.1
           node tests/catalog-smoke.mjs
+      - name: Salvar prévias de layout
+        uses: actions/upload-artifact@v4
+        with:
+          name: import-layout
+          path: frontend/import-layout-*.png
+          retention-days: 1
       - name: Verificar imagem do Railway e acesso individual
         run: |
           docker build -t finare-hosted .
@@ -50,6 +56,17 @@ jobs:
           docker compose exec -T -e POSTGRES_DB=migration_check api alembic downgrade base
           docker compose exec -T -e POSTGRES_DB=migration_check api alembic upgrade head
           docker compose exec -T api pytest
+      - name: Formatação
+        if: failure()
+        run: |
+          docker compose exec -T web node --input-type=module -e '
+          import prettier from "prettier";
+          import {readFileSync} from "node:fs";
+          const path = "src/table-import.tsx";
+          const source = readFileSync(path, "utf8");
+          const output = await prettier.format(source, { filepath: path });
+          if (source !== output) console.log("FORMAT " + path + " " + Buffer.from(output).toString("base64"));
+          '
       - name: Diagnosticar falha
         if: failure()
         run: |

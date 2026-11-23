@@ -138,6 +138,10 @@ try {
   await save();
 
   await page.getByRole("button", { name: "Importar", exact: true }).click();
+  await page.screenshot({ path: "import-layout-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "import-layout-mobile.png", fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.getByLabel("Arquivo CSV ou XLSX").setInputFiles({
     name: "clientes-erp.csv",
     mimeType: "text/csv",
