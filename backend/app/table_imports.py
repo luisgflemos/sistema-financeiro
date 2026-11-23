@@ -293,6 +293,7 @@ def insert_record(connection, organization_id, table, model, values, parent=None
                 "account_digit",
                 "holder_name",
                 "tax_id",
+                "contact_name",
                 "contact_email",
                 "contact_phone",
                 "display_name",

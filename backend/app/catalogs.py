@@ -157,7 +157,9 @@ router.include_router(
             PartyInput,
             Party,
             order_by="display_name",
-            private_fields=frozenset({"display_name", "tax_id", "contact_name", "contact_email", "contact_phone"}),
+            private_fields=frozenset(
+                {"display_name", "tax_id", "contact_name", "contact_email", "contact_phone"}
+            ),
         )
     )
 )
