@@ -45,8 +45,10 @@ jobs:
           node frontend/tests/login-smoke.mjs
       - name: Reaplicar migração no banco descartável
         run: |
-          docker compose exec -T api alembic downgrade base
-          docker compose exec -T api alembic upgrade head
+          docker compose exec -T db sh -c 'createdb -U "$POSTGRES_USER" migration_check'
+          docker compose exec -T -e POSTGRES_DB=migration_check api alembic upgrade head
+          docker compose exec -T -e POSTGRES_DB=migration_check api alembic downgrade base
+          docker compose exec -T -e POSTGRES_DB=migration_check api alembic upgrade head
           docker compose exec -T api pytest
       - name: Diagnosticar falha
         if: failure()
