@@ -53,6 +53,11 @@ try {
     .click();
   await save();
   await page.getByRole("row", { name: /Conta sintética CTA-\d+/ }).waitFor();
+  const bankSearchX = (
+    await page
+      .getByRole("searchbox", { name: "Pesquisar cadastros" })
+      .boundingBox()
+  ).x;
   await page
     .getByRole("searchbox", { name: "Pesquisar cadastros" })
     .fill("BRASIL");
@@ -77,6 +82,37 @@ try {
   assert.equal(await menuItems.count(), 4);
 
   await open("Classificações");
+  await page.locator(".catalog-toolbar").waitFor();
+  const treeSearchX = (
+    await page
+      .getByRole("searchbox", { name: "Pesquisar cadastros" })
+      .boundingBox()
+  ).x;
+  assert.equal(
+    treeSearchX,
+    bankSearchX,
+    "A busca deve começar na mesma posição nos cadastros",
+  );
+  const toolbarBounds = await page.locator(".catalog-toolbar").boundingBox();
+  assert.ok(
+    toolbarBounds.height < 90,
+    "O cabeçalho deve permanecer compacto em desktop",
+  );
+  const searchBounds = await page
+    .getByRole("searchbox", { name: "Pesquisar cadastros" })
+    .boundingBox();
+  const filterBounds = await page
+    .getByLabel("Filtrar por situação")
+    .boundingBox();
+  assert.equal(
+    searchBounds.y,
+    filterBounds.y,
+    "Busca e filtro devem estar na mesma linha",
+  );
+  await page.screenshot({
+    path: "import-layout-compact-header.png",
+    fullPage: true,
+  });
   assert.equal(
     await page.getByRole("navigation").getByText("Subclasses").count(),
     0,

@@ -1,6 +1,8 @@
 import { Fragment, useEffect, useState } from "react";
 import { api } from "./api";
-import { CatalogSearch, matchesCatalog } from "./catalog-search";
+import { matchesCatalog } from "./catalog-search";
+import { CatalogToolbar } from "./catalog-toolbar";
+import { Plus, Minus } from "lucide-react";
 import { NatureBadge } from "./nature";
 import { Modal } from "./modal";
 import { TableImport } from "./table-import";
@@ -183,50 +185,40 @@ export function ClassificationTree({
             className="panel listing"
             aria-label="Classificações e subclassificações"
           >
-            <div className="panel-header">
-              <h2>
-                Classificações{" "}
-                <span>
-                  {visible.length} de {categories.length}
-                </span>
-              </h2>
-              <div className="actions catalog-filters">
-                <CatalogSearch
-                  value={query}
-                  onChange={(value) => {
-                    setQuery(value);
-                    if (value.trim())
-                      setExpanded(new Set(categories.map((item) => item.id)));
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpanded(new Set(categories.map((item) => item.id)))
-                  }
-                >
-                  Expandir tudo
-                </button>
-                <button type="button" onClick={() => setExpanded(new Set())}>
-                  Recolher tudo
-                </button>
-                <select
-                  aria-label="Filtrar por situação"
-                  value={filter}
-                  onChange={(event) => setFilter(event.target.value)}
-                >
-                  <option value="all">Todas as situações</option>
-                  <option value="active">Ativos</option>
-                  <option value="inactive">Inativos</option>
-                </select>
-              </div>
-            </div>
-            {query.trim() && (
-              <p className="catalog-search-count" role="status">
-                {visible.length} classificações encontradas, incluindo
-                correspondências nas subclassificações.
-              </p>
-            )}
+            <CatalogToolbar
+              title="Classificações"
+              shown={visible.length}
+              total={categories.length}
+              query={query}
+              onQueryChange={(value) => {
+                setQuery(value);
+                if (value.trim())
+                  setExpanded(new Set(categories.map((item) => item.id)));
+              }}
+              filter={filter}
+              onFilterChange={setFilter}
+            >
+              <button
+                type="button"
+                className="catalog-toolbar-icon"
+                aria-label="Expandir tudo"
+                title="Expandir tudo"
+                onClick={() =>
+                  setExpanded(new Set(categories.map((item) => item.id)))
+                }
+              >
+                <Plus size={18} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="catalog-toolbar-icon"
+                aria-label="Recolher tudo"
+                title="Recolher tudo"
+                onClick={() => setExpanded(new Set())}
+              >
+                <Minus size={18} aria-hidden="true" />
+              </button>
+            </CatalogToolbar>
             <div className="table-scroll">
               <table className="classification-tree">
                 <caption className="sr-only">

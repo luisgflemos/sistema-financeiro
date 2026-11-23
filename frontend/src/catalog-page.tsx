@@ -4,7 +4,8 @@ import { api } from "./api";
 import { Modal } from "./modal";
 import { TableImport } from "./table-import";
 import { SearchSelect } from "./search-select";
-import { CatalogSearch, matchesCatalog } from "./catalog-search";
+import { matchesCatalog } from "./catalog-search";
+import { CatalogToolbar } from "./catalog-toolbar";
 import { catalogs } from "./catalogs";
 import type { CatalogId, RecordData } from "./catalogs";
 
@@ -430,31 +431,16 @@ export function CatalogPage({
               className="panel listing"
               aria-labelledby={`${uid}-records`}
             >
-              <div className="panel-header">
-                <h2 id={`${uid}-records`}>
-                  Registros{" "}
-                  <span>
-                    {visible.length} de {records.length}
-                  </span>
-                </h2>
-                <div className="catalog-filters">
-                  <CatalogSearch value={query} onChange={setQuery} />
-                  <select
-                    aria-label="Filtrar por situação"
-                    value={filter}
-                    onChange={(event) => setFilter(event.target.value)}
-                  >
-                    <option value="all">Todas as situações</option>
-                    <option value="active">Ativos</option>
-                    <option value="inactive">Inativos</option>
-                  </select>
-                </div>
-              </div>
-              {query.trim() && (
-                <p className="catalog-search-count" role="status">
-                  {visible.length} registros encontrados.
-                </p>
-              )}
+              <CatalogToolbar
+                title="Registros"
+                headingId={`${uid}-records`}
+                shown={visible.length}
+                total={records.length}
+                query={query}
+                onQueryChange={setQuery}
+                filter={filter}
+                onFilterChange={setFilter}
+              />
               {visible.length === 0 ? (
                 <div className="empty">
                   <strong>
