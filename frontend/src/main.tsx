@@ -164,7 +164,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
       </aside>
       <main>
         <header className="toolbar">
-          <span>Cadastros</span>
+          <span className="toolbar-title">Cadastros</span>
           <div className="organization-tools">
             {organizations.length > 0 && (
               <select
@@ -185,7 +185,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
               </button>
             )}
             {organizationId && !creating && !importing && (
-              <button type="button" onClick={() => setImporting(true)}>
+              <button type="button" className="toolbar-primary" onClick={() => setImporting(true)}>
                 Importar cadastros
               </button>
             )}

@@ -914,3 +914,71 @@ select.nature-NEUTRAL {
   color: #146c3b;
   padding: 0.5rem;
 }
+
+.toolbar {
+  min-height: 6rem;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+  color: white;
+  background: var(--nav);
+  border-bottom: 3px solid var(--primary);
+}
+
+.toolbar-title {
+  font-size: clamp(1.6rem, 2.5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.toolbar .organization-tools {
+  gap: 0.75rem;
+}
+
+.toolbar .organization-tools select {
+  color: white;
+  background: #173456;
+  border-color: #6d839e;
+  font-weight: 600;
+}
+
+.toolbar .organization-tools option {
+  color: var(--ink);
+  background: white;
+}
+
+.toolbar button {
+  color: var(--ink);
+  background: white;
+  border-color: white;
+}
+
+.toolbar button.toolbar-primary {
+  color: var(--ink);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.toolbar button.toolbar-primary:hover {
+  background: #4ade80;
+  border-color: #4ade80;
+}
+
+.toolbar button:last-child {
+  color: white;
+  background: transparent;
+  border-color: #91a4bd;
+}
+
+.toolbar button:last-child:hover {
+  background: #173456;
+}
+
+.toolbar :focus-visible {
+  outline-color: var(--mint);
+}
+
+@media (max-width: 720px) {
+  .toolbar .organization-tools {
+    width: 100%;
+  }
+}
