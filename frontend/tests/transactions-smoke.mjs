@@ -72,6 +72,10 @@ try {
   await page
     .getByText("Conta identificada pelo cabeçalho", { exact: true })
     .waitFor();
+  await page.screenshot({
+    path: "import-layout-statement-preview.png",
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Importar e identificar", exact: true })
     .click();
@@ -104,9 +108,14 @@ try {
     .getByRole("dialog")
     .getByText("TARIFA SINTETICA", { exact: true })
     .waitFor();
+  await page.screenshot({
+    path: "import-layout-transaction-detail.png",
+    fullPage: true,
+  });
   await page
-    .getByRole("button", { name: "← Voltar à visão geral", exact: true })
+    .getByRole("button", { name: "Ver extrato completo", exact: true })
     .click();
+  await page.getByText("PIX CLIENTE SINTETICO", { exact: true }).waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await page

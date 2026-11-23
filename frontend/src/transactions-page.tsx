@@ -561,13 +561,32 @@ export function TransactionsPage({
           onClose={() => setSelected(null)}
         >
           <div className="transaction-original">
-            <button
-              type="button"
-              className="text-button transaction-overview"
-              onClick={() => setSelected(null)}
-            >
-              ← Voltar à visão geral
-            </button>
+            <div className="transaction-overview-actions">
+              <button
+                type="button"
+                className="text-button transaction-overview"
+                onClick={() => setSelected(null)}
+              >
+                ← Voltar à visão geral
+              </button>
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => {
+                  setStatementId(selected.import_file_id);
+                  setState("all");
+                  setAccount("");
+                  setStart("");
+                  setEnd("");
+                  setDirection("");
+                  setQuery("");
+                  setPage(1);
+                  setSelected(null);
+                }}
+              >
+                Ver extrato completo
+              </button>
+            </div>
             <span>
               {brazilDate(selected.posted_on)} · {selected.account_label}
             </span>

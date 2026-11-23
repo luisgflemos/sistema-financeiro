@@ -169,7 +169,18 @@
   margin-bottom: 0.5rem;
 }
 .transaction-filters input {
+  width: 100%;
+  min-width: 0;
   font-size: 0.875rem;
+}
+.transaction-filters > label {
+  min-width: 0;
+}
+.transaction-overview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 .transactions-table small {
   display: block;
