@@ -35,9 +35,13 @@ try {
     "Conta mascarada": "**1234",
   });
   await page.getByLabel("Banco", { exact: true }).fill("brasil");
-  await page.getByRole("option", { name: "001 — BCO DO BRASIL S.A.", exact: true }).click();
+  await page
+    .getByRole("option", { name: "001 — BCO DO BRASIL S.A.", exact: true })
+    .click();
   await page.getByLabel("Moeda", { exact: true }).fill("brasileiro");
-  await page.getByRole("option", { name: "BRL — Real brasileiro", exact: true }).click();
+  await page
+    .getByRole("option", { name: "BRL — Real brasileiro", exact: true })
+    .click();
   await save();
   await page.getByRole("row", { name: /Conta sintética CTA-\d+/ }).waitFor();
   await page.getByRole("button", { name: "Editar Conta sintética" }).click();

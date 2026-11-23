@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import type { Option } from "./catalogs";
 
 function normalize(value: string) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }
 
 export function SearchSelect({
@@ -55,7 +58,7 @@ export function SearchSelect({
             : undefined
         }
         required={required}
-        value={open ? query : selected?.label ?? ""}
+        value={open ? query : (selected?.label ?? "")}
         placeholder="Digite para buscar"
         onFocus={() => {
           setQuery("");

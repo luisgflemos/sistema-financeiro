@@ -354,7 +354,8 @@ export function CatalogPage({
                             {field.label}
                           </label>
                           {availableOptions &&
-                          (field.name === "bank_code" || field.name === "currency") ? (
+                          (field.name === "bank_code" ||
+                            field.name === "currency") ? (
                             <SearchSelect
                               id={`${uid}-${field.name}`}
                               value={value}
