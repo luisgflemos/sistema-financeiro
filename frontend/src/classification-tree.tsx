@@ -121,7 +121,7 @@ export function ClassificationTree({ organizationId }: { organizationId: string 
                           </button>
                         </th>
                         <td>{String(parent.code)}</td>
-                        <td>{{ REVENUE: "Receita", EXPENSE: "Despesa", NEUTRAL: "Neutra" }[String(parent.kind)] ?? "—"}</td>
+                        <td>{parent.kind === "REVENUE" ? "Receita" : parent.kind === "EXPENSE" ? "Despesa" : parent.kind === "NEUTRAL" ? "Neutra" : "—"}</td>
                         <td>{status(parent)}</td>
                         <td><button type="button" className="text-button" aria-label={`Editar ${parent.name}`} onClick={() => openEditor(parent)}>Editar</button></td>
                       </tr>
@@ -158,7 +158,6 @@ export function ClassificationTree({ organizationId }: { organizationId: string 
                     : [...items, saved];
                 if (editor.category) setChildren(update);
                 else setCategories(update);
-                openEditor(undefined, editor.category);
               }}
             />
           </div>
