@@ -28,8 +28,8 @@ class Movement:
     def fingerprint(self):
         value = [
             self.posted_on,
-            self.description,
-            self.document,
+            " ".join(self.description.upper().split()),
+            self.document.strip(),
             str(self.signed_amount),
         ]
         return sha256("\x1f".join(value).encode()).hexdigest()
@@ -44,6 +44,9 @@ class Movement:
             "amount": f"{abs(self.signed_amount):.2f}",
             "balance": f"{self.balance:.2f}",
             "fingerprint": self.fingerprint(),
+            "signature": sha256(
+                (self.fingerprint() + "\x1f" + f"{self.balance:.2f}").encode()
+            ).hexdigest(),
         }
 
 

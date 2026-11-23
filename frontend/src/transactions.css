@@ -87,6 +87,12 @@
   margin: 0 0 0.5rem;
   color: inherit;
 }
+.statement-ambiguity-reason {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #854d0e;
+  line-height: 1.4;
+}
 .statement-file summary {
   cursor: pointer;
   font-size: 0.875rem;

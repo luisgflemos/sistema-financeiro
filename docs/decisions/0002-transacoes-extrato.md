@@ -12,7 +12,11 @@ O usuário seleciona/arrasta até dez arquivos, confere as contas e importa o lo
 
 Datas, histórico, valor, documento, saldo, número da linha, hash e bytes originais são preservados. Dinheiro usa Decimal e NUMERIC. A sequência dos saldos do layout validado, em ordem decrescente, é conferida antes da gravação.
 
-Documento não é identificador bancário único neste layout. Ocorrências legítimas iguais dentro do mesmo arquivo são mantidas. Mesmo arquivo/conta não é duplicado. Em arquivos diferentes, colisões por data, descrição, documento e valor exigem decisão explícita: ignorar a repetição ou manter como outro movimento. O sistema revalida a prévia sob bloqueio da organização antes do commit.
+Documento não é identificador bancário único neste layout. Ocorrências legítimas iguais dentro do mesmo arquivo são mantidas. Mesmo arquivo/conta não é duplicado.
+
+Em arquivos diferentes, a ferramenta compara conta, data, valor, descrição normalizada, documento, saldo e assinaturas dos movimentos vizinhos. Uma correspondência única, apoiada pela sequência bancária e sem reutilizar uma ocorrência para duas linhas, é tratada automaticamente como já existente. Se todas as ocorrências anteriores já foram localizadas e existe uma posição bancária adicional, ela é mantida como movimento novo. Esses critérios são determinísticos; IA generativa não decide exclusão de movimentos financeiros.
+
+Somente casos sem evidência suficiente, como movimento isolado sem contexto, saldo divergente sem ancoragem ou ciclos indistinguíveis, pedem confirmação do operador, com justificativa. As decisões são auditadas. O sistema revalida a prévia sob bloqueio da organização antes do commit.
 
 ## Operação
 

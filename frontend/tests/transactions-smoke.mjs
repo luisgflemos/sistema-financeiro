@@ -93,8 +93,10 @@ try {
     buffer: Buffer.from(csv + "\n"),
   });
   await page
-    .getByRole("button", { name: "Marcar 2 como já importados", exact: true })
-    .click();
+    .getByText("2 já existentes — identificados automaticamente.", {
+      exact: true,
+    })
+    .waitFor();
   await page
     .getByRole("button", { name: "Importar e identificar", exact: true })
     .click();

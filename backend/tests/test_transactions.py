@@ -159,8 +159,8 @@ def test_pattern_uses_only_consistent_operator_confirmations(statements, monkeyp
             == 200
         )
     # Outro arquivo com mais uma ocorrência, explicitamente confirmada como nova.
-    next_source = source(trailing=True)
-    next_source["decisions"] = {str(row): "new" for row in range(4, 8)}
+    next_source = source(single=True)
+    next_source["decisions"] = {"4": "new"}
     preview = client.post(base + "/statements/preview", json={"files": [next_source]}).json()
     response = client.post(
         base + "/statements/commit",
@@ -168,7 +168,7 @@ def test_pattern_uses_only_consistent_operator_confirmations(statements, monkeyp
     )
     assert response.status_code == 200, response.text
     result = client.post(base + "/recognition/run", json={}).json()
-    assert result["automatic"] == 3
+    assert result["automatic"] == 1
     assert (
         connection.scalar(
             text(
@@ -176,7 +176,7 @@ def test_pattern_uses_only_consistent_operator_confirmations(statements, monkeyp
             ),
             {"org": base.split("/")[2]},
         )
-        == 3
+        == 1
     )
 
 

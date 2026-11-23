@@ -19,16 +19,19 @@ def count_movements(connection, base):
     )
 
 
-def source(account="123456", branch="0001", name="extrato-sintetico.xlsx", trailing=False):
+def source(
+    account="123456", branch="0001", name="extrato-sintetico.xlsx", trailing=False, single=False
+):
     book = Workbook()
     sheet = book.active
     sheet.append(["AGENCIA", branch, "CONTA", account])
     sheet.append([])
     sheet.append(["Data", "Histórico", "Documento", "Valor (R$)", "Saldo (R$)"])
     sheet.append(["02/01/2026", "PIX RECEBIDO CLIENTE SINTETICO", "00001", 100, 220])
-    sheet.append(["02/01/2026", "PIX ENVIADO FORNECEDOR SINTETICO", "00001", -30, 120])
-    sheet.append(["02/01/2026", "PIX RECEBIDO CLIENTE SINTETICO", "00001", 100, 150])
-    sheet.append(["02/01/2026", "PIX RECEBIDO CLIENTE SINTETICO", "00001", 100, 50])
+    if not single:
+        sheet.append(["02/01/2026", "PIX ENVIADO FORNECEDOR SINTETICO", "00001", -30, 120])
+        sheet.append(["02/01/2026", "PIX RECEBIDO CLIENTE SINTETICO", "00001", 100, 150])
+        sheet.append(["02/01/2026", "PIX RECEBIDO CLIENTE SINTETICO", "00001", 100, 50])
     if trailing:
         sheet.append(["", "", "", "", ""])
     output = io.BytesIO()
@@ -102,14 +105,14 @@ def test_multiple_files_accounts_and_original_bytes(statements):
     assert count_movements(connection, base) == 8
 
 
-def test_overlapping_file_requires_explicit_decisions(statements):
+def test_isolated_overlap_without_sequence_requires_confirmation(statements):
     client, connection, base, _ = statements
     first = {"files": [source()]}
     preview = client.post(base + "/statements/preview", json=first).json()
     client.post(base + "/statements/commit", json={**first, "token": preview["token"]})
-    overlap = {"files": [source(trailing=True)]}
+    overlap = {"files": [source(single=True)]}
     result = client.post(base + "/statements/preview", json=overlap).json()
-    assert result["files"][0]["pending"] == 4
+    assert result["files"][0]["pending"] == 1
     assert not result["ready"]
     assert (
         client.post(
@@ -117,7 +120,7 @@ def test_overlapping_file_requires_explicit_decisions(statements):
         ).status_code
         == 422
     )
-    overlap["files"][0]["decisions"] = {str(row): "skip" for row in range(4, 8)}
+    overlap["files"][0]["decisions"] = {"4": "skip"}
     result = client.post(base + "/statements/preview", json=overlap).json()
     assert result["ready"]
     assert (
@@ -173,3 +176,51 @@ def test_date_description_and_amount_are_required_from_source(cell):
     book.save(output)
     with pytest.raises(ValueError, match="Linha 4"):
         parse_statement(upload["file_name"], base64.b64encode(output.getvalue()).decode())
+
+
+def test_overlapping_bank_sequence_is_resolved_automatically(statements):
+    client, connection, base, _ = statements
+    first = {"files": [source()]}
+    preview = client.post(base + "/statements/preview", json=first).json()
+    client.post(base + "/statements/commit", json={**first, "token": preview["token"]})
+    overlap = {"files": [source(trailing=True)]}
+    result = client.post(base + "/statements/preview", json=overlap).json()
+    assert result["ready"]
+    assert result["new"] == 0
+    assert result["files"][0]["duplicates"] == 4
+    assert result["files"][0]["pending"] == 0
+    assert (
+        client.post(base + "/statements/commit", json={**overlap, "token": result["token"]}).json()[
+            "imported"
+        ]
+        == 0
+    )
+    assert count_movements(connection, base) == 4
+
+
+def test_additional_identical_payment_is_preserved_when_prior_occurrences_are_located(statements):
+    client, connection, base, _ = statements
+    first = {"files": [source()]}
+    preview = client.post(base + "/statements/preview", json=first).json()
+    client.post(base + "/statements/commit", json={**first, "token": preview["token"]})
+    upload = source()
+    book = load_workbook(io.BytesIO(base64.b64decode(upload["content"])))
+    book.active.insert_rows(4)
+    for column, value in enumerate(
+        ["02/01/2026", "PIX RECEBIDO CLIENTE SINTETICO", "00001", 100, 320], 1
+    ):
+        book.active.cell(4, column, value)
+    output = io.BytesIO()
+    book.save(output)
+    upload["content"] = base64.b64encode(output.getvalue()).decode()
+    result = client.post(base + "/statements/preview", json={"files": [upload]}).json()
+    assert result["ready"]
+    assert result["new"] == 1
+    assert result["files"][0]["duplicates"] == 4
+    assert (
+        client.post(
+            base + "/statements/commit", json={"files": [upload], "token": result["token"]}
+        ).json()["imported"]
+        == 1
+    )
+    assert count_movements(connection, base) == 5

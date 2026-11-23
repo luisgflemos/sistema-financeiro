@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
 
 from app.catalog import lock_organization
+from app.statement_dedup import classify_rows
 from app.statement_parser import digits, parse_statement
 
 router = APIRouter(prefix="/organizations/{organization_id}/statements", tags=["Extratos"])
@@ -63,15 +64,23 @@ def build_preview(connection, organization_id, payload):
         ).mappings()
     ]
     seen_files = set()
-    seen = defaultdict(set)
+    seen = defaultdict(list)
     for row in connection.execute(
         text("""
-        SELECT t.account_id, t.fingerprint, t.id FROM bank_transactions t
+        SELECT t.account_id, t.fingerprint, t.id, t.raw_payload FROM bank_transactions t
         JOIN bank_accounts a ON a.id = t.account_id WHERE a.organization_id = :org
     """),
         {"org": organization_id},
     ).mappings():
-        seen[(str(row["account_id"]), row["fingerprint"])].add(str(row["id"]))
+        raw = row["raw_payload"]
+        seen[(str(row["account_id"]), row["fingerprint"])].append(
+            {
+                "id": str(row["id"]),
+                "signature": raw.get("signature"),
+                "previous_signature": raw.get("previous_signature"),
+                "next_signature": raw.get("next_signature"),
+            }
+        )
     stored = set(
         (str(row["bank_account_id"]), row["sha256"])
         for row in connection.execute(
@@ -105,25 +114,25 @@ def build_preview(connection, organization_id, payload):
         account_id = str(selected["id"]) if selected else None
         file_key = (account_id, statement.digest)
         repeated = file_key in stored or file_key in seen_files
-        rows, pending = [], 0
-        for movement in statement.movements:
-            row = movement.public()
-            candidates = sorted(seen[(account_id, movement.fingerprint())])
-            decision = upload.decisions.get(str(movement.row))
-            state = "duplicate" if repeated else "new"
-            if not repeated and candidates:
-                state = "new" if decision == "new" else "skip" if decision == "skip" else "review"
-            if decision and not candidates and not repeated:
-                raise HTTPException(
-                    409,
-                    "O conjunto de possíveis duplicidades mudou. Gere uma nova prévia.",
-                )
-            pending += state == "review"
-            row.update(status=state, candidates=candidates)
-            rows.append(row)
+        rows = [movement.public() for movement in statement.movements]
+        for position, row in enumerate(rows):
+            row["previous_signature"] = rows[position - 1]["signature"] if position else None
+            row["next_signature"] = (
+                rows[position + 1]["signature"] if position + 1 < len(rows) else None
+            )
+        previous = {row["fingerprint"]: seen[(account_id, row["fingerprint"])] for row in rows}
+        rows = classify_rows(rows, previous, upload.decisions, repeated)
+        pending = sum(row["status"] == "review" for row in rows)
         for row in rows:
             if row["status"] == "new":
-                seen[(account_id, row["fingerprint"])].add(f"batch:{index}:{row['row']}")
+                seen[(account_id, row["fingerprint"])].append(
+                    {
+                        "id": f"batch:{index}:{row['row']}",
+                        "signature": row["signature"],
+                        "previous_signature": row["previous_signature"],
+                        "next_signature": row["next_signature"],
+                    }
+                )
         seen_files.add(file_key)
         item = {
             "file_name": upload.file_name,
@@ -137,6 +146,7 @@ def build_preview(connection, organization_id, payload):
             "rows": rows,
             "pending": pending,
             "new": sum(row["status"] == "new" for row in rows),
+            "duplicates": sum(row["status"] == "duplicate" for row in rows),
         }
         output.append(item)
         internal.append((upload, statement, selected, rows, repeated))
@@ -242,6 +252,9 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
                                 "valor": ("-" if row["direction"] == "DEBIT" else "")
                                 + row["amount"],
                                 "saldo": row["balance"],
+                                "signature": row["signature"],
+                                "previous_signature": row["previous_signature"],
+                                "next_signature": row["next_signature"],
                             }
                         ),
                     },

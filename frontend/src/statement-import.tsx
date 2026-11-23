@@ -10,6 +10,7 @@ type Upload = {
   decisions: Record<string, "new" | "skip">;
 };
 type Row = {
+  reason: string;
   document: string;
   row: number;
   posted_on: string;
@@ -31,6 +32,7 @@ type FilePreview = {
   debits: string;
   repeated: boolean;
   pending: number;
+  duplicates: number;
   new: number;
   rows: Row[];
 };
@@ -265,30 +267,18 @@ export function StatementImport({
                         : item.new + " novos movimentos"}
                     </span>
                   </div>
+                  {item.duplicates > 0 && !item.repeated && (
+                    <p className="statement-match">
+                      {item.duplicates} já existentes — identificados
+                      automaticamente.
+                    </p>
+                  )}
                   {item.pending > 0 && (
                     <div className="statement-review-note">
                       <p>
-                        Possíveis repetições em outro extrato. Confira as linhas
-                        destacadas abaixo.
+                        A ferramenta concluiu a análise. Somente {item.pending}{" "}
+                        caso(s) ainda precisa(m) da sua confirmação.
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const decisions = { ...file.decisions };
-                          for (const row of item.rows)
-                            if (row.status === "review")
-                              decisions[String(row.row)] = "skip";
-                          const next = files.map((entry, position) =>
-                            position === index
-                              ? { ...entry, decisions }
-                              : entry,
-                          );
-                          setFiles(next);
-                          void analyze(next);
-                        }}
-                      >
-                        Marcar {item.pending} como já importados
-                      </button>
                     </div>
                   )}
                   <details open={item.pending > 0}>
@@ -334,6 +324,11 @@ export function StatementImport({
                                 </td>
                                 <td>{brl(row.balance)}</td>
                                 <td>
+                                  {row.status === "review" && (
+                                    <small className="statement-ambiguity-reason">
+                                      {row.reason}
+                                    </small>
+                                  )}
                                   {row.status === "review" ||
                                   file.decisions[String(row.row)] ? (
                                     <SearchSelect
@@ -344,7 +339,7 @@ export function StatementImport({
                                       options={[
                                         {
                                           value: "",
-                                          label: "Escolha uma ação",
+                                          label: "Confirmação necessária",
                                         },
                                         {
                                           value: "skip",
