@@ -794,3 +794,54 @@ button.toggle[aria-checked="true"]:hover:not(:disabled) {
 .tree-disclosure[aria-expanded="true"] .tree-sign::after {
   display: none;
 }
+
+.form-modal {
+  width: min(36rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  color: var(--ink);
+  background: white;
+  box-shadow: 0 20px 80px #0b1f3b40;
+}
+
+.form-modal::backdrop {
+  background: #0b1f3b80;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-header button {
+  flex: none;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.form-modal .modal-editor,
+.form-modal .setup {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.form-modal .setup h2 {
+  display: none;
+}
+
+.form-modal .search-options {
+  position: relative;
+  top: auto;
+}
+
+.catalog-list {
+  width: 100%;
+}

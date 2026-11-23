@@ -13,13 +13,13 @@ try {
   await page.getByText("Usuário ou senha incorretos.").waitFor();
   await page.getByLabel("Senha", { exact: true }).fill("Teste8ok");
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await page.getByRole("heading", { name: "Nova organização" }).waitFor();
+  await page.getByRole("heading", { name: "Organizações" }).waitFor();
   assert.deepEqual(
     await (await page.request.get("/api/organizations")).json(),
     [],
   );
   await page.reload();
-  await page.getByRole("heading", { name: "Nova organização" }).waitFor();
+  await page.getByRole("heading", { name: "Organizações" }).waitFor();
   await page.getByRole("button", { name: "Sair", exact: true }).click();
   await page.getByRole("heading", { name: "Entrar na Finare" }).waitFor();
   assert.equal((await page.request.get("/api/organizations")).status(), 401);

@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import { api } from "./api";
+import { Modal } from "./modal";
 import { CatalogPage } from "./catalog-page";
 import type { RecordData } from "./catalogs";
 
@@ -13,6 +14,8 @@ export function ClassificationTree({
   const [categories, setCategories] = useState<RecordData[]>([]);
   const [children, setChildren] = useState<RecordData[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [formOpen, setFormOpen] = useState(false);
+  const [notice, setNotice] = useState("");
   const [editor, setEditor] = useState<Editor>({ key: 0 });
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
@@ -42,6 +45,8 @@ export function ClassificationTree({
   }, [attempt, base]);
 
   function openEditor(record?: RecordData, category?: RecordData) {
+    setFormOpen(true);
+    setNotice("");
     setEditor((previous) => ({ record, category, key: previous.key + 1 }));
   }
 
@@ -83,6 +88,7 @@ export function ClassificationTree({
 
   return (
     <>
+      <p className="notice" role="status">{notice}</p>
       <div className="page-heading">
         <h1>Classificações</h1>
         <button type="button" className="primary" onClick={() => openEditor()}>
@@ -108,7 +114,7 @@ export function ClassificationTree({
           </button>
         </>
       ) : (
-        <div className="catalog-grid classification-grid">
+        <div className="catalog-list">
           <section
             className="panel listing"
             aria-label="Classificações e subclassificações"
@@ -262,7 +268,10 @@ export function ClassificationTree({
               </table>
             </div>
           </section>
-          <div>
+          {formOpen && <Modal
+            title={editor.record ? "Editar cadastro" : editor.category ? "Nova subclassificação" : "Nova classificação"}
+            onClose={() => setFormOpen(false)}
+          >
             {editor.category && (
               <p className="editor-context">
                 Subclassificação de{" "}
@@ -276,6 +285,7 @@ export function ClassificationTree({
               category={editor.category}
               initialRecord={editor.record}
               editorOnly
+              onCancel={() => setFormOpen(false)}
               onSaved={(saved) => {
                 const update = (items: RecordData[]) =>
                   items.some((item) => item.id === saved.id)
@@ -283,9 +293,11 @@ export function ClassificationTree({
                     : [...items, saved];
                 if (editor.category) setChildren(update);
                 else setCategories(update);
+                setFormOpen(false);
+                setNotice("Cadastro salvo.");
               }}
             />
-          </div>
+          </Modal>}
         </div>
       )}
     </>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
+import { Modal } from "./modal";
 import { Brand } from "./brand";
 import { CatalogImport } from "./catalog-import";
 import { ClassificationTree } from "./classification-tree";
@@ -195,6 +196,17 @@ function App({ onLogout }: { onLogout?: () => void }) {
             )}
           </div>
         </header>
+        {creating && (
+          <Modal title="Nova organização" onClose={() => setCreating(false)}>
+            <OrganizationForm
+              onCreate={(organization) => {
+                setOrganizations((current) => [...current, organization]);
+                selectOrganization(organization.id);
+              }}
+              onCancel={() => setCreating(false)}
+            />
+          </Modal>
+        )}
         <div className="content">
           {loading ? (
             <p role="status">Carregando organizações…</p>
@@ -214,16 +226,12 @@ function App({ onLogout }: { onLogout?: () => void }) {
                 Tentar novamente
               </button>
             </>
-          ) : creating || !organizationId ? (
+          ) : !organizationId ? (
             <>
               <h1>Organizações</h1>
-              <OrganizationForm
-                onCreate={(organization) => {
-                  setOrganizations((current) => [...current, organization]);
-                  selectOrganization(organization.id);
-                }}
-                onCancel={organizationId ? () => setCreating(false) : undefined}
-              />
+              <button type="button" className="primary" onClick={() => setCreating(true)}>
+                Nova organização
+              </button>
             </>
           ) : importing ? (
             <CatalogImport
