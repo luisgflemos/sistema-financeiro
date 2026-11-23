@@ -211,3 +211,17 @@ def test_partial_ai_suggestion_does_not_bypass_required_identification(statement
         ).status_code
         == 422
     )
+
+
+def test_party_is_optional_and_complementary_description_is_preserved(statements):
+    client, _, base, _ = statements
+    row = imported(client, base)[0]
+    values = dimensions(client, base)
+    values["party_id"] = None
+    values["notes"] = "Descrição complementar sintética."
+    response = client.put(base + "/transactions/" + row["id"] + "/identification", json=values)
+    assert response.status_code == 200, response.text
+    result = client.get(base + "/transactions?state=identified").json()["rows"][0]
+    assert result["party_id"] is None
+    assert result["notes"] == values["notes"]
+    assert result["raw_description"] == row["raw_description"]

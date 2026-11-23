@@ -448,12 +448,20 @@ export function TransactionsPage({
                     </td>
                     <td>
                       {row.raw_description}
-                      {row.party_name && (
+                      {(row.party_name ||
+                        row.category_name ||
+                        row.cost_center_name) && (
                         <small>
-                          {row.party_name} · {row.category_name} ·{" "}
-                          {row.cost_center_name}
+                          {[
+                            row.party_name,
+                            row.category_name,
+                            row.cost_center_name,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </small>
                       )}
+                      {row.notes && <small>{row.notes}</small>}
                     </td>
                     <td
                       className={
@@ -662,11 +670,21 @@ export function TransactionsPage({
                 )}
                 {fieldLabels.map(([field, label, key]) => (
                   <div className="field" key={field}>
-                    <label htmlFor={"identify-" + field}>{label}</label>
+                    <label
+                      className="identification-label"
+                      htmlFor={"identify-" + field}
+                    >
+                      {label}
+                      {field === "party_id" && (
+                        <small aria-hidden="true">Opcional</small>
+                      )}
+                    </label>
                     <SearchSelect
                       id={"identify-" + field}
                       value={draft[field as keyof Draft]}
-                      required={draft.movement_kind === "NORMAL"}
+                      required={
+                        draft.movement_kind === "NORMAL" && field !== "party_id"
+                      }
                       options={[
                         { value: "", label: "Selecione" },
                         ...(key === "subcategories"
@@ -695,7 +713,8 @@ export function TransactionsPage({
                   </div>
                 ))}
                 <label>
-                  Observação
+                  Descrição Complementar
+                  <small aria-hidden="true">Opcional</small>
                   <textarea
                     value={draft.notes}
                     onChange={(event) =>

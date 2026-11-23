@@ -3,7 +3,7 @@ import io
 from decimal import Decimal
 
 import pytest
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from sqlalchemy import text
 
 from app.statement_parser import parse_statement
@@ -155,9 +155,21 @@ def test_wrong_account_or_bad_second_file_never_partially_import(statements):
 
 def test_same_file_twice_in_batch_is_not_duplicated(statements):
     client, _, base, _ = statements
-    payload = {"files": [source(), source()]}
+    upload = source()
+    payload = {"files": [upload, upload]}
     preview = client.post(base + "/statements/preview", json=payload).json()
     assert preview["new"] == 4
     assert preview["files"][1]["repeated"]
     response = client.post(base + "/statements/commit", json={**payload, "token": preview["token"]})
     assert response.json()["imported"] == 4
+
+
+@pytest.mark.parametrize("cell", ["A4", "B4", "D4"])
+def test_date_description_and_amount_are_required_from_source(cell):
+    upload = source()
+    book = load_workbook(io.BytesIO(base64.b64decode(upload["content"])))
+    book.active[cell] = None
+    output = io.BytesIO()
+    book.save(output)
+    with pytest.raises(ValueError, match="Linha 4"):
+        parse_statement(upload["file_name"], base64.b64encode(output.getvalue()).decode())

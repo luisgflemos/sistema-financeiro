@@ -68,11 +68,11 @@ def validate_identification(connection, organization_id, payload, require_comple
     if (
         require_complete
         and payload.movement_kind == "NORMAL"
-        and any(not values[key] for key in IDENT_FIELDS[:4])
+        and any(not values[key] for key in ("category_id", "subcategory_id", "cost_center_id"))
     ):
         raise HTTPException(
             422,
-            "Informe cliente/fornecedor, classificação, subclassificação e centro de custos.",
+            "Informe classificação, subclassificação e centro de custos.",
         )
     checks = (
         ("party_id", "parties"),

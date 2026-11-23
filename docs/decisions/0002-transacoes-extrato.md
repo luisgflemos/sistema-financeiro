@@ -16,7 +16,7 @@ Documento não é identificador bancário único neste layout. Ocorrências leg�
 
 ## Operação
 
-A fila inicia em pendentes e permite buscar, filtrar por conta, extrato, data, crédito/débito e estado. O detalhe mantém acesso à visão geral. A identificação normal exige cliente/fornecedor, classificação, subclassificação e centro de custos; observação é opcional. Salvar e próximo avança sem retornar à listagem.
+A fila inicia em pendentes e permite buscar, filtrar por conta, extrato, data, crédito/débito e estado. O detalhe mantém acesso à visão geral. A identificação normal exige classificação, subclassificação e centro de custos. Cliente/fornecedor é opcional. Data, valor e descrição da operação são obrigatórios e vêm do extrato. Descrição Complementar é opcional, armazenada separadamente do histórico do banco. Salvar e próximo avança sem retornar à listagem.
 
 Identificações são versões imutáveis, com operador, método e horário. Uma edição concorrente não sobrescreve silenciosamente a anterior. Cadastros de outra organização ou subclasses de outra classificação são rejeitados.
 

@@ -7,7 +7,7 @@
 | RN-001 | APROVADA | A movimentação realizada nasce no extrato bancário importado; não exigir redigitação do lançamento bancário. |
 | RN-002 | APROVADA | Um ou vários extratos podem ser recebidos por lote, sempre vinculados a contas bancárias cadastradas. |
 | RN-003 | APROVADA | Ler conta, data, crédito/débito, valor e pagador/recebedor; manter histórico original quando fornecido. |
-| RN-004 | APROVADA | Toda receita/despesa deve ser reconhecida com classificação, subclassificação, centro de custos e contraparte, ressalvadas exceções justificadas/não aplicáveis. |
+| RN-004 | APROVADA | Toda receita/despesa deve ser identificada com classificação, subclassificação e centro de custos. Cliente/fornecedor é opcional. Data, valor e descrição da operação são obrigatórios e vêm do extrato; Descrição Complementar é opcional e não altera o original. Preservar as exceções aprovadas para transferências próprias e Processos Automáticos. |
 | RN-005 | APROVADA | Pagadores/recebedores são descrições/identificadores do banco; o vínculo a cliente/fornecedor é explícito e pode reunir múltiplas descrições por entidade. |
 | RN-006 | APROVADA | Importação de clientes/fornecedores por Excel e associação intuitiva de contrapartes, inclusive por arrastar/soltar. |
 | RN-007 | APROVADA | Reconhecer padrões conhecidos e sugerir vínculos, classificações e subclasses segundo o histórico de decisões. |
@@ -75,3 +75,4 @@ A diferença de R$ 5.000 corresponde à movimentação líquida entre conta corr
 - Exibir motivo da associação e da classificação quando automática.
 - No reconhecimento de ambiguidade, exigir ação humana.
 - Informações adicionais são vinculadas à transação reconhecida, não alteram a descrição original do banco.
+

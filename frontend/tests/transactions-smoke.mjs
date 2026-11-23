@@ -93,7 +93,6 @@ try {
     .click();
   await row.getByRole("button", { name: /Identificar movimento/ }).click();
   for (const [label, value] of [
-    ["Cliente / Fornecedor", "Cliente sintético"],
     ["Classificação", "Receitas sintéticas"],
     ["Subclassificação", "Serviços sintéticos"],
     ["Centro de Custos", "Centro sintético"],
@@ -101,6 +100,9 @@ try {
     await page.getByLabel(label, { exact: true }).fill(value);
     await page.getByRole("option", { name: value, exact: true }).click();
   }
+  await page
+    .getByLabel("Descrição Complementar", { exact: true })
+    .fill("Detalhe sintético para revisão.");
   await page
     .getByRole("button", { name: "Salvar e próximo", exact: true })
     .click();
