@@ -1,0 +1,1850 @@
+[
+  {
+    "value": "001",
+    "label": "001 — BCO DO BRASIL S.A."
+  },
+  {
+    "value": "003",
+    "label": "003 — BCO DA AMAZONIA S.A."
+  },
+  {
+    "value": "004",
+    "label": "004 — BCO DO NORDESTE DO BRASIL S.A."
+  },
+  {
+    "value": "007",
+    "label": "007 — BNDES"
+  },
+  {
+    "value": "009",
+    "label": "009 — STN"
+  },
+  {
+    "value": "010",
+    "label": "010 — CREDICOAMO"
+  },
+  {
+    "value": "011",
+    "label": "011 — UBS (BRASIL) CORRETORA DE VALORES S.A."
+  },
+  {
+    "value": "012",
+    "label": "012 — BANCO INBURSA"
+  },
+  {
+    "value": "014",
+    "label": "014 — STATE STREET BR S.A. BCO COMERCIAL"
+  },
+  {
+    "value": "015",
+    "label": "015 — UBS BB CCTVM S.A."
+  },
+  {
+    "value": "016",
+    "label": "016 — CCM DESP TRÂNS SC E RS"
+  },
+  {
+    "value": "017",
+    "label": "017 — BNY MELLON BCO S.A."
+  },
+  {
+    "value": "018",
+    "label": "018 — BCO TRICURY S.A."
+  },
+  {
+    "value": "021",
+    "label": "021 — BCO BANESTES S.A."
+  },
+  {
+    "value": "023",
+    "label": "023 — CONTA SIMPLES SCD S.A."
+  },
+  {
+    "value": "024",
+    "label": "024 — BCO BANDEPE S.A."
+  },
+  {
+    "value": "025",
+    "label": "025 — BCO ALFA S.A."
+  },
+  {
+    "value": "033",
+    "label": "033 — BCO SANTANDER (BRASIL) S.A."
+  },
+  {
+    "value": "036",
+    "label": "036 — BCO BBI S.A."
+  },
+  {
+    "value": "037",
+    "label": "037 — BCO DO EST. DO PA S.A."
+  },
+  {
+    "value": "040",
+    "label": "040 — BCO CARGILL S.A."
+  },
+  {
+    "value": "041",
+    "label": "041 — BCO DO ESTADO DO RS S.A."
+  },
+  {
+    "value": "047",
+    "label": "047 — BCO DO EST. DE SE S.A."
+  },
+  {
+    "value": "060",
+    "label": "060 — CONFIDENCE CC S.A."
+  },
+  {
+    "value": "063",
+    "label": "063 — BANCO BRADESCARD"
+  },
+  {
+    "value": "064",
+    "label": "064 — GOLDMAN SACHS DO BRASIL BM S.A"
+  },
+  {
+    "value": "065",
+    "label": "065 — BCO ANDBANK S.A."
+  },
+  {
+    "value": "066",
+    "label": "066 — BCO MORGAN STANLEY S.A."
+  },
+  {
+    "value": "069",
+    "label": "069 — BCO CREFISA S.A."
+  },
+  {
+    "value": "070",
+    "label": "070 — BRB - BCO DE BRASILIA S.A."
+  },
+  {
+    "value": "074",
+    "label": "074 — BCO. J.SAFRA S.A."
+  },
+  {
+    "value": "075",
+    "label": "075 — BANCO ABN AMRO CLEARING S.A."
+  },
+  {
+    "value": "076",
+    "label": "076 — BCO KDB BRASIL S.A."
+  },
+  {
+    "value": "077",
+    "label": "077 — BANCO INTER"
+  },
+  {
+    "value": "078",
+    "label": "078 — HAITONG BI DO BRASIL S.A."
+  },
+  {
+    "value": "079",
+    "label": "079 — PICPAY BANK - BANCO MÚLTIPLO S.A"
+  },
+  {
+    "value": "080",
+    "label": "080 — BT CC LTDA."
+  },
+  {
+    "value": "081",
+    "label": "081 — BANCOSEGURO S.A."
+  },
+  {
+    "value": "082",
+    "label": "082 — BANCO TOPÁZIO S.A."
+  },
+  {
+    "value": "083",
+    "label": "083 — BCO DA CHINA BRASIL S.A."
+  },
+  {
+    "value": "084",
+    "label": "084 — SISPRIME DO BRASIL - COOP"
+  },
+  {
+    "value": "085",
+    "label": "085 — COOPCENTRAL AILOS"
+  },
+  {
+    "value": "089",
+    "label": "089 — CREDISAN CC"
+  },
+  {
+    "value": "093",
+    "label": "093 — POLOCRED SCMEPP LTDA."
+  },
+  {
+    "value": "094",
+    "label": "094 — BANCO FINAXIS"
+  },
+  {
+    "value": "095",
+    "label": "095 — BANCO TRAVELEX S.A."
+  },
+  {
+    "value": "096",
+    "label": "096 — BCO B3 S.A."
+  },
+  {
+    "value": "097",
+    "label": "097 — CREDISIS - CENTRAL DE COOPERATIVAS DE CRÉDITO"
+  },
+  {
+    "value": "099",
+    "label": "099 — UNIPRIME COOPCENTRAL LTDA."
+  },
+  {
+    "value": "100",
+    "label": "100 — PLANNER CV S.A."
+  },
+  {
+    "value": "101",
+    "label": "101 — WARREN RENA DTVM"
+  },
+  {
+    "value": "102",
+    "label": "102 — XP INVESTIMENTOS CCTVM S/A"
+  },
+  {
+    "value": "104",
+    "label": "104 — CAIXA ECONOMICA FEDERAL"
+  },
+  {
+    "value": "105",
+    "label": "105 — LECCA CFI S.A."
+  },
+  {
+    "value": "107",
+    "label": "107 — BCO BOCOM BBM S.A."
+  },
+  {
+    "value": "111",
+    "label": "111 — OLIVEIRA TRUST DTVM S.A."
+  },
+  {
+    "value": "113",
+    "label": "113 — NEON CTVM S.A."
+  },
+  {
+    "value": "119",
+    "label": "119 — BCO WESTERN UNION"
+  },
+  {
+    "value": "120",
+    "label": "120 — BCO RODOBENS S.A."
+  },
+  {
+    "value": "121",
+    "label": "121 — BCO AGIBANK S.A."
+  },
+  {
+    "value": "122",
+    "label": "122 — BCO BRADESCO BERJ S.A."
+  },
+  {
+    "value": "124",
+    "label": "124 — BCO WOORI BANK DO BRASIL S.A."
+  },
+  {
+    "value": "125",
+    "label": "125 — BANCO GENIAL"
+  },
+  {
+    "value": "126",
+    "label": "126 — BR PARTNERS BI"
+  },
+  {
+    "value": "127",
+    "label": "127 — CODEPE CVC S.A."
+  },
+  {
+    "value": "128",
+    "label": "128 — BRAZA BANK S.A. BCO DE CÂMBIO"
+  },
+  {
+    "value": "129",
+    "label": "129 — UBS BB BI S.A."
+  },
+  {
+    "value": "130",
+    "label": "130 — CARUANA SCFI"
+  },
+  {
+    "value": "131",
+    "label": "131 — TULLETT PREBON BRASIL CVC LTDA"
+  },
+  {
+    "value": "132",
+    "label": "132 — ICBC DO BRASIL BM S.A."
+  },
+  {
+    "value": "133",
+    "label": "133 — CRESOL CONFEDERAÇÃO"
+  },
+  {
+    "value": "134",
+    "label": "134 — BGC LIQUIDEZ DTVM LTDA"
+  },
+  {
+    "value": "136",
+    "label": "136 — UNICRED DO BRASIL"
+  },
+  {
+    "value": "138",
+    "label": "138 — GET MONEY CC LTDA."
+  },
+  {
+    "value": "139",
+    "label": "139 — INTESA SANPAOLO BRASIL S.A. BM"
+  },
+  {
+    "value": "140",
+    "label": "140 — NU INVESTIMENTOS S.A. - CTVM"
+  },
+  {
+    "value": "141",
+    "label": "141 — MASTER BI S.A. - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "142",
+    "label": "142 — BROKER BRASIL CC LTDA."
+  },
+  {
+    "value": "143",
+    "label": "143 — INTEX BANK BCO DE CÂMBIO S.A."
+  },
+  {
+    "value": "144",
+    "label": "144 — EBURY BCO DE CÂMBIO S.A."
+  },
+  {
+    "value": "145",
+    "label": "145 — LEVYCAM CCV LTDA"
+  },
+  {
+    "value": "146",
+    "label": "146 — GUITTA CC LTDA"
+  },
+  {
+    "value": "149",
+    "label": "149 — FACTA S.A. CFI"
+  },
+  {
+    "value": "157",
+    "label": "157 — ICAP DO BRASIL CTVM LTDA."
+  },
+  {
+    "value": "159",
+    "label": "159 — CASA CREDITO S.A. SCM"
+  },
+  {
+    "value": "173",
+    "label": "173 — APEX GROUP DTVM"
+  },
+  {
+    "value": "174",
+    "label": "174 — PEFISA S.A. - C.F.I."
+  },
+  {
+    "value": "180",
+    "label": "180 — CM CAPITAL MARKETS CCTVM LTDA"
+  },
+  {
+    "value": "183",
+    "label": "183 — SOCRED SA - SCMEPP"
+  },
+  {
+    "value": "188",
+    "label": "188 — ATIVA S.A. INVESTIMENTOS CCTVM"
+  },
+  {
+    "value": "190",
+    "label": "190 — SERVICOOP"
+  },
+  {
+    "value": "191",
+    "label": "191 — NOVA FUTURA CTVM LTDA."
+  },
+  {
+    "value": "194",
+    "label": "194 — UNIDA DTVM LTDA"
+  },
+  {
+    "value": "195",
+    "label": "195 — VALOR S/A SCFI"
+  },
+  {
+    "value": "196",
+    "label": "196 — FAIR SOCIEDADE CC"
+  },
+  {
+    "value": "197",
+    "label": "197 — STONE IP S.A."
+  },
+  {
+    "value": "208",
+    "label": "208 — BANCO BTG PACTUAL S.A."
+  },
+  {
+    "value": "212",
+    "label": "212 — BANCO ORIGINAL"
+  },
+  {
+    "value": "213",
+    "label": "213 — BCO ARBI S.A."
+  },
+  {
+    "value": "217",
+    "label": "217 — BANCO JOHN DEERE S.A."
+  },
+  {
+    "value": "218",
+    "label": "218 — BCO BS2 S.A."
+  },
+  {
+    "value": "222",
+    "label": "222 — BCO CRÉDIT AGRICOLE BR S.A."
+  },
+  {
+    "value": "224",
+    "label": "224 — BCO FIBRA S.A."
+  },
+  {
+    "value": "233",
+    "label": "233 — BANCO BMG SOLUÇÕES FINANCEIRAS S.A."
+  },
+  {
+    "value": "237",
+    "label": "237 — BCO BRADESCO S.A."
+  },
+  {
+    "value": "241",
+    "label": "241 — BCO CLASSICO S.A."
+  },
+  {
+    "value": "243",
+    "label": "243 — BANCO MASTER - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "246",
+    "label": "246 — BCO ABC BRASIL S.A."
+  },
+  {
+    "value": "249",
+    "label": "249 — BANCO INVESTCRED UNIBANCO S.A."
+  },
+  {
+    "value": "250",
+    "label": "250 — BANCO BMG CONSIGNADO S.A."
+  },
+  {
+    "value": "254",
+    "label": "254 — PARANA BCO S.A."
+  },
+  {
+    "value": "259",
+    "label": "259 — MONEYCORP BCO DE CÂMBIO S.A."
+  },
+  {
+    "value": "260",
+    "label": "260 — NU PAGAMENTOS - IP"
+  },
+  {
+    "value": "265",
+    "label": "265 — BCO FATOR S.A."
+  },
+  {
+    "value": "266",
+    "label": "266 — BCO CEDULA S.A."
+  },
+  {
+    "value": "268",
+    "label": "268 — BARI CIA HIPOTECÁRIA"
+  },
+  {
+    "value": "269",
+    "label": "269 — BCO HSBC S.A."
+  },
+  {
+    "value": "271",
+    "label": "271 — BPY CCTVM S.A."
+  },
+  {
+    "value": "272",
+    "label": "272 — AGK CC S.A."
+  },
+  {
+    "value": "273",
+    "label": "273 — COOP SULCREDI AMPLEA"
+  },
+  {
+    "value": "274",
+    "label": "274 — BMP SCMEPP LTDA"
+  },
+  {
+    "value": "276",
+    "label": "276 — BCO SENFF S.A."
+  },
+  {
+    "value": "280",
+    "label": "280 — WILL FINANCEIRA S.A.CFI - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "281",
+    "label": "281 — CCR COOPAVEL"
+  },
+  {
+    "value": "283",
+    "label": "283 — RB INVESTIMENTOS DTVM LTDA."
+  },
+  {
+    "value": "288",
+    "label": "288 — CAROL DTVM LTDA."
+  },
+  {
+    "value": "289",
+    "label": "289 — EFX CC LTDA."
+  },
+  {
+    "value": "290",
+    "label": "290 — PAGSEGURO INTERNET IP S.A."
+  },
+  {
+    "value": "292",
+    "label": "292 — GALAPAGOS DTVM S.A."
+  },
+  {
+    "value": "293",
+    "label": "293 — LASTRO RDV DTVM LTDA"
+  },
+  {
+    "value": "296",
+    "label": "296 — OZ CÂMBIO"
+  },
+  {
+    "value": "298",
+    "label": "298 — VIPS CC S.A."
+  },
+  {
+    "value": "299",
+    "label": "299 — BCO AFINZ S.A. - BM"
+  },
+  {
+    "value": "300",
+    "label": "300 — BCO LA NACION ARGENTINA"
+  },
+  {
+    "value": "301",
+    "label": "301 — DOCK IP S.A."
+  },
+  {
+    "value": "305",
+    "label": "305 — FOURTRADE COR. DE CAMBIO LTDA"
+  },
+  {
+    "value": "307",
+    "label": "307 — TERRA INVESTIMENTOS DTVM"
+  },
+  {
+    "value": "310",
+    "label": "310 — VORTX DTVM LTDA."
+  },
+  {
+    "value": "312",
+    "label": "312 — HSCM SCMEPP LTDA."
+  },
+  {
+    "value": "318",
+    "label": "318 — BCO BMG S.A."
+  },
+  {
+    "value": "319",
+    "label": "319 — OM DTVM LTDA"
+  },
+  {
+    "value": "320",
+    "label": "320 — BOC BRASIL"
+  },
+  {
+    "value": "321",
+    "label": "321 — CREFAZ SCMEPP SA"
+  },
+  {
+    "value": "322",
+    "label": "322 — CCR DE ABELARDO LUZ"
+  },
+  {
+    "value": "323",
+    "label": "323 — MERCADO PAGO IP LTDA."
+  },
+  {
+    "value": "324",
+    "label": "324 — CARTOS SCD S.A."
+  },
+  {
+    "value": "326",
+    "label": "326 — MEUTUDO SCFI"
+  },
+  {
+    "value": "329",
+    "label": "329 — QI SCD S.A."
+  },
+  {
+    "value": "330",
+    "label": "330 — BANCO BARI S.A."
+  },
+  {
+    "value": "331",
+    "label": "331 — OSLO CAPITAL DTVM SA"
+  },
+  {
+    "value": "332",
+    "label": "332 — ACESSO SOLUÇÕES DE PAGAMENTO S.A. - INSTITUIÇÃO DE PAGAMENTO"
+  },
+  {
+    "value": "334",
+    "label": "334 — BANCO BESA S.A."
+  },
+  {
+    "value": "335",
+    "label": "335 — BANCO DIGIO"
+  },
+  {
+    "value": "336",
+    "label": "336 — BCO C6 S.A."
+  },
+  {
+    "value": "341",
+    "label": "341 — ITAÚ UNIBANCO S.A."
+  },
+  {
+    "value": "342",
+    "label": "342 — CREDITAS SCD"
+  },
+  {
+    "value": "348",
+    "label": "348 — BCO XP S.A."
+  },
+  {
+    "value": "349",
+    "label": "349 — AL5 S.A. SCFI"
+  },
+  {
+    "value": "350",
+    "label": "350 — COOPERATIVA DE CRÉDITO POPULAR DO BRASIL"
+  },
+  {
+    "value": "352",
+    "label": "352 — SANTANDER CTVM S.A."
+  },
+  {
+    "value": "355",
+    "label": "355 — ÓTIMO SCD S.A."
+  },
+  {
+    "value": "358",
+    "label": "358 — MIDWAY S.A. - SCFI"
+  },
+  {
+    "value": "359",
+    "label": "359 — ZEMA CFI S/A"
+  },
+  {
+    "value": "360",
+    "label": "360 — TRINUS CAPITAL DTVM"
+  },
+  {
+    "value": "362",
+    "label": "362 — CIELO IP S.A."
+  },
+  {
+    "value": "363",
+    "label": "363 — QI CTVM S.A."
+  },
+  {
+    "value": "364",
+    "label": "364 — EFÍ S.A. - IP"
+  },
+  {
+    "value": "365",
+    "label": "365 — BINANCE BRASIL"
+  },
+  {
+    "value": "366",
+    "label": "366 — BCO SOCIETE GENERALE BRASIL"
+  },
+  {
+    "value": "368",
+    "label": "368 — BCO CSF S.A."
+  },
+  {
+    "value": "370",
+    "label": "370 — BCO MIZUHO S.A."
+  },
+  {
+    "value": "373",
+    "label": "373 — UP.P SEP S.A."
+  },
+  {
+    "value": "374",
+    "label": "374 — REALIZE SCFI S.A."
+  },
+  {
+    "value": "376",
+    "label": "376 — BCO J.P. MORGAN S.A."
+  },
+  {
+    "value": "377",
+    "label": "377 — BMS SCD S.A."
+  },
+  {
+    "value": "378",
+    "label": "378 — BCO BRASILEIRO DE CRÉDITO S.A."
+  },
+  {
+    "value": "379",
+    "label": "379 — COOP COOPERFORTE LTDA."
+  },
+  {
+    "value": "380",
+    "label": "380 — PICPAY"
+  },
+  {
+    "value": "381",
+    "label": "381 — BCO MERCEDES-BENZ S.A."
+  },
+  {
+    "value": "382",
+    "label": "382 — FIDUCIA SCMEPP LTDA"
+  },
+  {
+    "value": "383",
+    "label": "383 — EBANX IP LTDA."
+  },
+  {
+    "value": "384",
+    "label": "384 — GLOBAL SCM LTDA"
+  },
+  {
+    "value": "385",
+    "label": "385 — CECM DOS TRAB.PORT. DA G.VITOR"
+  },
+  {
+    "value": "386",
+    "label": "386 — NU FINANCEIRA S.A. CFI"
+  },
+  {
+    "value": "389",
+    "label": "389 — BCO MERCANTIL DO BRASIL S.A."
+  },
+  {
+    "value": "390",
+    "label": "390 — BCO GM S.A."
+  },
+  {
+    "value": "391",
+    "label": "391 — CCR DE IBIAM"
+  },
+  {
+    "value": "393",
+    "label": "393 — BCO VOLKSWAGEN S.A"
+  },
+  {
+    "value": "394",
+    "label": "394 — BCO BRADESCO FINANC. S.A."
+  },
+  {
+    "value": "395",
+    "label": "395 — F D GOLD DTVM LTDA"
+  },
+  {
+    "value": "396",
+    "label": "396 — MAGALUPAY"
+  },
+  {
+    "value": "397",
+    "label": "397 — LISTO SCD S.A."
+  },
+  {
+    "value": "398",
+    "label": "398 — IDEAL CTVM S.A."
+  },
+  {
+    "value": "399",
+    "label": "399 — Kirton Bank"
+  },
+  {
+    "value": "400",
+    "label": "400 — COOP CREDITAG - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "401",
+    "label": "401 — IUGU IP S.A."
+  },
+  {
+    "value": "402",
+    "label": "402 — COBUCCIO S.A. SCFI"
+  },
+  {
+    "value": "403",
+    "label": "403 — CORA SCFI"
+  },
+  {
+    "value": "404",
+    "label": "404 — SUMUP SCFI S.A"
+  },
+  {
+    "value": "406",
+    "label": "406 — ACCREDITO SCD S.A."
+  },
+  {
+    "value": "407",
+    "label": "407 — SEFER INVESTIMENTOS DTVM LTDA - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "408",
+    "label": "408 — BONUSPAGO SCD S.A."
+  },
+  {
+    "value": "410",
+    "label": "410 — PLANNER SOCIEDADE DE CRÉDITO DIRETO"
+  },
+  {
+    "value": "411",
+    "label": "411 — VIA CERTA FINANCIADORA S.A. - CFI"
+  },
+  {
+    "value": "412",
+    "label": "412 — SOCIAL BANK S/A"
+  },
+  {
+    "value": "413",
+    "label": "413 — BCO BV S.A."
+  },
+  {
+    "value": "414",
+    "label": "414 — LEND SCD S.A."
+  },
+  {
+    "value": "415",
+    "label": "415 — BCO NACIONAL"
+  },
+  {
+    "value": "416",
+    "label": "416 — LAMARA SCD S.A."
+  },
+  {
+    "value": "418",
+    "label": "418 — ZIPDIN SCD S.A."
+  },
+  {
+    "value": "419",
+    "label": "419 — NUMBRS SCD S.A."
+  },
+  {
+    "value": "421",
+    "label": "421 — CC LAR CREDI"
+  },
+  {
+    "value": "422",
+    "label": "422 — BCO SAFRA S.A."
+  },
+  {
+    "value": "423",
+    "label": "423 — COLUNA S.A. DTVM"
+  },
+  {
+    "value": "425",
+    "label": "425 — SOCINAL S.A. CFI"
+  },
+  {
+    "value": "426",
+    "label": "426 — NEON FINANCEIRA - SCFI S.A."
+  },
+  {
+    "value": "427",
+    "label": "427 — CRED.UFES"
+  },
+  {
+    "value": "428",
+    "label": "428 — CREDSYSTEM SCD S.A."
+  },
+  {
+    "value": "430",
+    "label": "430 — CCR SEARA"
+  },
+  {
+    "value": "433",
+    "label": "433 — BR-CAPITAL DTVM S.A."
+  },
+  {
+    "value": "435",
+    "label": "435 — DELFINANCE SCD S.A."
+  },
+  {
+    "value": "438",
+    "label": "438 — TRUSTEE DTVM LTDA. - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "439",
+    "label": "439 — ID CTVM"
+  },
+  {
+    "value": "440",
+    "label": "440 — COOP CREDI&GENTE"
+  },
+  {
+    "value": "443",
+    "label": "443 — OCTA SCD S.A. - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "444",
+    "label": "444 — TRINUS SCD S.A."
+  },
+  {
+    "value": "445",
+    "label": "445 — PLANTAE CFI"
+  },
+  {
+    "value": "447",
+    "label": "447 — MIRAE ASSET (BRASIL) CCTVM LTDA."
+  },
+  {
+    "value": "448",
+    "label": "448 — HEMERA DTVM LTDA."
+  },
+  {
+    "value": "449",
+    "label": "449 — DM"
+  },
+  {
+    "value": "450",
+    "label": "450 — FITS IP"
+  },
+  {
+    "value": "451",
+    "label": "451 — J17 - SCD S/A"
+  },
+  {
+    "value": "452",
+    "label": "452 — CREDIFIT SCD S.A."
+  },
+  {
+    "value": "454",
+    "label": "454 — MÉRITO DTVM LTDA."
+  },
+  {
+    "value": "456",
+    "label": "456 — BCO MUFG BRASIL S.A."
+  },
+  {
+    "value": "457",
+    "label": "457 — UY3 SCD S/A"
+  },
+  {
+    "value": "458",
+    "label": "458 — HEDGE INVESTMENTS DTVM LTDA."
+  },
+  {
+    "value": "460",
+    "label": "460 — UNAVANTI SCD S/A"
+  },
+  {
+    "value": "461",
+    "label": "461 — ASAAS IP S.A."
+  },
+  {
+    "value": "462",
+    "label": "462 — STARK SCD S.A."
+  },
+  {
+    "value": "463",
+    "label": "463 — AZUMI DTVM"
+  },
+  {
+    "value": "464",
+    "label": "464 — BCO SUMITOMO MITSUI BRASIL S.A."
+  },
+  {
+    "value": "465",
+    "label": "465 — CAPITAL CONSIG SCD S.A."
+  },
+  {
+    "value": "467",
+    "label": "467 — MASTER S/A CCTVM - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "468",
+    "label": "468 — PORTOSEG S.A. CFI"
+  },
+  {
+    "value": "469",
+    "label": "469 — PICPAY INVEST"
+  },
+  {
+    "value": "470",
+    "label": "470 — CDC SCD S.A."
+  },
+  {
+    "value": "473",
+    "label": "473 — BCO CAIXA GERAL BRASIL S.A."
+  },
+  {
+    "value": "475",
+    "label": "475 — BCO YAMAHA MOTOR S.A."
+  },
+  {
+    "value": "476",
+    "label": "476 — IDEA MAKER IP LTDA"
+  },
+  {
+    "value": "477",
+    "label": "477 — CITIBANK N.A."
+  },
+  {
+    "value": "478",
+    "label": "478 — GAZINCRED S.A. SCFI"
+  },
+  {
+    "value": "479",
+    "label": "479 — BCO ITAUBANK S.A."
+  },
+  {
+    "value": "481",
+    "label": "481 — SUPERLÓGICA SCD S.A."
+  },
+  {
+    "value": "482",
+    "label": "482 — ARTTA SCD"
+  },
+  {
+    "value": "484",
+    "label": "484 — APEX DTVM"
+  },
+  {
+    "value": "487",
+    "label": "487 — DEUTSCHE BANK S.A.BCO ALEMAO"
+  },
+  {
+    "value": "488",
+    "label": "488 — JPMORGAN CHASE BANK"
+  },
+  {
+    "value": "495",
+    "label": "495 — BCO LA PROVINCIA B AIRES BCE"
+  },
+  {
+    "value": "496",
+    "label": "496 — BBVA BRASIL BI S.A."
+  },
+  {
+    "value": "505",
+    "label": "505 — BCO UBS BRASIL"
+  },
+  {
+    "value": "506",
+    "label": "506 — RJI"
+  },
+  {
+    "value": "507",
+    "label": "507 — SCFI EFÍ S.A."
+  },
+  {
+    "value": "508",
+    "label": "508 — AVENUE SECURITIES BI S.A."
+  },
+  {
+    "value": "509",
+    "label": "509 — CELCOIN IP S.A."
+  },
+  {
+    "value": "510",
+    "label": "510 — FFCRED SCD S.A."
+  },
+  {
+    "value": "511",
+    "label": "511 — MAGNUM SCD"
+  },
+  {
+    "value": "512",
+    "label": "512 — FINVEST DTVM"
+  },
+  {
+    "value": "513",
+    "label": "513 — ATF SCD S.A."
+  },
+  {
+    "value": "514",
+    "label": "514 — EXIM SCC"
+  },
+  {
+    "value": "516",
+    "label": "516 — PLACARPAY S.A - SCFI"
+  },
+  {
+    "value": "517",
+    "label": "517 — PAGUEVELOZ IP LTDA."
+  },
+  {
+    "value": "518",
+    "label": "518 — MERCADO CRÉDITO SCFI S.A."
+  },
+  {
+    "value": "519",
+    "label": "519 — LIONS TRUST DTVM"
+  },
+  {
+    "value": "520",
+    "label": "520 — SOMAPAY SCD S.A."
+  },
+  {
+    "value": "521",
+    "label": "521 — PEAK SEP S.A."
+  },
+  {
+    "value": "522",
+    "label": "522 — RED SCD S.A."
+  },
+  {
+    "value": "523",
+    "label": "523 — HR DIGITAL SCD"
+  },
+  {
+    "value": "524",
+    "label": "524 — WNT CAPITAL DTVM"
+  },
+  {
+    "value": "526",
+    "label": "526 — MONETARIE SCD"
+  },
+  {
+    "value": "527",
+    "label": "527 — ATICCA SCD S.A."
+  },
+  {
+    "value": "528",
+    "label": "528 — CBSF DTVM -EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "529",
+    "label": "529 — PINBANK IP"
+  },
+  {
+    "value": "530",
+    "label": "530 — SER FINANCE SCD S.A."
+  },
+  {
+    "value": "531",
+    "label": "531 — BMP SCD S.A."
+  },
+  {
+    "value": "532",
+    "label": "532 — FUTURO SCD"
+  },
+  {
+    "value": "533",
+    "label": "533 — SRM BANK"
+  },
+  {
+    "value": "534",
+    "label": "534 — EWALLY IP S.A."
+  },
+  {
+    "value": "535",
+    "label": "535 — OPEA SCD"
+  },
+  {
+    "value": "536",
+    "label": "536 — NEON PAGAMENTOS S.A. IP"
+  },
+  {
+    "value": "537",
+    "label": "537 — SELECT CREDIT SCMEPP LTDA."
+  },
+  {
+    "value": "538",
+    "label": "538 — SUDACRED SCD S.A."
+  },
+  {
+    "value": "539",
+    "label": "539 — SANTINVEST S.A. - CFI"
+  },
+  {
+    "value": "540",
+    "label": "540 — HBI SCD"
+  },
+  {
+    "value": "541",
+    "label": "541 — FDO GARANTIDOR CRÉDITOS"
+  },
+  {
+    "value": "542",
+    "label": "542 — CLOUDWALK IP LTDA"
+  },
+  {
+    "value": "543",
+    "label": "543 — COOPCRECE"
+  },
+  {
+    "value": "544",
+    "label": "544 — MULTICRED SCD S.A."
+  },
+  {
+    "value": "546",
+    "label": "546 — OKTO IP"
+  },
+  {
+    "value": "547",
+    "label": "547 — BNK DIGITAL SCD S.A."
+  },
+  {
+    "value": "548",
+    "label": "548 — RPW S.A. SCFI"
+  },
+  {
+    "value": "550",
+    "label": "550 — BEETELLER IP LTDA."
+  },
+  {
+    "value": "551",
+    "label": "551 — VERT DTVM LTDA."
+  },
+  {
+    "value": "552",
+    "label": "552 — UZZIPAY IP S.A."
+  },
+  {
+    "value": "553",
+    "label": "553 — PERCAPITAL SCD S.A."
+  },
+  {
+    "value": "554",
+    "label": "554 — BCO STONEX S.A."
+  },
+  {
+    "value": "555",
+    "label": "555 — PAN FINAN"
+  },
+  {
+    "value": "556",
+    "label": "556 — SAYGO CC S.A."
+  },
+  {
+    "value": "557",
+    "label": "557 — PAGPRIME IP"
+  },
+  {
+    "value": "559",
+    "label": "559 — KANASTRA CFI"
+  },
+  {
+    "value": "560",
+    "label": "560 — MAG IP LTDA."
+  },
+  {
+    "value": "561",
+    "label": "561 — PAY4FUN IP S.A."
+  },
+  {
+    "value": "562",
+    "label": "562 — AZIMUT BRASIL DTVM LTDA"
+  },
+  {
+    "value": "563",
+    "label": "563 — PROTEGE CASH"
+  },
+  {
+    "value": "564",
+    "label": "564 — ANKOR CFI S.A."
+  },
+  {
+    "value": "565",
+    "label": "565 — ÁGORA CTVM S.A."
+  },
+  {
+    "value": "566",
+    "label": "566 — FLAGSHIP IP LTDA"
+  },
+  {
+    "value": "567",
+    "label": "567 — MERCANTIL FINANCEIRA"
+  },
+  {
+    "value": "569",
+    "label": "569 — CONTA PRONTA IP"
+  },
+  {
+    "value": "571",
+    "label": "571 — MONTE BRAVO CTVM S.A."
+  },
+  {
+    "value": "572",
+    "label": "572 — ALL IN CRED SCD S.A."
+  },
+  {
+    "value": "573",
+    "label": "573 — OXY CH"
+  },
+  {
+    "value": "574",
+    "label": "574 — A55 SCD S.A."
+  },
+  {
+    "value": "575",
+    "label": "575 — DGBK CREDIT S.A. - SOCIEDADE DE CRÉDITO DIRETO."
+  },
+  {
+    "value": "576",
+    "label": "576 — MERCADO BITCOIN IP LTDA"
+  },
+  {
+    "value": "577",
+    "label": "577 — AF DESENVOLVE SP S.A."
+  },
+  {
+    "value": "579",
+    "label": "579 — QUADRA SCD"
+  },
+  {
+    "value": "585",
+    "label": "585 — SETHI SCD SA"
+  },
+  {
+    "value": "586",
+    "label": "586 — Z1 IP LTDA."
+  },
+  {
+    "value": "587",
+    "label": "587 — FIDD DTVM LTDA."
+  },
+  {
+    "value": "588",
+    "label": "588 — AVANCARD PROVER IP LTDA"
+  },
+  {
+    "value": "589",
+    "label": "589 — G5 SCD SA"
+  },
+  {
+    "value": "590",
+    "label": "590 — REPASSES FINANCEIROS E SOLUCOES TECNOLOGICAS IP S.A."
+  },
+  {
+    "value": "591",
+    "label": "591 — BANVOX DTVM - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "592",
+    "label": "592 — MAPS IP LTDA."
+  },
+  {
+    "value": "593",
+    "label": "593 — TRANSFEERA IP S.A."
+  },
+  {
+    "value": "594",
+    "label": "594 — ASA SCFI S.A."
+  },
+  {
+    "value": "595",
+    "label": "595 — IFOOD PAGO IP"
+  },
+  {
+    "value": "596",
+    "label": "596 — CACTVS IP S.A."
+  },
+  {
+    "value": "597",
+    "label": "597 — ISSUER IP LTDA."
+  },
+  {
+    "value": "598",
+    "label": "598 — KONECT SCD S/A"
+  },
+  {
+    "value": "599",
+    "label": "599 — AGORACRED S/A SCFI"
+  },
+  {
+    "value": "600",
+    "label": "600 — BCO LUSO BRASILEIRO S.A."
+  },
+  {
+    "value": "604",
+    "label": "604 — BCO INDUSTRIAL DO BRASIL S.A."
+  },
+  {
+    "value": "610",
+    "label": "610 — BCO VR S.A."
+  },
+  {
+    "value": "611",
+    "label": "611 — BCO PAULISTA S.A."
+  },
+  {
+    "value": "612",
+    "label": "612 — BCO GUANABARA S.A."
+  },
+  {
+    "value": "613",
+    "label": "613 — OMNI BANCO S.A."
+  },
+  {
+    "value": "614",
+    "label": "614 — SANTS SCD S.A."
+  },
+  {
+    "value": "615",
+    "label": "615 — SMART SOLUTIONS GROUP IP LTDA"
+  },
+  {
+    "value": "619",
+    "label": "619 — TRIO IP LTDA."
+  },
+  {
+    "value": "620",
+    "label": "620 — REVOLUT SCD S.A."
+  },
+  {
+    "value": "623",
+    "label": "623 — BANCO PAN"
+  },
+  {
+    "value": "626",
+    "label": "626 — BCO C6 CONSIG"
+  },
+  {
+    "value": "630",
+    "label": "630 — BANCO LETSBANK S.A. - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "632",
+    "label": "632 — Z-ON SCD S.A."
+  },
+  {
+    "value": "633",
+    "label": "633 — BCO RENDIMENTO S.A."
+  },
+  {
+    "value": "634",
+    "label": "634 — BCO TRIANGULO S.A."
+  },
+  {
+    "value": "636",
+    "label": "636 — GIRO - SCD S/A"
+  },
+  {
+    "value": "637",
+    "label": "637 — BCO SOFISA S.A."
+  },
+  {
+    "value": "643",
+    "label": "643 — BCO PINE S.A."
+  },
+  {
+    "value": "644",
+    "label": "644 — 321 SCD S.A."
+  },
+  {
+    "value": "646",
+    "label": "646 — DM SCFI"
+  },
+  {
+    "value": "651",
+    "label": "651 — PAGARE IP S.A."
+  },
+  {
+    "value": "653",
+    "label": "653 — BM PLENO S.A. - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "654",
+    "label": "654 — BCO DIGIMAIS S.A."
+  },
+  {
+    "value": "655",
+    "label": "655 — BCO VOTORANTIM S.A."
+  },
+  {
+    "value": "659",
+    "label": "659 — ONEKEY PAYMENTS IP S.A."
+  },
+  {
+    "value": "660",
+    "label": "660 — PAGME IP LTDA"
+  },
+  {
+    "value": "661",
+    "label": "661 — FREEX SCC S.A."
+  },
+  {
+    "value": "662",
+    "label": "662 — WE PAY OUT IP LTDA."
+  },
+  {
+    "value": "663",
+    "label": "663 — ACTUAL DTVM S.A."
+  },
+  {
+    "value": "665",
+    "label": "665 — STARK BANK S.A. - IP"
+  },
+  {
+    "value": "668",
+    "label": "668 — CELCOIN SCD"
+  },
+  {
+    "value": "669",
+    "label": "669 — TRANSFERO IP LTDA."
+  },
+  {
+    "value": "670",
+    "label": "670 — BSN"
+  },
+  {
+    "value": "671",
+    "label": "671 — ZERO IP"
+  },
+  {
+    "value": "672",
+    "label": "672 — STONE CFI S.A."
+  },
+  {
+    "value": "673",
+    "label": "673 — CCR DO AGRESTE ALAGOANO - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "674",
+    "label": "674 — HINOVA PAY IP S.A."
+  },
+  {
+    "value": "675",
+    "label": "675 — CASAS BAHIA PAY IP LTDA."
+  },
+  {
+    "value": "676",
+    "label": "676 — DUFRIO CFI S.A."
+  },
+  {
+    "value": "677",
+    "label": "677 — GOWD IP LTDA."
+  },
+  {
+    "value": "678",
+    "label": "678 — FIDEM SCD S/A"
+  },
+  {
+    "value": "679",
+    "label": "679 — PAY IP S.A."
+  },
+  {
+    "value": "680",
+    "label": "680 — DELTA GLOBAL SCD S.A."
+  },
+  {
+    "value": "681",
+    "label": "681 — MT IP S.A."
+  },
+  {
+    "value": "682",
+    "label": "682 — MONERY IP S.A."
+  },
+  {
+    "value": "683",
+    "label": "683 — BRASIL CASH IP S.A."
+  },
+  {
+    "value": "684",
+    "label": "684 — HARMOS S.A. - SCFI"
+  },
+  {
+    "value": "685",
+    "label": "685 — TYCOON TECHNOLOGY IIP S.A"
+  },
+  {
+    "value": "686",
+    "label": "686 — BIZ IP LTDA."
+  },
+  {
+    "value": "687",
+    "label": "687 — INCO SEP S.A."
+  },
+  {
+    "value": "688",
+    "label": "688 — KIKAI SCD S.A."
+  },
+  {
+    "value": "690",
+    "label": "690 — BK IP S.A."
+  },
+  {
+    "value": "692",
+    "label": "692 — ZYDI"
+  },
+  {
+    "value": "693",
+    "label": "693 — EFEX IP"
+  },
+  {
+    "value": "694",
+    "label": "694 — WOOVI IP LTDA."
+  },
+  {
+    "value": "695",
+    "label": "695 — BEES IP LTDA."
+  },
+  {
+    "value": "696",
+    "label": "696 — LOAN BRASIL SCD S.A."
+  },
+  {
+    "value": "697",
+    "label": "697 — JM CORRETORA DE CÂMBIO"
+  },
+  {
+    "value": "698",
+    "label": "698 — BIT SCD S.A."
+  },
+  {
+    "value": "699",
+    "label": "699 — BFC SCD S.A."
+  },
+  {
+    "value": "700",
+    "label": "700 — MW IP LTDA. - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "701",
+    "label": "701 — INTEGRAÇÃO DE CRÉDITO E COBRANÇA SCD"
+  },
+  {
+    "value": "703",
+    "label": "703 — GETNET IP"
+  },
+  {
+    "value": "704",
+    "label": "704 — FESTOR IP LTDA."
+  },
+  {
+    "value": "707",
+    "label": "707 — BCO DAYCOVAL S.A"
+  },
+  {
+    "value": "708",
+    "label": "708 — BCO INDUSCRED DE INVESTIM. S/A"
+  },
+  {
+    "value": "712",
+    "label": "712 — OURIBANK S.A."
+  },
+  {
+    "value": "714",
+    "label": "714 — FINAMAX S.A. CFI"
+  },
+  {
+    "value": "719",
+    "label": "719 — BANCO MASTER MÚLTIPLO - EM LIQUIDAÇÃO EXTRAJUDICIAL"
+  },
+  {
+    "value": "741",
+    "label": "741 — BCO RIBEIRAO PRETO S.A."
+  },
+  {
+    "value": "743",
+    "label": "743 — BANCO SEMEAR"
+  },
+  {
+    "value": "745",
+    "label": "745 — BCO CITIBANK S.A."
+  },
+  {
+    "value": "747",
+    "label": "747 — BCO RABOBANK INTL BRASIL S.A."
+  },
+  {
+    "value": "748",
+    "label": "748 — BANCO COOPERATIVO SICREDI"
+  },
+  {
+    "value": "751",
+    "label": "751 — Scotiabank Brasil"
+  },
+  {
+    "value": "752",
+    "label": "752 — BCO BNP PARIBAS BRASIL S A"
+  },
+  {
+    "value": "753",
+    "label": "753 — NOVO BCO CONTINENTAL S.A. - BM"
+  },
+  {
+    "value": "754",
+    "label": "754 — BANCO SISTEMA"
+  },
+  {
+    "value": "755",
+    "label": "755 — BOFA MERRILL LYNCH BM S.A."
+  },
+  {
+    "value": "756",
+    "label": "756 — BANCO SICOOB S.A."
+  },
+  {
+    "value": "757",
+    "label": "757 — BCO KEB HANA DO BRASIL S.A."
+  },
+  {
+    "value": "759",
+    "label": "759 — BANSUR JM SCD S.A."
+  },
+  {
+    "value": "760",
+    "label": "760 — EMCASH SERV FINANC SEP S.A."
+  },
+  {
+    "value": "761",
+    "label": "761 — URBANO S.A. SCFI"
+  },
+  {
+    "value": "763",
+    "label": "763 — VUE IP S.A."
+  },
+  {
+    "value": "764",
+    "label": "764 — INDEPENDÊNCIA CC"
+  },
+  {
+    "value": "765",
+    "label": "765 — PAGSMILE IP LTDA."
+  },
+  {
+    "value": "766",
+    "label": "766 — LB PAY IP LTDA"
+  },
+  {
+    "value": "767",
+    "label": "767 — QORE"
+  },
+  {
+    "value": "768",
+    "label": "768 — BECKER FINANCEIRA SA - CFI"
+  },
+  {
+    "value": "769",
+    "label": "769 — 99PAY IP S.A."
+  },
+  {
+    "value": "770",
+    "label": "770 — V3 IP S.A."
+  },
+  {
+    "value": "771",
+    "label": "771 — WX IP LTDA."
+  },
+  {
+    "value": "773",
+    "label": "773 — KIWIFY IP"
+  },
+  {
+    "value": "774",
+    "label": "774 — MOVA SEP S.A."
+  },
+  {
+    "value": "775",
+    "label": "775 — CONTAAZUL IP LTDA."
+  },
+  {
+    "value": "776",
+    "label": "776 — ONCRED - SCD S.A."
+  },
+  {
+    "value": "778",
+    "label": "778 — PB SCD"
+  },
+  {
+    "value": "780",
+    "label": "780 — SAFETYPAY BRASIL IP LTDA"
+  },
+  {
+    "value": "781",
+    "label": "781 — BASE DTVM"
+  },
+  {
+    "value": "783",
+    "label": "783 — SWAP IP S.A."
+  },
+  {
+    "value": "785",
+    "label": "785 — LA FINTECA IP LTDA"
+  },
+  {
+    "value": "786",
+    "label": "786 — AWX BRASIL IP LTDA."
+  },
+  {
+    "value": "787",
+    "label": "787 — ATTRUS IP S/A"
+  },
+  {
+    "value": "788",
+    "label": "788 — PROTOTYPE IP S.A."
+  },
+  {
+    "value": "789",
+    "label": "789 — APUSDIGITAL IP LTDA."
+  },
+  {
+    "value": "790",
+    "label": "790 — MAX IP"
+  },
+  {
+    "value": "791",
+    "label": "791 — MULTIPLIKE FINANCEIRA S.A. SCFI"
+  },
+  {
+    "value": "792",
+    "label": "792 — NIXFIN SCD"
+  },
+  {
+    "value": "793",
+    "label": "793 — MAGALUPAY SCFI S.A."
+  },
+  {
+    "value": "794",
+    "label": "794 — ATUAL CC LTDA"
+  },
+  {
+    "value": "795",
+    "label": "795 — BANCO TRATON BRASIL S.A."
+  },
+  {
+    "value": "796",
+    "label": "796 — ASAAS CFI S.A"
+  },
+  {
+    "value": "798",
+    "label": "798 — NSTECH IP S.A."
+  },
+  {
+    "value": "803",
+    "label": "803 — DLOCAL BRASIL IP S.A."
+  },
+  {
+    "value": "804",
+    "label": "804 — MÊNTORE IP S.A."
+  },
+  {
+    "value": "805",
+    "label": "805 — BCO DES. DE MG S.A."
+  },
+  {
+    "value": "807",
+    "label": "807 — GUARDIAN SCD S.A."
+  },
+  {
+    "value": "808",
+    "label": "808 — RENDIMENTO SCD"
+  }
+]

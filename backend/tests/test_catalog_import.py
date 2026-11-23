@@ -37,3 +37,18 @@ def test_import_saves_drafts_and_deduplicates_by_parent(catalog_client):
     )
     assert completed.status_code == 200
     assert completed.json()["code"] == categories[0]["code"]
+
+    account_updated = client.put(
+        f"{base}/bank-accounts/{account['id']}",
+        json={
+            "label": "Unidade revisada",
+            "bank_code": "001",
+            "branch": "0001",
+            "account_number_masked": "**1234",
+            "holder_name": "Titular sintético",
+        },
+    )
+    assert account_updated.status_code == 200
+    stored = client.get(f"{base}/bank-accounts/{account['id']}").json()
+    assert stored["label"] == "Unidade revisada"
+    assert stored["holder_name"] == "Titular sintético"

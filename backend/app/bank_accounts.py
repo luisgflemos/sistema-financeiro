@@ -22,6 +22,7 @@ class BankAccountInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     code: RequiredText | None = None
+    label: RequiredText | None = None
     bank_code: RequiredText
     branch: RequiredText
     account_number_masked: MaskedAccount
@@ -125,11 +126,11 @@ def create_account(
                     text(
                         """
                         INSERT INTO bank_accounts (
-                            organization_id, code, bank_code, branch, account_number_masked,
+                            organization_id, code, label, bank_code, branch, account_number_masked,
                             holder_name, currency, active
                         )
                         VALUES (
-                            :org, :code, :bank_code, :branch, :account_number_masked,
+                            :org, :code, :label, :bank_code, :branch, :account_number_masked,
                             :holder_name, :currency, :active
                         )
                         RETURNING *
@@ -160,15 +161,14 @@ def update_account(
             previous = require_account(connection, organization_id, account_id, lock=True)
             values = payload.model_dump()
             values["code"] = payload.code or previous.code
-            current = BankAccount(
-                id=account_id, organization_id=organization_id, label=previous.label, **values
-            )
+            values["label"] = payload.label or previous.label
+            current = BankAccount(id=account_id, organization_id=organization_id, **values)
             if current != previous:
                 connection.execute(
                     text(
                         """
                         UPDATE bank_accounts SET
-                            code = :code, bank_code = :bank_code, branch = :branch,
+                            code = :code, label = :label, bank_code = :bank_code, branch = :branch,
                             account_number_masked = :account_number_masked,
                             holder_name = :holder_name, currency = :currency, active = :active
                         WHERE id = :id AND organization_id = :org

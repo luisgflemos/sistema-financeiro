@@ -1,3 +1,5 @@
+import banks from "./banks.json";
+
 export type CatalogId =
   | "bank-accounts"
   | "categories"
@@ -45,10 +47,11 @@ export const catalogs: Record<CatalogId, Catalog> = {
   "bank-accounts": {
     label: "Contas bancárias",
     singular: "conta bancária",
-    titleField: "holder_name",
+    titleField: "label",
     fields: [
+      { name: "label", label: "Nome da conta / unidade", required: true },
       { name: "holder_name", label: "Titular", required: true },
-      { name: "bank_code", label: "Código do banco", required: true },
+      { name: "bank_code", label: "Banco", required: true, options: banks },
       { name: "branch", label: "Agência", required: true },
       {
         name: "account_number_masked",

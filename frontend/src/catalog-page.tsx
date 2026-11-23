@@ -130,7 +130,7 @@ export function CatalogPage({
   );
 
   function title(record: RecordData) {
-    return String(record[catalog.titleField] ?? record.label ?? record.code);
+    return String(record[catalog.titleField] ?? record.holder_name ?? record.code);
   }
 
   function pending(record: RecordData) {
@@ -223,7 +223,7 @@ export function CatalogPage({
                   <thead>
                     <tr>
                       <th scope="col">
-                        {id === "bank-accounts" ? "Titular" : "Nome"}
+                        {id === "bank-accounts" ? "Conta / unidade" : "Nome"}
                       </th>
                       {columns.map((column) => (
                         <th key={column.name} scope="col">
@@ -336,12 +336,15 @@ export function CatalogPage({
                               label: `${item.code} · ${item.name}`,
                             }))
                         : field.options;
+                      const availableOptions = options && value && !options.some((item) => item.value === value)
+                        ? [...options, { value, label: value }]
+                        : options;
                       return (
                         <div className="field" key={field.name}>
                           <label htmlFor={`${uid}-${field.name}`}>
                             {field.label}
                           </label>
-                          {options ? (
+                          {availableOptions ? (
                             <select
                               id={`${uid}-${field.name}`}
                               required={field.required}
@@ -356,7 +359,7 @@ export function CatalogPage({
                               <option value="">
                                 {field.required ? "Selecione" : "Nenhum"}
                               </option>
-                              {options.map((option) => (
+                              {availableOptions.map((option) => (
                                 <option key={option.value} value={option.value}>
                                   {option.label}
                                 </option>
