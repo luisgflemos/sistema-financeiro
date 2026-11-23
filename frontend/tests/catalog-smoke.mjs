@@ -7,7 +7,9 @@ try {
   await page.goto("http://127.0.0.1:5173");
   assert.equal(await page.title(), "Finare | Cadastros");
   await page.getByText("Finare", { exact: true }).waitFor();
-  await page.getByRole("button", { name: "Nova organização", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Nova organização", exact: true })
+    .click();
   await page.getByLabel("Nome da organização").fill("Organização sintética");
   await page.getByRole("button", { name: "Criar organização" }).click();
 
@@ -32,7 +34,9 @@ try {
     .getByRole("heading", { name: "Contas Bancárias", level: 1 })
     .waitFor();
   assert.equal(await page.getByRole("dialog").count(), 0);
-  await page.getByRole("button", { name: "Novo cadastro", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Novo cadastro", exact: true })
+    .click();
   await fill({
     "Nome da conta": "Conta sintética",
     Agência: "0000",
@@ -68,7 +72,9 @@ try {
     await page.getByRole("navigation").getByText("Subclasses").count(),
     0,
   );
-  await page.getByRole("button", { name: "Nova classificação", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Nova classificação", exact: true })
+    .click();
   await fill({ Nome: "Receitas de teste" });
   await page.getByLabel("Natureza", { exact: true }).selectOption("REVENUE");
   await save();
@@ -104,10 +110,14 @@ try {
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
 
   await open("Centro de Custos");
-  await page.getByRole("button", { name: "Novo cadastro", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Novo cadastro", exact: true })
+    .click();
   await fill({ Nome: "Sede de teste" });
   await save();
-  await page.getByRole("button", { name: "Novo cadastro", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Novo cadastro", exact: true })
+    .click();
   await fill({ Nome: "Unidade de teste" });
   const parents = page.getByLabel("Centro superior", { exact: true });
   const parent = await parents
@@ -117,7 +127,9 @@ try {
   await save();
 
   await open("Clientes e Fornecedores");
-  await page.getByRole("button", { name: "Novo cadastro", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Novo cadastro", exact: true })
+    .click();
   await fill({ Nome: "Fornecedor sintético", "E-mail": "teste@example.test" });
   await page.getByLabel("Tipo", { exact: true }).selectOption("SUPPLIER");
   await save();

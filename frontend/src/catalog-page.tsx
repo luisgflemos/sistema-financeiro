@@ -184,142 +184,153 @@ export function CatalogPage({
   }
 
   const editorForm = (
-<section className="panel editor modal-editor" aria-labelledby={`${uid}-editor`}>
-            <h2 id={`${uid}-editor`} ref={formTitle} tabIndex={-1} className="sr-only">
-              {editing ? "Editar cadastro" : `Adicionar ${catalog.singular}`}
-            </h2>
-            {needsCategory ? (
-              <p>
-                Reative a classificação para cadastrar uma subclassificação.
-              </p>
-            ) : (
-              <form onSubmit={submit}>
-                <fieldset disabled={saving}>
-                  <div className="fields">
-                    {fields.map((field) => {
-                      const value =
-                        field.name === "account_number_masked" &&
-                        draft.account_number
-                          ? "**" + String(draft.account_number).slice(-4)
-                          : String(draft[field.name] ?? "");
-                      const options = field.reference
-                        ? records
-                            .filter(
-                              (item) =>
-                                item.id !== editing?.id &&
-                                (item.active || item.id === value),
-                            )
-                            .map((item) => ({
-                              value: item.id,
-                              label: `${item.code} · ${item.name}`,
-                            }))
-                        : field.options;
-                      const availableOptions =
-                        options &&
-                        value &&
-                        !options.some((item) => item.value === value)
-                          ? [...options, { value, label: value }]
-                          : options;
-                      return (
-                        <div className="field" key={field.name}>
-                          <label htmlFor={`${uid}-${field.name}`}>
-                            {field.label}
-                          </label>
-                          {availableOptions &&
-                          (field.name === "bank_code" ||
-                            field.name === "currency") ? (
-                            <SearchSelect
-                              id={`${uid}-${field.name}`}
-                              value={value}
-                              options={availableOptions}
-                              required={field.required}
-                              onChange={(selected) =>
-                                setDraft({ ...draft, [field.name]: selected })
-                              }
-                            />
-                          ) : availableOptions ? (
-                            <select
-                              id={`${uid}-${field.name}`}
-                              required={field.required}
-                              value={value}
-                              onChange={(event) =>
-                                setDraft({
-                                  ...draft,
-                                  [field.name]: event.target.value,
-                                })
-                              }
-                            >
-                              <option value="">
-                                {field.required ? "Selecione" : "Nenhum"}
-                              </option>
-                              {availableOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              id={`${uid}-${field.name}`}
-                              value={value}
-                              type={field.type ?? "text"}
-                              required={field.required}
-                              readOnly={field.readOnly}
-                              placeholder={field.placeholder}
-                              pattern={field.pattern}
-                              maxLength={field.maxLength}
-                              onChange={(event) =>
-                                setDraft({
-                                  ...draft,
-                                  [field.name]: event.target.value,
-                                })
-                              }
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="active-toggle">
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={Boolean(draft.active)}
-                      aria-label="Cadastro ativo"
-                      className="toggle"
-                      onClick={() =>
-                        setDraft({ ...draft, active: !draft.active })
-                      }
-                    >
-                      <span />
-                    </button>
-                    <span>Cadastro {draft.active ? "ativo" : "inativo"}</span>
-                  </div>
-                  <div className="actions">
-                    <button className="primary">
-                      {saving ? "Salvando…" : "Salvar cadastro"}
-                    </button>
-                    {(editing || formOpen || editorOnly) && (
-                      <button type="button" onClick={() => editorOnly ? onCancel?.() : setFormOpen(false)}>
-                        Cancelar
-                      </button>
+    <section
+      className="panel editor modal-editor"
+      aria-labelledby={`${uid}-editor`}
+    >
+      <h2
+        id={`${uid}-editor`}
+        ref={formTitle}
+        tabIndex={-1}
+        className="sr-only"
+      >
+        {editing ? "Editar cadastro" : `Adicionar ${catalog.singular}`}
+      </h2>
+      {needsCategory ? (
+        <p>Reative a classificação para cadastrar uma subclassificação.</p>
+      ) : (
+        <form onSubmit={submit}>
+          <fieldset disabled={saving}>
+            <div className="fields">
+              {fields.map((field) => {
+                const value =
+                  field.name === "account_number_masked" && draft.account_number
+                    ? "**" + String(draft.account_number).slice(-4)
+                    : String(draft[field.name] ?? "");
+                const options = field.reference
+                  ? records
+                      .filter(
+                        (item) =>
+                          item.id !== editing?.id &&
+                          (item.active || item.id === value),
+                      )
+                      .map((item) => ({
+                        value: item.id,
+                        label: `${item.code} · ${item.name}`,
+                      }))
+                  : field.options;
+                const availableOptions =
+                  options &&
+                  value &&
+                  !options.some((item) => item.value === value)
+                    ? [...options, { value, label: value }]
+                    : options;
+                return (
+                  <div className="field" key={field.name}>
+                    <label htmlFor={`${uid}-${field.name}`}>
+                      {field.label}
+                    </label>
+                    {availableOptions &&
+                    (field.name === "bank_code" ||
+                      field.name === "currency") ? (
+                      <SearchSelect
+                        id={`${uid}-${field.name}`}
+                        value={value}
+                        options={availableOptions}
+                        required={field.required}
+                        onChange={(selected) =>
+                          setDraft({ ...draft, [field.name]: selected })
+                        }
+                      />
+                    ) : availableOptions ? (
+                      <select
+                        id={`${uid}-${field.name}`}
+                        required={field.required}
+                        value={value}
+                        onChange={(event) =>
+                          setDraft({
+                            ...draft,
+                            [field.name]: event.target.value,
+                          })
+                        }
+                      >
+                        <option value="">
+                          {field.required ? "Selecione" : "Nenhum"}
+                        </option>
+                        {availableOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        id={`${uid}-${field.name}`}
+                        value={value}
+                        type={field.type ?? "text"}
+                        required={field.required}
+                        readOnly={field.readOnly}
+                        placeholder={field.placeholder}
+                        pattern={field.pattern}
+                        maxLength={field.maxLength}
+                        onChange={(event) =>
+                          setDraft({
+                            ...draft,
+                            [field.name]: event.target.value,
+                          })
+                        }
+                      />
                     )}
                   </div>
-                </fieldset>
-              </form>
-            )}
-            {saveError && (
-              <p className="error" role="alert">
-                {saveError}
-              </p>
-            )}
-
-          </section>
+                );
+              })}
+            </div>
+            <div className="active-toggle">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={Boolean(draft.active)}
+                aria-label="Cadastro ativo"
+                className="toggle"
+                onClick={() => setDraft({ ...draft, active: !draft.active })}
+              >
+                <span />
+              </button>
+              <span>Cadastro {draft.active ? "ativo" : "inativo"}</span>
+            </div>
+            <div className="actions">
+              <button className="primary">
+                {saving ? "Salvando…" : "Salvar cadastro"}
+              </button>
+              {(editing || formOpen || editorOnly) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    editorOnly ? onCancel?.() : setFormOpen(false)
+                  }
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </fieldset>
+        </form>
+      )}
+      {saveError && (
+        <p className="error" role="alert">
+          {saveError}
+        </p>
+      )}
+    </section>
   );
 
   return (
     <>
-      {!editorOnly && <p className="notice" role="status">{notice}</p>}
+      {!editorOnly && (
+        <p className="notice" role="status">
+          {notice}
+        </p>
+      )}
       {!editorOnly && (
         <div className="page-heading">
           {category ? <h3>{catalog.label}</h3> : <h1>{catalog.label}</h1>}
@@ -352,9 +363,7 @@ export function CatalogPage({
           </button>
         </>
       ) : (
-        <div
-          className={editorOnly ? "editor-only" : "catalog-list"}
-        >
+        <div className={editorOnly ? "editor-only" : "catalog-list"}>
           {!editorOnly && (
             <section
               className="panel listing"
@@ -483,15 +492,22 @@ export function CatalogPage({
               )}
             </section>
           )}
-          {editorOnly ? editorForm : formOpen ? (
+          {editorOnly ? (
+            editorForm
+          ) : formOpen ? (
             <Modal
-              title={editing ? `Editar ${catalog.singular}` : `Novo cadastro de ${catalog.singular}`}
+              title={
+                editing
+                  ? `Editar ${catalog.singular}`
+                  : `Novo cadastro de ${catalog.singular}`
+              }
               busy={saving}
               onClose={() => setFormOpen(false)}
             >
               {editorForm}
             </Modal>
-          ) : null}      </div>
+          ) : null}{" "}
+        </div>
       )}
     </>
   );

@@ -229,7 +229,11 @@ function App({ onLogout }: { onLogout?: () => void }) {
           ) : !organizationId ? (
             <>
               <h1>Organizações</h1>
-              <button type="button" className="primary" onClick={() => setCreating(true)}>
+              <button
+                type="button"
+                className="primary"
+                onClick={() => setCreating(true)}
+              >
                 Nova organização
               </button>
             </>

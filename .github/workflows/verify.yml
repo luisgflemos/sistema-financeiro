@@ -50,17 +50,6 @@ jobs:
           docker compose exec -T -e POSTGRES_DB=migration_check api alembic downgrade base
           docker compose exec -T -e POSTGRES_DB=migration_check api alembic upgrade head
           docker compose exec -T api pytest
-      - name: Formatação
-        if: failure()
-        run: |
-          docker compose exec -T web node --input-type=module -e '
-          import prettier from "prettier";
-          import {readFileSync} from "node:fs";
-          for (const path of ["src/modal.tsx", "src/catalog-page.tsx", "src/classification-tree.tsx", "src/main.tsx", "tests/catalog-smoke.mjs"]) {
-            const source = readFileSync(path, "utf8");
-            const output = await prettier.format(source, { filepath: path });
-            if (source !== output) console.log("FORMAT " + path + " " + Buffer.from(output).toString("base64"));
-          }'
       - name: Diagnosticar falha
         if: failure()
         run: |

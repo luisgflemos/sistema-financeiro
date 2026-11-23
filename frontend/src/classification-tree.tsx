@@ -88,7 +88,9 @@ export function ClassificationTree({
 
   return (
     <>
-      <p className="notice" role="status">{notice}</p>
+      <p className="notice" role="status">
+        {notice}
+      </p>
       <div className="page-heading">
         <h1>Classificações</h1>
         <button type="button" className="primary" onClick={() => openEditor()}>
@@ -268,36 +270,46 @@ export function ClassificationTree({
               </table>
             </div>
           </section>
-          {formOpen && <Modal
-            title={editor.record ? "Editar cadastro" : editor.category ? "Nova subclassificação" : "Nova classificação"}
-            onClose={() => setFormOpen(false)}
-          >
-            {editor.category && (
-              <p className="editor-context">
-                Subclassificação de{" "}
-                <strong>{String(editor.category.name)}</strong>
-              </p>
-            )}
-            <CatalogPage
-              key={editor.key}
-              id={editor.category ? "subcategories" : "categories"}
-              organizationId={organizationId}
-              category={editor.category}
-              initialRecord={editor.record}
-              editorOnly
-              onCancel={() => setFormOpen(false)}
-              onSaved={(saved) => {
-                const update = (items: RecordData[]) =>
-                  items.some((item) => item.id === saved.id)
-                    ? items.map((item) => (item.id === saved.id ? saved : item))
-                    : [...items, saved];
-                if (editor.category) setChildren(update);
-                else setCategories(update);
-                setFormOpen(false);
-                setNotice("Cadastro salvo.");
-              }}
-            />
-          </Modal>}
+          {formOpen && (
+            <Modal
+              title={
+                editor.record
+                  ? "Editar cadastro"
+                  : editor.category
+                    ? "Nova subclassificação"
+                    : "Nova classificação"
+              }
+              onClose={() => setFormOpen(false)}
+            >
+              {editor.category && (
+                <p className="editor-context">
+                  Subclassificação de{" "}
+                  <strong>{String(editor.category.name)}</strong>
+                </p>
+              )}
+              <CatalogPage
+                key={editor.key}
+                id={editor.category ? "subcategories" : "categories"}
+                organizationId={organizationId}
+                category={editor.category}
+                initialRecord={editor.record}
+                editorOnly
+                onCancel={() => setFormOpen(false)}
+                onSaved={(saved) => {
+                  const update = (items: RecordData[]) =>
+                    items.some((item) => item.id === saved.id)
+                      ? items.map((item) =>
+                          item.id === saved.id ? saved : item,
+                        )
+                      : [...items, saved];
+                  if (editor.category) setChildren(update);
+                  else setCategories(update);
+                  setFormOpen(false);
+                  setNotice("Cadastro salvo.");
+                }}
+              />
+            </Modal>
+          )}
         </div>
       )}
     </>
