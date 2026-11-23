@@ -62,3 +62,5 @@ Criar uma aplicação web simples, rápida, acessível e auditável onde o **ext
 ## Seleções da interface
 
 Novas caixas de seleção devem permitir filtrar por trechos do nome ou código, com busca sem distinção de acentos e suporte a teclado. Reutilizar o componente SearchSelect.
+
+Títulos de páginas e menus usam iniciais maiúsculas nas palavras principais. Padrão aprovado: Contas Bancárias, Centro de Custos, Clientes e Fornecedores e Classificações.

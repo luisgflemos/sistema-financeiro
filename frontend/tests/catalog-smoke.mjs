@@ -27,7 +27,7 @@ try {
   }
 
   await page
-    .getByRole("heading", { name: "Contas bancárias", level: 1 })
+    .getByRole("heading", { name: "Contas Bancárias", level: 1 })
     .waitFor();
   await fill({
     "Nome da conta": "Conta sintética",
@@ -80,7 +80,7 @@ try {
     .click();
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
 
-  await open("Centros de custos");
+  await open("Centro de Custos");
   await fill({ Nome: "Sede de teste" });
   await save();
   await fill({ Nome: "Unidade de teste" });
@@ -91,14 +91,14 @@ try {
   await parents.selectOption(parent);
   await save();
 
-  await open("Clientes e fornecedores");
+  await open("Clientes e Fornecedores");
   await fill({ Nome: "Fornecedor sintético", "E-mail": "teste@example.test" });
   await page.getByLabel("Tipo", { exact: true }).selectOption("SUPPLIER");
   await save();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  await open("Clientes e fornecedores");
+  await open("Clientes e Fornecedores");
   await page.getByRole("row", { name: /Fornecedor sintético/ }).waitFor();
   assert.equal(
     await page.evaluate(

@@ -43,7 +43,7 @@ const description: Field = { name: "description", label: "Descrição" };
 
 export const catalogs: Record<CatalogId, Catalog> = {
   "bank-accounts": {
-    label: "Contas bancárias",
+    label: "Contas Bancárias",
     singular: "conta bancária",
     titleField: "label",
     fields: [
@@ -131,7 +131,7 @@ export const catalogs: Record<CatalogId, Catalog> = {
     columns: [{ name: "code", label: "Código" }],
   },
   "cost-centers": {
-    label: "Centros de custos",
+    label: "Centro de Custos",
     singular: "centro de custos",
     titleField: "name",
     fields: [
@@ -148,7 +148,7 @@ export const catalogs: Record<CatalogId, Catalog> = {
     ],
   },
   parties: {
-    label: "Clientes e fornecedores",
+    label: "Clientes e Fornecedores",
     singular: "cliente ou fornecedor",
     titleField: "display_name",
     fields: [
