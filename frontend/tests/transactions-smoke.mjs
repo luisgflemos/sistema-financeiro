@@ -133,6 +133,11 @@ try {
     .getByRole("dialog")
     .getByText("TARIFA SINTETICA", { exact: true })
     .waitFor();
+  assert.equal(
+    await page.getByRole("dialog").evaluate((element) => element.scrollTop),
+    0,
+    "O próximo lançamento deve abrir com os dados originais visíveis no topo",
+  );
   await page.screenshot({
     path: "import-layout-transaction-detail.png",
     fullPage: true,

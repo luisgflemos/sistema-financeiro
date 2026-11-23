@@ -565,6 +565,7 @@ export function TransactionsPage({
       )}
       {selected && (
         <Modal
+          key={selected.id}
           title={
             selected.version ? "Revisar Identificação" : "Identificar Movimento"
           }
