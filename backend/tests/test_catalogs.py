@@ -18,7 +18,7 @@ def organizations(catalog_client):
             "categories",
             "categories",
             {"code": "receita", "name": "Receita", "kind": "REVENUE"},
-            {"valid_from": "2026-01-01", "valid_to": "2026-12-31"},
+            {"description": "Receitas da operação"},
         ),
         (
             "cost-centers",

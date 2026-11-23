@@ -38,10 +38,7 @@ type Catalog = {
 const code: Field = { name: "code", label: "Código", required: true };
 const name: Field = { name: "name", label: "Nome", required: true };
 
-const dates: Field[] = [
-  { name: "valid_from", label: "Início da vigência", type: "date" },
-  { name: "valid_to", label: "Fim da vigência", type: "date" },
-];
+const description: Field = { name: "description", label: "Descrição" };
 
 export const catalogs: Record<CatalogId, Catalog> = {
   "bank-accounts": {
@@ -91,7 +88,7 @@ export const catalogs: Record<CatalogId, Catalog> = {
           { value: "NEUTRAL", label: "Neutra" },
         ],
       },
-      ...dates,
+      description,
     ],
     columns: [
       { name: "code", label: "Código" },
@@ -102,7 +99,7 @@ export const catalogs: Record<CatalogId, Catalog> = {
     label: "Subclassificações",
     singular: "subclassificação",
     titleField: "name",
-    fields: [code, name, ...dates],
+    fields: [code, name, description],
     columns: [{ name: "code", label: "Código" }],
   },
   "cost-centers": {

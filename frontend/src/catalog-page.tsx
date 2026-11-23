@@ -386,6 +386,29 @@ export function CatalogPage({
                       );
                     })}
                   </div>
+                  {id === "categories" || id === "subcategories" ? (
+                    <fieldset className="active-choice">
+                      <legend>Ativo</legend>
+                      <label>
+                        <input
+                          type="radio"
+                          name={`${uid}-active`}
+                          checked={Boolean(draft.active)}
+                          onChange={() => setDraft({ ...draft, active: true })}
+                        />
+                        Sim
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          name={`${uid}-active`}
+                          checked={!draft.active}
+                          onChange={() => setDraft({ ...draft, active: false })}
+                        />
+                        Não
+                      </label>
+                    </fieldset>
+                  ) : (
                   <label className="checkbox">
                     <input
                       type="checkbox"
@@ -396,6 +419,7 @@ export function CatalogPage({
                     />
                     Cadastro ativo
                   </label>
+                  )}
                   <div className="actions">
                     <button className="primary">
                       {saving ? "Salvando…" : "Salvar cadastro"}

@@ -23,6 +23,7 @@ class NamedCatalog(CatalogInput):
 
 
 class DatedCatalog(NamedCatalog):
+    description: str | None = None
     valid_from: date | None = None
     valid_to: date | None = None
 

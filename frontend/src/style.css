@@ -609,3 +609,25 @@ td:first-child {
 .nested-grid {
   grid-template-columns: minmax(0, 1fr);
 }
+
+.active-choice {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.active-choice legend {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.active-choice label {
+  display: flex;
+  align-items: center;
+}
+
+.active-choice input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--ink);
+}
