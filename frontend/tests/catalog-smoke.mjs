@@ -117,7 +117,7 @@ try {
     .getByRole("searchbox", { name: "Pesquisar cadastros" })
     .fill("SERVICOS SINTETICOS");
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
-  await sub.getByRole("row", { name: /Receitas de teste/ }).waitFor();
+  await sub.getByRole("button", { name: /^Receitas de teste/ }).waitFor();
   await page.getByRole("button", { name: "Limpar pesquisa" }).click();
   await page
     .getByRole("button", { name: "Expandir tudo", exact: true })
@@ -238,6 +238,7 @@ try {
   await page
     .getByRole("searchbox", { name: "Pesquisar cadastros" })
     .fill("ERP SINTETICO");
+  await page.screenshot({ path: "import-layout-search.png", fullPage: true });
   await page.getByRole("row", { name: /Cliente ERP sintético/ }).waitFor();
   assert.equal(
     await page
@@ -264,3 +265,4 @@ try {
 } finally {
   await browser.close();
 }
+
