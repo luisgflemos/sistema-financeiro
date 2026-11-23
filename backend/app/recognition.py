@@ -25,7 +25,7 @@ router = APIRouter(prefix="/organizations/{organization_id}/recognition", tags=[
 
 
 class RecognitionBatch(BaseModel):
-    exclude: list[UUID] = Field(default_factory=list, max_length=200)
+    exclude: list[UUID] = Field(default_factory=list, max_length=10000)
     test: bool = False
 
 
@@ -70,7 +70,9 @@ def generative_suggestions(context):
         "são AUTOMATIC_PROCESS; rendimentos, tarifas, IOF e IR são NORMAL e fatos financeiros reais. "
         "Transferências próprias são INTERNAL_TRANSFER apenas com evidência de titularidade; PIX "
         "sozinho não comprova transferência própria. Nunca associe um nome ambíguo sem sinalizar "
-        "LOW. Identificações NORMAL exigem os quatro vínculos. Não invente um cliente para preencher lacunas."
+        "LOW. Sugira apenas os vínculos com evidência e use null nos desconhecidos, para que o operador "
+        "complete. party_candidates informa correspondências documentais calculadas localmente; "
+        "vários candidatos exigem revisão. Não invente um cliente para preencher lacunas."
     )
     try:
         with httpx.Client(timeout=45) as client:
@@ -202,13 +204,14 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
             ).mappings()
         ]
         catalogs = {}
+        party_documents = defaultdict(list)
         for table in ("parties", "categories", "subcategories", "cost_centers"):
             if table == "subcategories":
                 sql = """SELECT s.id, s.name, s.category_id FROM subcategories s
                     JOIN categories c ON c.id = s.category_id
                     WHERE c.organization_id = :org AND s.active AND c.active LIMIT 2000"""
             else:
-                columns = "id, display_name AS name" if table == "parties" else "id, name"
+                columns = "id, display_name AS name, tax_id" if table == "parties" else "id, name"
                 if table == "categories":
                     columns += ", kind"
                 sql = f"SELECT {columns} FROM {table} WHERE organization_id = :org AND active LIMIT 2000"
@@ -216,6 +219,11 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 dict(row)
                 for row in connection.execute(text(sql), {"org": organization_id}).mappings()
             ]
+            if table == "parties":
+                for item in catalogs[table]:
+                    document = re.sub(r"\D", "", item.pop("tax_id") or "")
+                    if document:
+                        party_documents[document].append(str(item["id"]))
     patterns = defaultdict(list)
     for row in history:
         patterns[pattern_key(row)].append(row)
@@ -253,11 +261,15 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
         }
 
     def compact(row):
+        documents = re.findall(r"(?<!\d)\d{11,14}(?!\d)", row["raw_description"])
         return {
             "id": str(row["id"]),
             "account_id": str(row["account_id"]),
             "direction": row["direction"],
             "description": re.sub(r"\d{11,14}", "[documento]", row["raw_description"])[:1000],
+            "party_candidates": sorted(
+                {party for document in documents for party in party_documents[document]}
+            ),
             **{key: str(row.get(key) or "") for key in IDENT_FIELDS},
         }
 
@@ -282,7 +294,13 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 continue
             try:
                 payload = Identification(**{key: item.get(key) for key in IDENT_FIELDS})
-                validate_identification(connection, organization_id, payload)
+                validate_identification(
+                    connection, organization_id, payload, require_complete=False
+                )
+                if payload.movement_kind == "NORMAL" and not any(
+                    getattr(payload, key) for key in IDENT_FIELDS[:4]
+                ):
+                    continue
             except (HTTPException, ValueError):
                 continue
             current = transaction(connection, organization_id, UUID(tx_id))

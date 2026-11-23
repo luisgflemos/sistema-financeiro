@@ -63,9 +63,13 @@ def transaction(connection, organization_id, transaction_id):
     return dict(result)
 
 
-def validate_identification(connection, organization_id, payload):
+def validate_identification(connection, organization_id, payload, require_complete=True):
     values = payload.model_dump()
-    if payload.movement_kind == "NORMAL" and any(not values[key] for key in IDENT_FIELDS[:4]):
+    if (
+        require_complete
+        and payload.movement_kind == "NORMAL"
+        and any(not values[key] for key in IDENT_FIELDS[:4])
+    ):
         raise HTTPException(
             422,
             "Informe cliente/fornecedor, classificação, subclassificação e centro de custos.",

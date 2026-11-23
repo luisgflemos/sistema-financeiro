@@ -232,7 +232,7 @@ export function TransactionsPage({
       suggestions = 0;
     const attempted: string[] = [];
     try {
-      for (let iteration = 0; iteration < 10; iteration++) {
+      for (let iteration = 0; iteration < 500; iteration++) {
         const data = await api<{
           automatic: number;
           suggestions: number;
@@ -251,8 +251,7 @@ export function TransactionsPage({
         automatic += data.automatic;
         suggestions += data.suggestions;
         setRefresh((value) => value + 1);
-        if (data.processed < 20 || (!data.automatic && !data.suggestions))
-          break;
+        if (data.processed < 20) break;
       }
       setNotice(
         automatic +

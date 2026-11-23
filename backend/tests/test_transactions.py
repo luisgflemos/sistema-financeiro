@@ -178,3 +178,36 @@ def test_pattern_uses_only_consistent_operator_confirmations(statements, monkeyp
         )
         == 3
     )
+
+
+def test_partial_ai_suggestion_does_not_bypass_required_identification(statements, monkeypatch):
+    client, _, base, _ = statements
+    rows = imported(client, base)
+    values = dimensions(client, base)
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic-test-placeholder")
+
+    def fake(_context):
+        return [
+            {
+                "transaction_id": rows[0]["id"],
+                "party_id": values["party_id"],
+                "category_id": None,
+                "subcategory_id": None,
+                "cost_center_id": None,
+                "movement_kind": "NORMAL",
+                "reason": "Somente a contraparte foi identificada.",
+                "confidence": "MEDIUM",
+            }
+        ], "test-model"
+
+    monkeypatch.setattr(recognition, "generative_suggestions", fake)
+    response = client.post(base + "/recognition/run", json={})
+    assert response.json()["suggestions"] == 1
+    suggestion = client.get(base + "/transactions?state=suggested").json()["rows"][0]
+    incomplete = {**suggestion["suggestion"], "suggestion_id": suggestion["suggestion_id"]}
+    assert (
+        client.put(
+            base + "/transactions/" + rows[0]["id"] + "/identification", json=incomplete
+        ).status_code
+        == 422
+    )
