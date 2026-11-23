@@ -433,7 +433,7 @@ export function TableImport({
           <header className="import-review-heading">
             <h3>
               {committed
-                ? "Importação concluída"
+                ? "Cadastros importados"
                 : report.errors
                   ? "Revise os registros indicados"
                   : "Tudo pronto para importar"}
