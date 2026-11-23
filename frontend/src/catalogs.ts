@@ -19,6 +19,7 @@ type Field = {
   name: string;
   label: string;
   required?: boolean;
+  readOnly?: boolean;
   defaultValue?: string;
   placeholder?: string;
   type?: "date" | "email" | "tel";
@@ -57,12 +58,13 @@ export const catalogs: Record<CatalogId, Catalog> = {
       {
         name: "holder_document",
         label: "CPF/CNPJ do titular",
-        pattern: "[0-9]{11}|[0-9]{14}",
+        
       },
       { name: "branch", label: "Agência", required: true },
       {
         name: "account_number",
         label: "Número da conta",
+        required: true,
         pattern: "[0-9]{1,20}",
       },
       {
@@ -82,9 +84,9 @@ export const catalogs: Record<CatalogId, Catalog> = {
       {
         name: "account_number_masked",
         label: "Conta mascarada",
-        placeholder: "**1234",
-        pattern: "\\*{2,}[0-9]{0,4}",
-        required: true,
+        placeholder: "Preenchida automaticamente",
+        readOnly: true,
+
       },
       {
         name: "currency",

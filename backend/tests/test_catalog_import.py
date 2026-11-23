@@ -44,7 +44,8 @@ def test_import_saves_drafts_and_deduplicates_by_parent(catalog_client):
             "label": "Unidade revisada",
             "bank_code": "001",
             "branch": "0001",
-            "account_number_masked": "**1234",
+            "account_number": "12345678",
+            "holder_document": "12.345.678/0001-00",
             "holder_name": "Titular sintético",
         },
     )
@@ -52,3 +53,6 @@ def test_import_saves_drafts_and_deduplicates_by_parent(catalog_client):
     stored = client.get(f"{base}/bank-accounts/{account['id']}").json()
     assert stored["label"] == "Unidade revisada"
     assert stored["holder_name"] == "Titular sintético"
+    assert stored["holder_document"] == "12345678000100"
+    assert stored["account_number"] == "12345678"
+    assert stored["account_number_masked"] == "**5678"

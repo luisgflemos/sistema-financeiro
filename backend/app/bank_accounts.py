@@ -2,7 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator, model_validator
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
@@ -31,10 +31,24 @@ class BankAccountInput(BaseModel):
     account_type: str | None = None
     bank_code: RequiredText
     branch: RequiredText
-    account_number_masked: MaskedAccount
+    account_number_masked: MaskedAccount | None = None
     holder_name: RequiredText | None = None
     currency: Currency = "BRL"
     active: bool = True
+
+
+    @field_validator("holder_document", mode="before")
+    @classmethod
+    def normalize_document(cls, value):
+        if isinstance(value, str):
+            return value.translate(str.maketrans("", "", "./- ")).strip() or None
+        return value
+
+    @model_validator(mode="after")
+    def generate_mask(self):
+        if self.account_number:
+            self.account_number_masked = "**" + self.account_number[-4:]
+        return self
 
 
 class BankAccount(BankAccountInput):
@@ -133,6 +147,8 @@ def create_account(
     try:
         with request.app.state.database.begin() as connection:
             lock_organization(connection, organization_id)
+            if not payload.account_number_masked:
+                raise HTTPException(422, "Informe o número da conta.")
             code = payload.code or next_catalog_code(connection, "bank_accounts", organization_id)
             row = (
                 connection.execute(
@@ -176,6 +192,9 @@ def update_account(
             previous = require_account(connection, organization_id, account_id, lock=True)
             values = payload.model_dump()
             values["code"] = payload.code or previous.code
+            values["account_number_masked"] = (
+                payload.account_number_masked or previous.account_number_masked
+            )
             values["label"] = payload.label or previous.label
             current = BankAccount(id=account_id, organization_id=organization_id, **values)
             if current != previous:

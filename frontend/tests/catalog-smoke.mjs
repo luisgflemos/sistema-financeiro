@@ -32,7 +32,8 @@ try {
   await fill({
     "Nome da conta": "Conta sintética",
     Agência: "0000",
-    "Conta mascarada": "**1234",
+    "Número da conta": "12345678",
+    "CPF/CNPJ do titular": "12.345.678/0001-00",
   });
   await page.getByLabel("Banco", { exact: true }).fill("brasil");
   await page
