@@ -6,7 +6,7 @@ import { createRoot } from "react-dom/client";
 import { api } from "./api";
 import { Modal } from "./modal";
 import { Brand } from "./brand";
-import { CatalogImport } from "./catalog-import";
+import { TableImport } from "./table-import";
 import { ClassificationTree } from "./classification-tree";
 import { CatalogPage } from "./catalog-page";
 import { catalogIds, catalogs } from "./catalogs";
@@ -97,6 +97,8 @@ function App({ onLogout }: { onLogout?: () => void }) {
   const [catalog, setCatalog] = useState<CatalogId>("bank-accounts");
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
+  const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -211,6 +213,26 @@ function App({ onLogout }: { onLogout?: () => void }) {
             />
           </Modal>
         )}
+        {importing && organizationId && (
+          <Modal
+            title={`Importar ${catalogs[catalog].label}`}
+            busy={importBusy}
+            onClose={() => {
+              setImporting(false);
+              setRevision((value) => value + 1);
+            }}
+          >
+            <TableImport
+              kind={catalog}
+              organizationId={organizationId}
+              onBusyChange={setImportBusy}
+              onDone={() => {
+                setImporting(false);
+                setRevision((value) => value + 1);
+              }}
+            />
+          </Modal>
+        )}
         <div className="content">
           {loading ? (
             <p role="status">Carregando organizações…</p>
@@ -241,23 +263,14 @@ function App({ onLogout }: { onLogout?: () => void }) {
                 Nova organização
               </button>
             </>
-          ) : importing ? (
-            <CatalogImport
-              organizationId={organizationId}
-              organizationName={
-                organizations.find((item) => item.id === organizationId)
-                  ?.name ?? "Organização"
-              }
-              onClose={() => setImporting(false)}
-            />
           ) : catalog === "categories" ? (
             <ClassificationTree
-              key={organizationId}
+              key={`${organizationId}/${revision}`}
               organizationId={organizationId}
             />
           ) : (
             <CatalogPage
-              key={`${organizationId}/${catalog}`}
+              key={`${organizationId}/${catalog}/${revision}`}
               id={catalog}
               organizationId={organizationId}
             />
