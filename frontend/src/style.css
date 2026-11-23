@@ -1545,3 +1545,59 @@ select.nature-NEUTRAL {
 .mapping-ambiguous .mapping-explanation {
   color: #713f12;
 }
+
+.catalog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.catalog-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 18rem;
+  min-width: 0;
+  max-width: 28rem;
+  color: var(--muted);
+}
+.catalog-search > svg {
+  position: absolute;
+  left: 0.75rem;
+  pointer-events: none;
+}
+.catalog-search input {
+  width: 100%;
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  font-size: 0.875rem;
+}
+.catalog-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.catalog-search button {
+  position: absolute;
+  right: 0.25rem;
+  display: grid;
+  place-items: center;
+  min-height: 2rem;
+  width: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.catalog-search-count {
+  margin: 0;
+  padding: 0 1rem 0.75rem;
+  font-size: 0.8rem;
+}
+@media (max-width: 720px) {
+  .panel-header > .catalog-filters {
+    width: 100%;
+  }
+  .catalog-search {
+    max-width: none;
+    flex-basis: 100%;
+  }
+}

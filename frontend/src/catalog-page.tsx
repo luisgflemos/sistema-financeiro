@@ -4,6 +4,7 @@ import { api } from "./api";
 import { Modal } from "./modal";
 import { TableImport } from "./table-import";
 import { SearchSelect } from "./search-select";
+import { CatalogSearch, matchesCatalog } from "./catalog-search";
 import { catalogs } from "./catalogs";
 import type { CatalogId, RecordData } from "./catalogs";
 
@@ -43,6 +44,7 @@ export function CatalogPage({
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editing, setEditing] = useState<RecordData | null>(null);
   const [draft, setDraft] = useState<Draft>(blank);
+  const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [attempt, setAttempt] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -149,7 +151,19 @@ export function CatalogPage({
   }
 
   const visible = records.filter(
-    (record) => filter === "all" || record.active === (filter === "active"),
+    (record) =>
+      (filter === "all" || record.active === (filter === "active")) &&
+      matchesCatalog(query, [
+        record.code,
+        ...fields.flatMap((field) => [
+          record[field.name],
+          field.options?.find((option) => option.value === record[field.name])
+            ?.label,
+          field.reference
+            ? records.find((item) => item.id === record[field.name])?.name
+            : "",
+        ]),
+      ]),
   );
   const sortField = id === "parties" ? "display_name" : "code";
   visible.sort((a, b) =>
@@ -418,18 +432,29 @@ export function CatalogPage({
             >
               <div className="panel-header">
                 <h2 id={`${uid}-records`}>
-                  Registros <span>{records.length}</span>
+                  Registros{" "}
+                  <span>
+                    {visible.length} de {records.length}
+                  </span>
                 </h2>
-                <select
-                  aria-label="Filtrar por situação"
-                  value={filter}
-                  onChange={(event) => setFilter(event.target.value)}
-                >
-                  <option value="all">Todas as situações</option>
-                  <option value="active">Ativos</option>
-                  <option value="inactive">Inativos</option>
-                </select>
+                <div className="catalog-filters">
+                  <CatalogSearch value={query} onChange={setQuery} />
+                  <select
+                    aria-label="Filtrar por situação"
+                    value={filter}
+                    onChange={(event) => setFilter(event.target.value)}
+                  >
+                    <option value="all">Todas as situações</option>
+                    <option value="active">Ativos</option>
+                    <option value="inactive">Inativos</option>
+                  </select>
+                </div>
               </div>
+              {query.trim() && (
+                <p className="catalog-search-count" role="status">
+                  {visible.length} registros encontrados.
+                </p>
+              )}
               {visible.length === 0 ? (
                 <div className="empty">
                   <strong>
@@ -439,7 +464,7 @@ export function CatalogPage({
                   </strong>
                   <p>
                     {records.length
-                      ? "Selecione outra situação para ver os registros."
+                      ? "Altere a pesquisa ou o filtro de situação para ver os registros."
                       : needsCategory
                         ? "Esta classificação está inativa."
                         : "Preencha o formulário para adicionar o primeiro registro."}

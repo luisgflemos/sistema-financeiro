@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import { api } from "./api";
+import { CatalogSearch, matchesCatalog } from "./catalog-search";
 import { NatureBadge } from "./nature";
 import { Modal } from "./modal";
 import { TableImport } from "./table-import";
@@ -21,6 +22,7 @@ export function ClassificationTree({
   const [formOpen, setFormOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [editor, setEditor] = useState<Editor>({ key: 0 });
+  const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -79,15 +81,36 @@ export function ClassificationTree({
     );
   }
 
+  function textMatches(record: RecordData) {
+    const nature: Record<string, string> = {
+      REVENUE: "Receita",
+      EXPENSE: "Despesa",
+      NEUTRAL: "Neutra",
+    };
+    return matchesCatalog(query, [
+      record.name,
+      record.code,
+      record.description,
+      nature[String(record.kind)],
+    ]);
+  }
+
+  function visibleChildren(parent: RecordData) {
+    return children.filter(
+      (child) =>
+        child.category_id === parent.id &&
+        matches(child) &&
+        (!query.trim() || textMatches(parent) || textMatches(child)),
+    );
+  }
+
   const ordered = [...categories].sort((a, b) =>
     String(a.name).localeCompare(String(b.name), "pt-BR"),
   );
   const visible = ordered.filter(
     (parent) =>
-      matches(parent) ||
-      children.some(
-        (child) => child.category_id === parent.id && matches(child),
-      ),
+      (matches(parent) && textMatches(parent)) ||
+      visibleChildren(parent).length > 0,
   );
 
   return (
@@ -162,9 +185,20 @@ export function ClassificationTree({
           >
             <div className="panel-header">
               <h2>
-                Classificações <span>{categories.length}</span>
+                Classificações{" "}
+                <span>
+                  {visible.length} de {categories.length}
+                </span>
               </h2>
-              <div className="actions">
+              <div className="actions catalog-filters">
+                <CatalogSearch
+                  value={query}
+                  onChange={(value) => {
+                    setQuery(value);
+                    if (value.trim())
+                      setExpanded(new Set(categories.map((item) => item.id)));
+                  }}
+                />
                 <button
                   type="button"
                   onClick={() =>
@@ -187,6 +221,12 @@ export function ClassificationTree({
                 </select>
               </div>
             </div>
+            {query.trim() && (
+              <p className="catalog-search-count" role="status">
+                {visible.length} classificações encontradas, incluindo
+                correspondências nas subclassificações.
+              </p>
+            )}
             <div className="table-scroll">
               <table className="classification-tree">
                 <caption className="sr-only">
@@ -205,14 +245,9 @@ export function ClassificationTree({
                 </thead>
                 <tbody>
                   {visible.map((parent) => {
-                    const subs = children
-                      .filter(
-                        (child) =>
-                          child.category_id === parent.id && matches(child),
-                      )
-                      .sort((a, b) =>
-                        String(a.name).localeCompare(String(b.name), "pt-BR"),
-                      );
+                    const subs = visibleChildren(parent).sort((a, b) =>
+                      String(a.name).localeCompare(String(b.name), "pt-BR"),
+                    );
                     const isOpen = expanded.has(parent.id);
                     return (
                       <Fragment key={parent.id}>

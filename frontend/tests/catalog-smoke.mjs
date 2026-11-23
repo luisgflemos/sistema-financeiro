@@ -53,6 +53,15 @@ try {
     .click();
   await save();
   await page.getByRole("row", { name: /Conta sintética CTA-\d+/ }).waitFor();
+  await page
+    .getByRole("searchbox", { name: "Pesquisar cadastros" })
+    .fill("BRASIL");
+  await page.getByRole("row", { name: /Conta sintética CTA-\d+/ }).waitFor();
+  await page
+    .getByRole("searchbox", { name: "Pesquisar cadastros" })
+    .fill("sem-correspondencia");
+  await page.getByText("Nenhum resultado", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Limpar pesquisa" }).click();
   await page.getByRole("button", { name: "Editar Conta sintética" }).click();
   await page.getByRole("switch", { name: "Cadastro ativo" }).click();
   await save();
@@ -105,6 +114,12 @@ try {
     0,
   );
   await page
+    .getByRole("searchbox", { name: "Pesquisar cadastros" })
+    .fill("SERVICOS SINTETICOS");
+  await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
+  await sub.getByRole("row", { name: /Receitas de teste/ }).waitFor();
+  await page.getByRole("button", { name: "Limpar pesquisa" }).click();
+  await page
     .getByRole("button", { name: "Expandir tudo", exact: true })
     .click();
   await sub.getByRole("row", { name: /Serviços sintéticos/ }).waitFor();
@@ -125,6 +140,18 @@ try {
     .getAttribute("value");
   await parents.selectOption(parent);
   await save();
+
+  await page
+    .getByRole("searchbox", { name: "Pesquisar cadastros" })
+    .fill("unidade");
+  await page.getByRole("row", { name: /Unidade de teste/ }).waitFor();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Editar Sede de teste", exact: true })
+      .count(),
+    0,
+  );
+  await page.getByRole("button", { name: "Limpar pesquisa" }).click();
 
   await open("Clientes e Fornecedores");
   await page
@@ -208,6 +235,20 @@ try {
   await page.getByText(/Importação concluída/).waitFor();
   await page.getByRole("button", { name: "Concluir", exact: true }).click();
   await page.getByRole("row", { name: /Cliente ERP sintético/ }).waitFor();
+  await page
+    .getByRole("searchbox", { name: "Pesquisar cadastros" })
+    .fill("ERP SINTETICO");
+  await page.getByRole("row", { name: /Cliente ERP sintético/ }).waitFor();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Editar Fornecedor sintético", exact: true })
+      .count(),
+    0,
+  );
+  await page.getByLabel("Filtrar por situação").selectOption("inactive");
+  await page.getByText("Nenhum resultado", { exact: true }).waitFor();
+  await page.getByLabel("Filtrar por situação").selectOption("all");
+  await page.getByRole("button", { name: "Limpar pesquisa" }).click();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
