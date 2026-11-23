@@ -115,7 +115,10 @@ try {
   await page
     .getByRole("button", { name: "Ver extrato completo", exact: true })
     .click();
-  await page.getByText("PIX CLIENTE SINTETICO", { exact: true }).waitFor();
+  await page
+    .getByRole("row")
+    .filter({ hasText: "PIX CLIENTE SINTETICO" })
+    .waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await page
