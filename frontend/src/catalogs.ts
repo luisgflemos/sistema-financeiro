@@ -37,7 +37,12 @@ type Catalog = {
   columns: { name: string; label: string }[];
 };
 
-const code: Field = { name: "code", label: "Código", required: true };
+const code: Field = {
+  name: "code",
+  label: "Código",
+  readOnly: true,
+  placeholder: "Gerado automaticamente ao salvar",
+};
 const name: Field = { name: "name", label: "Nome", required: true };
 
 const description: Field = { name: "description", label: "Descrição" };

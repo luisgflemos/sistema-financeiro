@@ -47,10 +47,12 @@ class Category(CategoryInput):
 
 
 class SubcategoryInput(DatedCatalog):
+    code: RequiredText | None = None
     category_id: UUID
 
 
 class Subcategory(SubcategoryInput):
+    code: RequiredText
     id: UUID
 
 

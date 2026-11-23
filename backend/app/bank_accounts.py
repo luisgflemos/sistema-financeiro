@@ -148,7 +148,9 @@ def create_account(
             lock_organization(connection, organization_id)
             if not payload.account_number_masked:
                 raise HTTPException(422, "Informe o número da conta.")
-            code = payload.code or next_catalog_code(connection, "bank_accounts", organization_id)
+            if payload.code is not None:
+                raise HTTPException(422, "O código é gerado automaticamente pela aplicação.")
+            code = next_catalog_code(connection, "bank_accounts", organization_id)
             row = (
                 connection.execute(
                     text(
@@ -189,6 +191,8 @@ def update_account(
         with request.app.state.database.begin() as connection:
             lock_organization(connection, organization_id)
             previous = require_account(connection, organization_id, account_id, lock=True)
+            if payload.code is not None and payload.code != previous.code:
+                raise HTTPException(422, "O código é gerado automaticamente pela aplicação.")
             values = payload.model_dump()
             values["code"] = payload.code or previous.code
             values["account_number_masked"] = (

@@ -766,3 +766,31 @@ button.toggle[aria-checked="true"]:hover:not(:disabled) {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.tree-sign {
+  position: relative;
+}
+
+.tree-sign::before,
+.tree-sign::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: currentColor;
+}
+
+.tree-sign::before {
+  width: 0.6rem;
+  height: 2px;
+}
+
+.tree-sign::after {
+  width: 2px;
+  height: 0.6rem;
+}
+
+.tree-disclosure[aria-expanded="true"] .tree-sign::after {
+  display: none;
+}

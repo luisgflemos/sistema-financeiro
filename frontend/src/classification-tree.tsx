@@ -178,7 +178,7 @@ export function ClassificationTree({
                               onClick={() => toggle(parent.id)}
                             >
                               <span className="tree-sign" aria-hidden="true">
-                                {isOpen ? "−" : "+"}
+                                
                               </span>
                               {String(parent.name)}
                               <span className="tree-count">{subs.length}</span>

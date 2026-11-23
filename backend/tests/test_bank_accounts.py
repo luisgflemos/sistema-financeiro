@@ -8,7 +8,6 @@ def test_bank_account_lifecycle_and_audit(catalog_client):
     other_org = connection.execute(organization).scalar_one()
     endpoint = f"/organizations/{first_org}/bank-accounts"
     payload = {
-        "code": "conta-teste",
         "bank_code": "000",
         "branch": "0000",
         "account_number_masked": "**00",
@@ -22,14 +21,15 @@ def test_bank_account_lifecycle_and_audit(catalog_client):
     assert created.json()["currency"] == "BRL"
     account_id = created.json()["id"]
     url = f"{endpoint}/{account_id}"
-    assert client.post(endpoint, json=payload).status_code == 409
+    assert client.post(endpoint, json={**payload, "code": "manual"}).status_code == 422
     other_url = f"/organizations/{other_org}/bank-accounts/{account_id}"
     assert client.get(other_url).status_code == 404
     assert client.delete(other_url).status_code == 404
     assert client.get(url).json()["active"] is True
-    updated = client.put(url, json={**payload, "code": "revisado"})
+    assert client.put(url, json={**payload, "code": "revisado"}).status_code == 422
+    updated = client.put(url, json={**payload, "branch": "0001"})
     assert updated.status_code == 200
-    assert updated.json()["code"] == "revisado"
+    assert updated.json()["code"] == created.json()["code"]
     assert client.delete(url).status_code == 204
     assert client.delete(url).status_code == 204
     assert client.get(endpoint, params={"active": True}).json() == []

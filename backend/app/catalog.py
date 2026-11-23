@@ -93,11 +93,16 @@ def catalog_router(catalog: Catalog) -> APIRouter:
 
     def save(connection, organization_id, values, previous=None) -> dict:
         record_id = previous["id"] if previous else None
-        if table in PREFIXES and values["code"] is None:
+        if table in PREFIXES:
+            supplied = values["code"]
+            if supplied is not None and (previous is None or supplied != previous["code"]):
+                raise HTTPException(422, "O código é gerado automaticamente pela aplicação.")
             values["code"] = (
                 previous["code"]
                 if previous
-                else next_catalog_code(connection, table, organization_id)
+                else next_catalog_code(
+                    connection, table, values.get("category_id", organization_id)
+                )
             )
         if catalog.validate:
             catalog.validate(connection, organization_id, values, record_id)
