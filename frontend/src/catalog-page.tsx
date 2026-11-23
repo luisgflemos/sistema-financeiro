@@ -2,6 +2,7 @@ import { Fragment, useEffect, useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./api";
 import { Modal } from "./modal";
+import { TableImport } from "./table-import";
 import { SearchSelect } from "./search-select";
 import { catalogs } from "./catalogs";
 import type { CatalogId, RecordData } from "./catalogs";
@@ -35,6 +36,7 @@ export function CatalogPage({
       ...fields.map((field) => [field.name, field.defaultValue ?? ""]),
       ["active", true],
     ]) as Draft;
+  const [importOpen, setImportOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [records, setRecords] = useState<RecordData[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -342,9 +344,20 @@ export function CatalogPage({
           {notice}
         </p>
       )}
+      {importOpen && id !== "subcategories" && (
+        <Modal title={`Importar ${catalog.label}`} onClose={() => setImportOpen(false)}>
+          <TableImport kind={id} organizationId={organizationId} onDone={() => {
+            setImportOpen(false);
+            setLoading(true);
+            setAttempt((value) => value + 1);
+          }} />
+        </Modal>
+      )}
       {!editorOnly && (
         <div className="page-heading">
           {category ? <h3>{catalog.label}</h3> : <h1>{catalog.label}</h1>}
+          <div className="actions">
+          {id !== "subcategories" && <button type="button" onClick={() => setImportOpen(true)}>Importar</button>}
           <button
             type="button"
             className="primary"
@@ -353,6 +366,7 @@ export function CatalogPage({
           >
             {category ? "+ Nova subclassificação" : "Novo cadastro"}
           </button>
+          </div>
         </div>
       )}
       {loading ? (

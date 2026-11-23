@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from "react";
 import { api } from "./api";
 import { NatureBadge } from "./nature";
 import { Modal } from "./modal";
+import { TableImport } from "./table-import";
 import { CatalogPage } from "./catalog-page";
 import type { RecordData } from "./catalogs";
 
@@ -15,6 +16,7 @@ export function ClassificationTree({
   const [categories, setCategories] = useState<RecordData[]>([]);
   const [children, setChildren] = useState<RecordData[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [editor, setEditor] = useState<Editor>({ key: 0 });
@@ -92,11 +94,21 @@ export function ClassificationTree({
       <p className="notice" role="status">
         {notice}
       </p>
+      {importOpen && (
+        <Modal title="Importar Classificações" onClose={() => setImportOpen(false)}>
+          <TableImport kind="categories" organizationId={organizationId} onDone={() => {
+            setImportOpen(false);
+            setLoading(true);
+            setAttempt((value) => value + 1);
+          }} />
+        </Modal>
+      )}
       <div className="page-heading">
         <h1>Classificações</h1>
         <button type="button" className="primary" onClick={() => openEditor()}>
           Nova classificação
         </button>
+        </div>
       </div>
       {loading ? (
         <p role="status">Carregando classificações…</p>

@@ -881,3 +881,36 @@ select.nature-NEUTRAL {
   color: var(--neutral-ink);
   background: var(--neutral-background);
 }
+
+.form-modal:has(.import-wizard) {
+  width: min(70rem, calc(100vw - 2rem));
+}
+
+.import-mapping {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.import-source {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.import-report {
+  max-height: 18rem;
+  margin-bottom: 1rem;
+}
+
+.import-wizard .primary {
+  margin-top: 1rem;
+}
+
+.download-link {
+  color: #146c3b;
+  padding: 0.5rem;
+}
