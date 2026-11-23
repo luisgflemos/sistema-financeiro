@@ -132,11 +132,21 @@
   max-width: none;
 }
 .transaction-filters {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 8.5rem 8.5rem minmax(
+      0,
+      1fr
+    );
   align-items: end;
   gap: 0.75rem;
   padding: 0 1rem 1rem;
+}
+.transaction-filters > div > label {
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.search-select > input {
+  width: 100%;
 }
 .transaction-filters > label:first-child {
   position: absolute;
@@ -257,6 +267,12 @@ textarea {
 @container (max-width: 650px) {
   .transaction-toolbar {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .transaction-filters {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .transaction-filters > div {
+    grid-column: 1 / -1;
   }
 }
 @media (max-width: 720px) {

@@ -221,7 +221,7 @@ export function TransactionsPage({
       setSaving(false);
     }
   }
-  async function recognize() {
+  async function recognize(testOnly = false) {
     if (aiBusy) return;
     setAiBusy(true);
     setNotice(
@@ -230,13 +230,24 @@ export function TransactionsPage({
     setError("");
     let automatic = 0,
       suggestions = 0;
+    const attempted: string[] = [];
     try {
       for (let iteration = 0; iteration < 10; iteration++) {
         const data = await api<{
           automatic: number;
           suggestions: number;
           processed: number;
-        }>(base + "/recognition/run", { method: "POST", body: "{}" });
+          analyzed: string[];
+          verified?: boolean;
+        }>(base + "/recognition/run", {
+          method: "POST",
+          body: JSON.stringify({ exclude: attempted, test: testOnly }),
+        });
+        if (data.verified) {
+          setNotice("Conexão com a IA verificada.");
+          return;
+        }
+        attempted.push(...data.analyzed);
         automatic += data.automatic;
         suggestions += data.suggestions;
         setRefresh((value) => value + 1);
@@ -287,10 +298,14 @@ export function TransactionsPage({
                 ? "Configure OPENAI_API_KEY no Railway"
                 : "Analisar pendências com IA generativa"
             }
-            onClick={() => void recognize()}
+            onClick={() => void recognize(total === 0)}
           >
             <Sparkles size={17} />
-            {aiBusy ? "IA analisando…" : "Identificar com IA"}
+            {aiBusy
+              ? "IA analisando…"
+              : total === 0
+                ? "Testar IA"
+                : "Identificar com IA"}
           </button>
           <button
             type="button"
@@ -330,19 +345,21 @@ export function TransactionsPage({
           />
         </div>
         <div className="transaction-filters">
-          <label htmlFor="transaction-account">Conta bancária</label>
-          <SearchSelect
-            id="transaction-account"
-            value={account}
-            options={[
-              { value: "", label: "Todas as contas" },
-              ...options("bank-accounts"),
-            ]}
-            onChange={(value) => {
-              setAccount(value);
-              setPage(1);
-            }}
-          />
+          <div>
+            <label htmlFor="transaction-account">Conta bancária</label>
+            <SearchSelect
+              id="transaction-account"
+              value={account}
+              options={[
+                { value: "", label: "Todas as contas" },
+                ...options("bank-accounts"),
+              ]}
+              onChange={(value) => {
+                setAccount(value);
+                setPage(1);
+              }}
+            />
+          </div>
           <div className="statement-filter">
             <label htmlFor="transaction-statement">Extrato</label>
             <SearchSelect
@@ -456,9 +473,13 @@ export function TransactionsPage({
                         }
                       >
                         {row.state === "identified"
-                          ? row.method === "PATTERN"
-                            ? "Automático"
-                            : "Identificado"
+                          ? row.movement_kind === "AUTOMATIC_PROCESS"
+                            ? "Processos Automáticos"
+                            : row.movement_kind === "INTERNAL_TRANSFER"
+                              ? "Transferência própria"
+                              : row.method === "PATTERN"
+                                ? "Automático"
+                                : "Identificado"
                           : row.state === "suggested"
                             ? "Sugestão da IA"
                             : "Pendente"}

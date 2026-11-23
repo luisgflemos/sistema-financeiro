@@ -8,6 +8,7 @@ from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from app.catalog import lock_organization
@@ -21,6 +22,11 @@ from app.transactions import (
 )
 
 router = APIRouter(prefix="/organizations/{organization_id}/recognition", tags=["Reconhecimento"])
+
+
+class RecognitionBatch(BaseModel):
+    exclude: list[UUID] = Field(default_factory=list, max_length=200)
+    test: bool = False
 
 
 def generative_suggestions(context):
@@ -87,6 +93,24 @@ def generative_suggestions(context):
                     },
                 },
             )
+            if response.status_code == 401:
+                raise HTTPException(
+                    502,
+                    "A chave da OpenAI não foi aceita. Confira a variável OPENAI_API_KEY no Railway.",
+                )
+            if response.status_code == 403:
+                raise HTTPException(
+                    502,
+                    "A chave não tem permissão para gerar respostas. Confira Responses: Write e o acesso ao modelo.",
+                )
+            if response.status_code == 429:
+                code = response.json().get("error", {}).get("code", "")
+                message = (
+                    "A API da OpenAI está sem cota disponível. Confira Billing na plataforma da OpenAI."
+                    if code == "insufficient_quota"
+                    else "O limite de solicitações da IA foi atingido. Aguarde e tente novamente."
+                )
+                raise HTTPException(502, message)
             response.raise_for_status()
             data = response.json()
         if data.get("status") != "completed":
@@ -125,13 +149,22 @@ def config(organization_id: UUID):
 
 
 @router.post("/run")
-def recognize(organization_id: UUID, request: Request):
+def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request):
     with request.app.state.database.connect() as connection:
         if not connection.scalar(
             text("SELECT 1 FROM organizations WHERE id = :org"),
             {"org": organization_id},
         ):
             raise HTTPException(404, "Organização não encontrada.")
+        if payload.test:
+            generative_suggestions({"movements": [], "confirmed_examples": [], "catalogs": {}})
+            return {
+                "automatic": 0,
+                "suggestions": 0,
+                "processed": 0,
+                "analyzed": [],
+                "verified": True,
+            }
         history = [
             dict(row)
             for row in connection.execute(
@@ -160,11 +193,12 @@ def recognize(organization_id: UUID, request: Request):
                     + LATEST
                     + """
             WHERE a.organization_id = :org AND i.id IS NULL
+                  AND t.id <> ALL(CAST(:exclude AS uuid[]))
                 AND NOT EXISTS (SELECT 1 FROM transaction_suggestions s WHERE s.transaction_id = t.id)
             ORDER BY t.posted_on DESC, t.source_row LIMIT 20
         """
                 ),
-                {"org": organization_id},
+                {"org": organization_id, "exclude": payload.exclude},
             ).mappings()
         ]
         catalogs = {}
@@ -215,6 +249,7 @@ def recognize(organization_id: UUID, request: Request):
             "suggestions": 0,
             "ai_enabled": bool(os.environ.get("OPENAI_API_KEY")),
             "processed": len(pending),
+            "analyzed": [str(row["id"]) for row in pending],
         }
 
     def compact(row):
@@ -285,4 +320,5 @@ def recognize(organization_id: UUID, request: Request):
         "suggestions": len(accepted),
         "ai_enabled": True,
         "processed": len(pending),
+        "analyzed": [str(row["id"]) for row in pending],
     }
