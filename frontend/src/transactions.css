@@ -295,6 +295,11 @@ textarea {
   font-size: 0.75rem;
   font-weight: 400;
 }
+.complementary-field > small {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--muted);
+}
 @container (max-width: 650px) {
   .transaction-toolbar {
     grid-template-columns: minmax(0, 1fr);

@@ -274,7 +274,7 @@ export function TransactionsPage({
       }));
   }
   const fieldLabels = [
-    ["party_id", "Cliente / Fornecedor", "parties"],
+    ["party_id", "Cliente / Fornecedor (opcional)", "parties"],
     ["category_id", "Classificação", "categories"],
     ["subcategory_id", "Subclassificação", "subcategories"],
     ["cost_center_id", "Centro de Custos", "cost-centers"],
@@ -679,9 +679,6 @@ export function TransactionsPage({
                       htmlFor={"identify-" + field}
                     >
                       {label}
-                      {field === "party_id" && (
-                        <small aria-hidden="true">Opcional</small>
-                      )}
                     </label>
                     <SearchSelect
                       id={"identify-" + field}
@@ -716,10 +713,13 @@ export function TransactionsPage({
                     />
                   </div>
                 ))}
-                <label>
-                  Descrição Complementar
-                  <small aria-hidden="true">Opcional</small>
+                <div className="field complementary-field">
+                  <label htmlFor="identification-complementary">
+                    Descrição Complementar
+                  </label>
                   <textarea
+                    id="identification-complementary"
+                    aria-describedby="identification-complementary-hint"
                     value={draft.notes}
                     onChange={(event) =>
                       setDraft({ ...draft, notes: event.target.value })
@@ -727,7 +727,11 @@ export function TransactionsPage({
                     maxLength={4000}
                     rows={2}
                   />
-                </label>
+                  <small id="identification-complementary-hint">
+                    Opcional. Complementa o lançamento sem alterar o histórico
+                    do banco.
+                  </small>
+                </div>
               </div>
               <div className="actions transaction-save">
                 <button className="primary" type="submit">
