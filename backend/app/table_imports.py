@@ -25,7 +25,9 @@ from app.catalogs import (
 )
 from app.codes import next_catalog_code
 
-router = APIRouter(prefix="/organizations/{organization_id}/table-imports", tags=["Importações"])
+router = APIRouter(
+    prefix="/organizations/{organization_id}/table-imports", tags=["Importações"]
+)
 Kind = Literal["bank-accounts", "categories", "cost-centers", "parties"]
 MAX_ROWS = 2000
 MAX_BYTES = 5 * 1024 * 1024
@@ -52,7 +54,12 @@ FIELDS = {
         ("active", "Ativo", False, ["situacao", "status"]),
     ],
     "cost-centers": [
-        ("name", "Nome do centro de custos", True, ["nome", "centro de custos", "centro de custo"]),
+        (
+            "name",
+            "Nome do centro de custos",
+            True,
+            ["nome", "centro de custos", "centro de custo"],
+        ),
         ("parent", "Centro superior", False, ["pai", "centro pai"]),
         ("active", "Ativo", False, ["situacao", "status"]),
     ],
@@ -89,6 +96,7 @@ class Source(BaseModel):
 
 class MappedSource(Source):
     mapping: dict[str, int] = Field(max_length=30)
+    constants: dict[str, str] = Field(default_factory=dict, max_length=2)
 
 
 def key(value) -> str:
@@ -121,8 +129,13 @@ def read_source(source: Source):
     elif source.file_name.lower().endswith(".xlsx"):
         try:
             with ZipFile(io.BytesIO(raw)) as archive:
-                if sum(item.file_size for item in archive.infolist()) > 40 * 1024 * 1024:
-                    raise HTTPException(422, "A planilha descompactada excede o limite.")
+                if (
+                    sum(item.file_size for item in archive.infolist())
+                    > 40 * 1024 * 1024
+                ):
+                    raise HTTPException(
+                        422, "A planilha descompactada excede o limite."
+                    )
             book = load_workbook(io.BytesIO(raw), read_only=True, data_only=False)
             try:
                 sheets = book.sheetnames
@@ -132,7 +145,8 @@ def read_source(source: Source):
                 sheet = book[selected]
                 if sheet.max_row and sheet.max_row > MAX_ROWS + source.header_row:
                     raise HTTPException(
-                        422, "A aba excede o limite de linhas. Divida o arquivo em cargas menores."
+                        422,
+                        "A aba excede o limite de linhas. Divida o arquivo em cargas menores.",
                     )
                 if sheet.max_column and sheet.max_column > 100:
                     raise HTTPException(422, "Use uma tabela com até 100 colunas.")
@@ -153,7 +167,8 @@ def read_source(source: Source):
     if len(rows) < source.header_row:
         raise HTTPException(422, "A linha de cabeçalho não foi encontrada.")
     headers = [
-        cell(value) or f"Coluna {i + 1}" for i, value in enumerate(rows[source.header_row - 1])
+        cell(value) or f"Coluna {i + 1}"
+        for i, value in enumerate(rows[source.header_row - 1])
     ]
     if not headers or len(headers) > 100:
         raise HTTPException(422, "Use uma tabela com até 100 colunas.")
@@ -163,7 +178,9 @@ def read_source(source: Source):
         if any(cell(value) for value in row)
     ]
     if not data or len(data) > MAX_ROWS:
-        raise HTTPException(422, f"O arquivo deve conter de 1 a {MAX_ROWS} registros por carga.")
+        raise HTTPException(
+            422, f"O arquivo deve conter de 1 a {MAX_ROWS} registros por carga."
+        )
     return sheets, headers, data
 
 
@@ -175,7 +192,8 @@ def preview(kind: Kind, payload: Source):
         matches = [
             i
             for i, header in enumerate(headers)
-            if key(header) in {key(field), key(label), *(key(alias) for alias in aliases)}
+            if key(header)
+            in {key(field), key(label), *(key(alias) for alias in aliases)}
         ]
         if len(matches) == 1 and matches[0] not in mapping.values():
             mapping[field] = matches[0]
@@ -214,27 +232,34 @@ def translate(value, choices, label):
 def find_named(connection, table, organization_id, name, parent=None):
     if table == "subcategories":
         rows = connection.execute(
-            text("SELECT * FROM subcategories WHERE category_id = :parent"), {"parent": parent}
+            text("SELECT * FROM subcategories WHERE category_id = :parent"),
+            {"parent": parent},
         ).mappings()
         field = "name"
     else:
         rows = connection.execute(
-            text(f"SELECT * FROM {table} WHERE organization_id = :org"), {"org": organization_id}
+            text(f"SELECT * FROM {table} WHERE organization_id = :org"),
+            {"org": organization_id},
         ).mappings()
         field = {"parties": "display_name", "bank_accounts": "label"}.get(table, "name")
     found = [dict(row) for row in rows if key(row[field] or "") == key(name)]
     if len(found) > 1:
-        raise ValueError("Há nomes repetidos no sistema. Revise os cadastros antes de importar.")
+        raise ValueError(
+            "Há nomes repetidos no sistema. Revise os cadastros antes de importar."
+        )
     return found[0] if found else None
 
 
 def insert_record(connection, organization_id, table, model, values, parent=None):
     data = model.model_validate(values).model_dump()
-    name_field = {"parties": "display_name", "bank_accounts": "label"}.get(table, "name")
+    name_field = {"parties": "display_name", "bank_accounts": "label"}.get(
+        table, "name"
+    )
     existing = find_named(connection, table, organization_id, data[name_field], parent)
     if table == "parties" and data.get("tax_id"):
         documents = connection.execute(
-            text("SELECT * FROM parties WHERE organization_id = :org"), {"org": organization_id}
+            text("SELECT * FROM parties WHERE organization_id = :org"),
+            {"org": organization_id},
         ).mappings()
         same_document = [
             dict(row)
@@ -245,7 +270,9 @@ def insert_record(connection, organization_id, table, model, values, parent=None
             raise ValueError("Documento duplicado no sistema.")
         if same_document:
             if existing and existing["id"] != same_document[0]["id"]:
-                raise ValueError("Nome e documento correspondem a cadastros diferentes.")
+                raise ValueError(
+                    "Nome e documento correspondem a cadastros diferentes."
+                )
             existing = same_document[0]
     if table == "bank_accounts" and not existing:
         candidates = connection.execute(
@@ -258,13 +285,21 @@ def insert_record(connection, organization_id, table, model, values, parent=None
             and row["account_number"] == data["account_number"]
             for row in candidates
         ):
-            raise ValueError("Esta agência e conta já estão cadastradas com outro nome.")
+            raise ValueError(
+                "Esta agência e conta já estão cadastradas com outro nome."
+            )
     if existing:
-        compared = [field for field, value in data.items() if value is not None and field != "code"]
+        compared = [
+            field
+            for field, value in data.items()
+            if value is not None and field != "code"
+        ]
         if table == "parties" and existing.get("tax_id"):
             existing["tax_id"] = re.sub(r"\D", "", existing["tax_id"])
         if any(existing[field] != data[field] for field in compared):
-            raise ValueError("Já existe cadastro com esse nome/documento e dados diferentes.")
+            raise ValueError(
+                "Já existe cadastro com esse nome/documento e dados diferentes."
+            )
         return existing, False
 
     if table in {"bank_accounts", "categories", "subcategories", "cost_centers"}:
@@ -275,7 +310,10 @@ def insert_record(connection, organization_id, table, model, values, parent=None
     placeholders = ", ".join(f":{name}" for name in data)
     current = dict(
         connection.execute(
-            text(f"INSERT INTO {table} ({columns}) VALUES ({placeholders}) RETURNING *"), data
+            text(
+                f"INSERT INTO {table} ({columns}) VALUES ({placeholders}) RETURNING *"
+            ),
+            data,
         )
         .mappings()
         .one()
@@ -304,8 +342,12 @@ def insert_record(connection, organization_id, table, model, values, parent=None
     return current, True
 
 
-def row_values(kind, row, mapping):
-    values = {field: row[index] if index < len(row) else "" for field, index in mapping.items()}
+def row_values(kind, row, mapping, constants):
+    values = {
+        field: row[index] if index < len(row) else ""
+        for field, index in mapping.items()
+    }
+    values.update(constants)
     for field, _, required, _ in FIELDS[kind]:
         if required and not values.get(field):
             raise ValueError("Preencha o campo obrigatório: " + field)
@@ -338,9 +380,9 @@ def row_values(kind, row, mapping):
             raise ValueError("Banco deve conter o código numérico de três dígitos.")
         values["bank_code"] = values["bank_code"].zfill(3)
         if "-" in values["account_number"] and not values.get("account_digit"):
-            values["account_number"], values["account_digit"] = values["account_number"].rsplit(
-                "-", 1
-            )
+            values["account_number"], values["account_digit"] = values[
+                "account_number"
+            ].rsplit("-", 1)
         values.setdefault("currency", "BRL")
         values["currency"] = values["currency"].upper()
         if values.get("account_type"):
@@ -366,18 +408,27 @@ def process(connection, organization_id, kind, payload):
         raise HTTPException(422, "Mapeamento inválido.")
     if len(set(payload.mapping.values())) != len(payload.mapping):
         raise HTTPException(422, "Associe cada coluna a apenas um campo.")
+    allowed_constants = {"active", "type"} if kind == "parties" else {"active"}
+    if set(payload.constants) - allowed_constants or set(payload.constants) & set(
+        payload.mapping
+    ):
+        raise HTTPException(422, "Escolha coluna ou valor fixo para cada campo.")
     result = []
     for number, row in rows:
         try:
             with connection.begin_nested():
-                values = row_values(kind, row, payload.mapping)
+                values = row_values(kind, row, payload.mapping, payload.constants)
                 sub_name = values.pop("sub_name", None)
                 sub_description = values.pop("sub_description", None)
                 parent_name = values.pop("parent", None)
                 if kind == "cost-centers" and parent_name:
-                    parent = find_named(connection, "cost_centers", organization_id, parent_name)
+                    parent = find_named(
+                        connection, "cost_centers", organization_id, parent_name
+                    )
                     if not parent:
-                        raise ValueError("Cadastre o centro superior antes dos subordinados.")
+                        raise ValueError(
+                            "Cadastre o centro superior antes dos subordinados."
+                        )
                     values["parent_id"] = parent["id"]
                     validate_parent(connection, organization_id, values, None)
                 current, created = insert_record(
@@ -402,14 +453,22 @@ def process(connection, organization_id, kind, payload):
                     {
                         "row": number,
                         "status": "new" if created or sub_created else "duplicate",
-                        "message": "Novo cadastro" if created or sub_created else "Já cadastrado",
+                        "message": "Novo cadastro"
+                        if created or sub_created
+                        else "Já cadastrado",
                     }
                 )
         except ValidationError as error:
-            messages = [str(item["loc"][0]) + ": " + item["msg"] for item in error.errors()]
-            result.append({"row": number, "status": "error", "message": "; ".join(messages)})
+            messages = [
+                str(item["loc"][0]) + ": " + item["msg"] for item in error.errors()
+            ]
+            result.append(
+                {"row": number, "status": "error", "message": "; ".join(messages)}
+            )
         except (ValueError, HTTPException) as error:
-            message = str(error.detail) if isinstance(error, HTTPException) else str(error)
+            message = (
+                str(error.detail) if isinstance(error, HTTPException) else str(error)
+            )
             result.append({"row": number, "status": "error", "message": message})
         except IntegrityError:
             result.append(
@@ -428,7 +487,9 @@ def process(connection, organization_id, kind, payload):
 
 
 @router.post("/{kind}/validate")
-def validate(organization_id: UUID, kind: Kind, payload: MappedSource, request: Request):
+def validate(
+    organization_id: UUID, kind: Kind, payload: MappedSource, request: Request
+):
     with request.app.state.database.begin() as connection:
         lock_organization(connection, organization_id)
         transaction = connection.begin_nested()
@@ -466,7 +527,9 @@ def template(kind: Kind, format: Literal["csv", "xlsx"] = "xlsx"):
         sheet.freeze_panes = "A2"
         for column in sheet.columns:
             sheet.column_dimensions[column[0].column_letter].width = 28
-        for row in sheet.iter_rows(min_row=2, max_row=MAX_ROWS + 1, max_col=len(headers)):
+        for row in sheet.iter_rows(
+            min_row=2, max_row=MAX_ROWS + 1, max_col=len(headers)
+        ):
             for item in row:
                 item.number_format = "@"
         output = io.BytesIO()
@@ -476,5 +539,7 @@ def template(kind: Kind, format: Literal["csv", "xlsx"] = "xlsx"):
     return Response(
         data,
         media_type=media,
-        headers={"Content-Disposition": f'attachment; filename="modelo-{kind}.{format}"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="modelo-{kind}.{format}"'
+        },
     )

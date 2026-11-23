@@ -154,14 +154,48 @@ try {
   await page
     .getByRole("option", { name: "1 · Razao ERP", exact: true })
     .click();
+  const nameBox = page.getByLabel("Nome do Cliente *", { exact: true });
+  const beforeOpen = await nameBox.boundingBox();
+  await page.getByLabel("Tipo *", { exact: true }).click();
+  const afterOpen = await nameBox.boundingBox();
+  assert.deepEqual(
+    afterOpen,
+    beforeOpen,
+    "Abrir a lista não deve deslocar os campos",
+  );
+  assert.equal(
+    await page
+      .getByRole("listbox")
+      .evaluate((element) => getComputedStyle(element).position),
+    "absolute",
+  );
   await page.getByLabel("Tipo *", { exact: true }).fill("Categoria ERP");
   await page
     .getByRole("option", { name: "2 · Categoria ERP", exact: true })
     .click();
+  await page.getByLabel("Tipo *", { exact: true }).fill("valor fixo");
+  await page
+    .getByRole("option", {
+      name: "Usar valor fixo para todos os registros",
+      exact: true,
+    })
+    .click();
+  await page.getByLabel("Valor fixo de Tipo", { exact: true }).fill("Cliente");
+  await page.getByRole("option", { name: "Cliente", exact: true }).click();
+  await page.getByLabel("Ativo", { exact: true }).fill("valor fixo");
+  await page
+    .getByRole("option", {
+      name: "Usar valor fixo para todos os registros",
+      exact: true,
+    })
+    .click();
+  await page.screenshot({ path: "import-layout-mapping.png", fullPage: true });
   await page
     .getByRole("button", { name: "Validar importação", exact: true })
     .click();
   await page.getByText(/Validação concluída/).waitFor();
+  await page.getByText("Tipo: Cliente", { exact: true }).waitFor();
+  await page.getByText("Ativo: Sim", { exact: true }).waitFor();
   await page
     .getByRole("button", { name: "Confirmar importação", exact: true })
     .click();

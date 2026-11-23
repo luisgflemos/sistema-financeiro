@@ -48,6 +48,7 @@ export function TableImport({
   const [source, setSource] = useState<Source | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [mapping, setMapping] = useState<Record<string, number>>({});
+  const [constants, setConstants] = useState<Record<string, string>>({});
   const [report, setReport] = useState<Report | null>(null);
   const [committed, setCommitted] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -64,6 +65,7 @@ export function TableImport({
     });
     setPreview(data);
     setMapping(data.mapping);
+    setConstants({});
   }
 
   async function choose(file?: File) {
@@ -117,7 +119,7 @@ export function TableImport({
     try {
       const data = await api<Report>(`${path}/${action}`, {
         method: "POST",
-        body: JSON.stringify({ ...source, mapping }),
+        body: JSON.stringify({ ...source, mapping, constants }),
       });
       setReport(data);
       if (action === "commit") setCommitted(true);
@@ -135,7 +137,24 @@ export function TableImport({
 
   const ready = preview?.fields
     .filter((field) => field.required)
-    .every((field) => mapping[field.name] !== undefined);
+    .every(
+      (field) => mapping[field.name] !== undefined || !!constants[field.name],
+    );
+
+  function fixedOptions(name: string) {
+    if (name === "active")
+      return [
+        { value: "Sim", label: "Sim — todos ativos" },
+        { value: "Não", label: "Não — todos inativos" },
+      ];
+    if (name === "type" && kind === "parties")
+      return [
+        { value: "Cliente", label: "Cliente" },
+        { value: "Fornecedor", label: "Fornecedor" },
+        { value: "Ambos", label: "Ambos" },
+      ];
+    return [];
+  }
 
   const step = committed || report ? 2 : preview ? 1 : 0;
   const guidance = {
@@ -353,7 +372,7 @@ export function TableImport({
                 <header>
                   <h3 id="mapping-title">Associar colunas</h3>
                   <p>
-                    Selecione a coluna do seu arquivo para cada campo da Finare.
+                    Selecione uma coluna ou use um valor fixo para todo o lote.
                     Os campos com * são obrigatórios.
                   </p>
                 </header>
@@ -367,12 +386,23 @@ export function TableImport({
                       <SearchSelect
                         id={`mapping-${field.name}`}
                         value={
-                          mapping[field.name] === undefined
-                            ? ""
-                            : String(mapping[field.name])
+                          constants[field.name] !== undefined
+                            ? "fixed"
+                            : mapping[field.name] === undefined
+                              ? ""
+                              : String(mapping[field.name])
                         }
                         options={[
                           { value: "", label: "Não importar esta coluna" },
+                          ...(fixedOptions(field.name).length
+                            ? [
+                                {
+                                  value: "fixed",
+                                  label:
+                                    "Usar valor fixo para todos os registros",
+                                },
+                              ]
+                            : []),
                           ...preview.headers.map((header, index) => ({
                             value: String(index),
                             label: `${index + 1} · ${header}`,
@@ -381,13 +411,45 @@ export function TableImport({
                         onChange={(selected) => {
                           setMapping((previous) => {
                             const next = { ...previous };
-                            if (selected === "") delete next[field.name];
+                            if (selected === "" || selected === "fixed")
+                              delete next[field.name];
                             else next[field.name] = Number(selected);
+                            return next;
+                          });
+                          setConstants((previous) => {
+                            const next = { ...previous };
+                            if (selected === "fixed")
+                              next[field.name] = fixedOptions(
+                                field.name,
+                              )[0].value;
+                            else delete next[field.name];
                             return next;
                           });
                           setReport(null);
                         }}
                       />
+                      {constants[field.name] !== undefined && (
+                        <div className="import-fixed-value">
+                          <label htmlFor={`fixed-${field.name}`}>
+                            Valor fixo de {field.label}
+                          </label>
+                          <SearchSelect
+                            id={`fixed-${field.name}`}
+                            value={constants[field.name]}
+                            options={fixedOptions(field.name)}
+                            onChange={(value) => {
+                              setConstants((previous) => ({
+                                ...previous,
+                                [field.name]: value,
+                              }));
+                              setReport(null);
+                            }}
+                          />
+                          <small>
+                            Aplicado a todas as linhas deste arquivo.
+                          </small>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -445,6 +507,20 @@ export function TableImport({
                 : "Confira o resumo da carga."}
             </p>
           </header>
+          {!!Object.keys(constants).length && (
+            <div className="import-fixed-summary">
+              <strong>Valores aplicados a todo o lote</strong>
+              <ul>
+                {preview?.fields
+                  .filter((field) => constants[field.name] !== undefined)
+                  .map((field) => (
+                    <li key={field.name}>
+                      {field.label}: {constants[field.name]}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
           <div className="import-totals">
             <div>
               <strong>{report.new}</strong>
