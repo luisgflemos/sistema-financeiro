@@ -24,6 +24,7 @@ from app.catalogs import (
     validate_parent,
 )
 from app.codes import next_catalog_code
+from app.import_mapping import suggest_mapping
 
 router = APIRouter(prefix="/organizations/{organization_id}/table-imports", tags=["Importações"])
 Kind = Literal["bank-accounts", "categories", "cost-centers", "parties"]
@@ -177,15 +178,9 @@ def read_source(source: Source):
 @router.post("/{kind}/preview")
 def preview(kind: Kind, payload: Source):
     sheets, headers, rows = read_source(payload)
-    mapping = {}
-    for field, label, _, aliases in FIELDS[kind]:
-        matches = [
-            i
-            for i, header in enumerate(headers)
-            if key(header) in {key(field), key(label), *(key(alias) for alias in aliases)}
-        ]
-        if len(matches) == 1 and matches[0] not in mapping.values():
-            mapping[field] = matches[0]
+    mapping, suggestions, ambiguities = suggest_mapping(
+        kind, FIELDS[kind], headers, [row for _, row in rows[:20]]
+    )
     return {
         "sheets": sheets,
         "headers": headers,
@@ -196,6 +191,8 @@ def preview(kind: Kind, payload: Source):
             for name, label, required, _ in FIELDS[kind]
         ],
         "mapping": mapping,
+        "suggestions": suggestions,
+        "ambiguities": ambiguities,
     }
 
 

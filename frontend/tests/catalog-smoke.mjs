@@ -146,15 +146,28 @@ try {
     name: "clientes-erp.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(
-      "Razao ERP;Categoria ERP\nCliente ERP sintético;Cliente\n",
+      "NOME FANTASIA;RESPONSÁVEL FINANCEIRO;TEL. COMERCIAL;TEL. CELULAR FINANCEIRO;E-MAIL;CPF\nCliente ERP sintético;Pessoa sintética;(11) 0000-0000;(11) 90000-0000;erp@example.test;000.000.000-00\n",
     ),
   });
   await page.getByRole("heading", { name: "Associar colunas" }).waitFor();
-  await page.getByLabel("Nome do Cliente *", { exact: true }).fill("Razao ERP");
-  await page
-    .getByRole("option", { name: "1 · Razao ERP", exact: true })
-    .click();
   const nameBox = page.getByLabel("Nome do Cliente *", { exact: true });
+  assert.equal(await nameBox.inputValue(), "1 · NOME FANTASIA");
+  assert.equal(
+    await page.getByLabel("Contato", { exact: true }).inputValue(),
+    "2 · RESPONSÁVEL FINANCEIRO",
+  );
+  await page
+    .getByText("Identificação inteligente das colunas", { exact: true })
+    .waitFor();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Validar importação", exact: true })
+      .isEnabled(),
+    false,
+  );
+  await page
+    .getByRole("button", { name: "Confirmar sugestões", exact: true })
+    .click();
   const beforeOpen = await nameBox.boundingBox();
   await page.getByLabel("Tipo *", { exact: true }).click();
   const afterOpen = await nameBox.boundingBox();
@@ -169,25 +182,18 @@ try {
       .evaluate((element) => getComputedStyle(element).position),
     "absolute",
   );
-  await page.getByLabel("Tipo *", { exact: true }).fill("Categoria ERP");
-  await page
-    .getByRole("option", { name: "2 · Categoria ERP", exact: true })
-    .click();
   await page.getByLabel("Tipo *", { exact: true }).fill("valor fixo");
   await page
-    .getByRole("option", {
-      name: "Importar com valor fixo",
-      exact: true,
-    })
+    .getByRole("option", { name: "Importar com valor fixo", exact: true })
     .click();
-  await page.getByLabel("Valor fixo de Tipo", { exact: true }).fill("Cliente");
-  await page.getByRole("option", { name: "Cliente", exact: true }).click();
   await page.getByLabel("Ativo", { exact: true }).fill("valor fixo");
   await page
-    .getByRole("option", {
-      name: "Importar com valor fixo",
-      exact: true,
-    })
+    .getByRole("option", { name: "Importar com valor fixo", exact: true })
+    .click();
+  await page.getByText("Precisa da sua escolha", { exact: true }).waitFor();
+  await page.getByLabel("Telefone", { exact: true }).fill("TEL. COMERCIAL");
+  await page
+    .getByRole("option", { name: "3 · TEL. COMERCIAL", exact: true })
     .click();
   await page.screenshot({ path: "import-layout-mapping.png", fullPage: true });
   await page

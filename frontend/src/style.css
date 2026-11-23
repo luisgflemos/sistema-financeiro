@@ -1486,3 +1486,62 @@ select.nature-NEUTRAL {
 .search-options .import-choice-fixed:hover {
   background: #bbf7d0;
 }
+
+.import-suggestion-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  color: #1e3a8a;
+  background: #eff6ff;
+  border-bottom: 1px solid #bfdbfe;
+}
+.import-suggestion-banner p {
+  margin: 0.3rem 0;
+  color: #1e40af;
+}
+.import-suggestion-banner small {
+  line-height: 1.5;
+}
+.import-suggestion-banner button,
+.mapping-explanation button {
+  color: #1e3a8a;
+  border-color: #93c5fd;
+  background: white;
+  font-size: 0.8rem;
+}
+.import-mapping .mapping-suggested,
+.import-mapping .mapping-ambiguous {
+  padding: 0.75rem;
+  border: 1px solid #93c5fd;
+  border-left: 4px solid #2563eb;
+  border-radius: 0.5rem;
+  background: #eff6ff;
+}
+.mapping-suggested input {
+  border-color: #93c5fd;
+}
+.mapping-explanation {
+  display: grid;
+  gap: 0.4rem;
+  color: #1e3a8a;
+}
+.mapping-explanation strong,
+.mapping-explanation small {
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.mapping-explanation small {
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.import-mapping .mapping-ambiguous {
+  border-color: #fcd34d;
+  border-left-color: #b45309;
+  background: #fffbeb;
+}
+.mapping-ambiguous .mapping-explanation {
+  color: #713f12;
+}

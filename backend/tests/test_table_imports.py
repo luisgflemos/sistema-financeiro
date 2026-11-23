@@ -165,3 +165,14 @@ def test_reject_conflicting_or_invalid_fixed_values(import_endpoint):
     mapped["constants"] = {"type": "Inválido"}
     assert client.post(f"{endpoint}/parties/validate", json=mapped).json()["errors"] == 1
     assert client.post(f"{endpoint}/parties/commit", json=mapped).status_code == 422
+
+
+def test_preview_exposes_explanation_and_candidates(import_endpoint):
+    client, _, endpoint = import_endpoint
+    source = csv_source(["Nome Fantasia", "Telefone", "Celular"], [["Teste", "", ""]])
+    result = client.post(f"{endpoint}/parties/preview", json=source)
+    assert result.status_code == 200
+    data = result.json()
+    assert data["mapping"]["display_name"] == 0
+    assert "display_name" in data["suggestions"]
+    assert len(data["ambiguities"]["contact_phone"]) == 2

@@ -18,6 +18,7 @@ type Source = {
   sheet?: string;
   header_row: number;
 };
+type Suggestion = { column: number; reason: string; confidence: string };
 type Preview = {
   sheets: string[];
   headers: string[];
@@ -25,6 +26,8 @@ type Preview = {
   total: number;
   fields: { name: string; label: string; required: boolean }[];
   mapping: Record<string, number>;
+  suggestions: Record<string, Suggestion>;
+  ambiguities: Record<string, Suggestion[]>;
 };
 type Report = {
   rows: { row: number; status: string; message: string }[];
@@ -48,6 +51,7 @@ export function TableImport({
   const [source, setSource] = useState<Source | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [mapping, setMapping] = useState<Record<string, number>>({});
+  const [reviewed, setReviewed] = useState<Record<string, boolean>>({});
   const [constants, setConstants] = useState<Record<string, string>>({});
   const [report, setReport] = useState<Report | null>(null);
   const [committed, setCommitted] = useState(false);
@@ -66,6 +70,7 @@ export function TableImport({
     setPreview(data);
     setMapping(data.mapping);
     setConstants({});
+    setReviewed({});
   }
 
   async function choose(file?: File) {
@@ -135,11 +140,20 @@ export function TableImport({
     onBusyChange(busy);
   }, [busy, onBusyChange]);
 
-  const ready = preview?.fields
-    .filter((field) => field.required)
-    .every(
-      (field) => mapping[field.name] !== undefined || !!constants[field.name],
-    );
+  const pending = Object.keys(preview?.suggestions ?? {}).filter(
+    (name) => !reviewed[name],
+  );
+  const ambiguous = Object.keys(preview?.ambiguities ?? {}).filter(
+    (name) => !reviewed[name],
+  );
+  const ready =
+    !pending.length &&
+    !ambiguous.length &&
+    preview?.fields
+      .filter((field) => field.required)
+      .every(
+        (field) => mapping[field.name] !== undefined || !!constants[field.name],
+      );
 
   function fixedOptions(name: string) {
     if (name === "active")
@@ -376,9 +390,45 @@ export function TableImport({
                     Os campos com * são obrigatórios.
                   </p>
                 </header>
+                {(pending.length > 0 || ambiguous.length > 0) && (
+                  <div className="import-suggestion-banner">
+                    <div>
+                      <strong>Identificação inteligente das colunas</strong>
+                      <p>
+                        {pending.length} sugestões para conferir.{" "}
+                        {ambiguous.length} campos com mais de uma possibilidade.
+                      </p>
+                      <small>
+                        Confira as sugestões em azul. Nos campos em amarelo,
+                        escolha uma coluna ou Não importar.
+                      </small>
+                    </div>
+                    {pending.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setReviewed((previous) => ({
+                            ...previous,
+                            ...Object.fromEntries(
+                              Object.keys(preview.suggestions).map((name) => [
+                                name,
+                                true,
+                              ]),
+                            ),
+                          }))
+                        }
+                      >
+                        Confirmar sugestões
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div className="import-mapping">
                   {preview.fields.map((field) => (
-                    <div className="field" key={field.name}>
+                    <div
+                      className={`field ${!reviewed[field.name] && preview.suggestions[field.name] ? "mapping-suggested" : ""} ${!reviewed[field.name] && preview.ambiguities[field.name] ? "mapping-ambiguous" : ""}`}
+                      key={field.name}
+                    >
                       <label htmlFor={`mapping-${field.name}`}>
                         {field.label}
                         {field.required ? " *" : ""}
@@ -413,6 +463,10 @@ export function TableImport({
                           })),
                         ]}
                         onChange={(selected) => {
+                          setReviewed((previous) => ({
+                            ...previous,
+                            [field.name]: true,
+                          }));
                           setMapping((previous) => {
                             const next = { ...previous };
                             if (selected === "" || selected === "fixed")
@@ -432,6 +486,42 @@ export function TableImport({
                           setReport(null);
                         }}
                       />
+                      {!reviewed[field.name] &&
+                        preview.suggestions[field.name] && (
+                          <div className="mapping-explanation">
+                            <strong>
+                              Sugestão automática · Confiança{" "}
+                              {preview.suggestions[
+                                field.name
+                              ].confidence.toLowerCase()}
+                            </strong>
+                            <small>
+                              {preview.suggestions[field.name].reason}
+                            </small>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setReviewed((previous) => ({
+                                  ...previous,
+                                  [field.name]: true,
+                                }))
+                              }
+                            >
+                              Confirmar {field.label}
+                            </button>
+                          </div>
+                        )}
+                      {!reviewed[field.name] &&
+                        preview.ambiguities[field.name] && (
+                          <div className="mapping-explanation">
+                            <strong>Precisa da sua escolha</strong>
+                            <small>
+                              {preview.ambiguities[field.name]
+                                .map((item) => preview.headers[item.column])
+                                .join(" / ")}
+                            </small>
+                          </div>
+                        )}
                       {constants[field.name] !== undefined && (
                         <div className="import-fixed-value">
                           <label htmlFor={`fixed-${field.name}`}>
