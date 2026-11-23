@@ -631,3 +631,45 @@ td:first-child {
   height: 1rem;
   accent-color: var(--ink);
 }
+
+.active-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+button.toggle {
+  display: flex;
+  align-items: center;
+  width: 3rem;
+  min-height: 1.75rem;
+  padding: 0.2rem;
+  border: 0;
+  border-radius: 2rem;
+  background: #64748b;
+}
+
+button.toggle[aria-checked="true"] {
+  background: var(--primary);
+}
+
+.toggle span {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: white;
+}
+
+.toggle[aria-checked="true"] span {
+  margin-left: auto;
+}
+
+button.toggle:hover:not(:disabled) {
+  filter: brightness(0.92);
+  background: #64748b;
+}
+
+button.toggle[aria-checked="true"]:hover:not(:disabled) {
+  background: var(--primary);
+}

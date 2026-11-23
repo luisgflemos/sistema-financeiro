@@ -1,4 +1,5 @@
 import banks from "./banks.json";
+import { currencies } from "./currencies";
 
 export type CatalogId =
   | "bank-accounts"
@@ -51,7 +52,6 @@ export const catalogs: Record<CatalogId, Catalog> = {
         name: "bank_code",
         label: "Banco",
         required: true,
-        defaultValue: "033",
         options: banks,
       },
       {
@@ -90,8 +90,7 @@ export const catalogs: Record<CatalogId, Catalog> = {
         name: "currency",
         label: "Moeda",
         defaultValue: "BRL",
-        pattern: "[A-Z]{3}",
-        maxLength: 3,
+        options: currencies,
         required: true,
       },
     ],

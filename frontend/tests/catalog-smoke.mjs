@@ -38,7 +38,7 @@ try {
   await save();
   await page.getByRole("row", { name: /Conta sintética CTA-\d+/ }).waitFor();
   await page.getByRole("button", { name: "Editar Conta sintética" }).click();
-  await page.getByRole("checkbox", { name: "Cadastro ativo" }).uncheck();
+  await page.getByRole("switch", { name: "Cadastro ativo" }).click();
   await save();
   await page.getByLabel("Filtrar por situação").selectOption("active");
   await page.getByText("Nenhum resultado").waitFor();

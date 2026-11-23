@@ -60,6 +60,17 @@ jobs:
             const output = await prettier.format(source, { filepath: path });
             if (source !== output) console.log("FORMAT " + path + " " + Buffer.from(output).toString("base64"));
           }'
+      - name: Conferir formatação
+        if: failure()
+        run: |
+          docker compose exec -T web node --input-type=module -e '
+          import prettier from "prettier";
+          import {readFileSync} from "node:fs";
+          for (const path of ["src/catalog-page.tsx", "src/catalogs.ts", "src/currencies.ts", "tests/catalog-smoke.mjs"]) {
+            const source = readFileSync(path, "utf8");
+            const output = await prettier.format(source, { filepath: path });
+            if (source !== output) console.log("FORMAT " + path + " " + Buffer.from(output).toString("base64"));
+          }'
       - name: Diagnosticar falha
         if: failure()
         run: |

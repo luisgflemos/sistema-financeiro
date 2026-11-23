@@ -392,40 +392,19 @@ export function CatalogPage({
                       );
                     })}
                   </div>
-                  {id === "categories" || id === "subcategories" ? (
-                    <fieldset className="active-choice">
-                      <legend>Ativo</legend>
-                      <label>
-                        <input
-                          type="radio"
-                          name={`${uid}-active`}
-                          checked={Boolean(draft.active)}
-                          onChange={() => setDraft({ ...draft, active: true })}
-                        />
-                        Sim
-                      </label>
-                      <label>
-                        <input
-                          type="radio"
-                          name={`${uid}-active`}
-                          checked={!draft.active}
-                          onChange={() => setDraft({ ...draft, active: false })}
-                        />
-                        Não
-                      </label>
-                    </fieldset>
-                  ) : (
-                    <label className="checkbox">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(draft.active)}
-                        onChange={(event) =>
-                          setDraft({ ...draft, active: event.target.checked })
-                        }
-                      />
-                      Cadastro ativo
-                    </label>
-                  )}
+                  <div className="active-toggle">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={Boolean(draft.active)}
+                      aria-label="Cadastro ativo"
+                      className="toggle"
+                      onClick={() => setDraft({ ...draft, active: !draft.active })}
+                    >
+                      <span />
+                    </button>
+                    <span>Cadastro {draft.active ? "ativo" : "inativo"}</span>
+                  </div>
                   <div className="actions">
                     <button className="primary">
                       {saving ? "Salvando…" : "Salvar cadastro"}
