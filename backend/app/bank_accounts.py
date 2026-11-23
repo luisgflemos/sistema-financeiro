@@ -23,6 +23,10 @@ class BankAccountInput(BaseModel):
 
     code: RequiredText | None = None
     label: RequiredText | None = None
+    holder_document: Annotated[str, StringConstraints(pattern=r"^(?:[0-9]{11}|[0-9]{14})$")] | None = None
+    account_number: Annotated[str, StringConstraints(pattern=r"^[0-9]{1,20}$")] | None = None
+    account_digit: Annotated[str, StringConstraints(pattern=r"^[0-9Xx]{1,2}$")] | None = None
+    account_type: str | None = None
     bank_code: RequiredText
     branch: RequiredText
     account_number_masked: MaskedAccount
@@ -57,7 +61,10 @@ def require_account(connection, organization_id: UUID, account_id: UUID, *, lock
 
 
 def audit(connection, action: str, current: BankAccount, previous: BankAccount | None = None):
-    excluded = {"holder_name", "branch", "account_number_masked"}
+    excluded = {
+        "holder_name", "branch", "account_number_masked",
+        "holder_document", "account_number", "account_digit",
+    }
     connection.execute(
         text(
             """
@@ -127,11 +134,13 @@ def create_account(
                         """
                         INSERT INTO bank_accounts (
                             organization_id, code, label, bank_code, branch, account_number_masked,
-                            holder_name, currency, active
+                            holder_name, currency, active, holder_document, account_number,
+                            account_digit, account_type
                         )
                         VALUES (
                             :org, :code, :label, :bank_code, :branch, :account_number_masked,
-                            :holder_name, :currency, :active
+                            :holder_name, :currency, :active, :holder_document, :account_number,
+                            :account_digit, :account_type
                         )
                         RETURNING *
                         """
@@ -170,7 +179,9 @@ def update_account(
                         UPDATE bank_accounts SET
                             code = :code, label = :label, bank_code = :bank_code, branch = :branch,
                             account_number_masked = :account_number_masked,
-                            holder_name = :holder_name, currency = :currency, active = :active
+                            holder_name = :holder_name, currency = :currency, active = :active,
+                            holder_document = :holder_document, account_number = :account_number,
+                            account_digit = :account_digit, account_type = :account_type
                         WHERE id = :id AND organization_id = :org
                         """
                     ),
