@@ -55,7 +55,7 @@ conferidas pela ferramenta, com decisão humana só se faltar evidência. As sug
 generativas precisam de confirmação; padrões automáticos dependem de exemplos confirmados
 e concordantes. DRE, rateios, projeções, importação histórica já classificada e limpeza dos
 testes ainda não possuem fluxo nesta versão: não invente botões para essas funções.
-O usuário está testando o fluxo. A futura limpeza foi limitada às transações de teste e
+A limpeza futura solicitada foi limitada às transações de teste e
 seus registros vinculados; cadastros validados devem ser preservados. Não execute limpeza.
 Não peça senhas, tokens, chaves de API ou credenciais bancárias.
 """
@@ -170,6 +170,18 @@ def chat(organization_id: UUID, payload: Conversation, request: Request):
                     "reason": redact(suggestion["reason"]),
                     "confidence": suggestion["confidence"],
                 }
+            names = {}
+            for field, table, column in (
+                ("category_id", "categories", "name"),
+                ("subcategory_id", "subcategories", "name"),
+                ("cost_center_id", "cost_centers", "name"),
+                ("party_id", "parties", "display_name"),
+            ):
+                if row.get(field):
+                    names[field] = connection.scalar(
+                        text(f"SELECT {column} FROM {table} WHERE id=:id"), {"id": row[field]}
+                    )
+            context["transaction"]["identification_names"] = names
         context["catalogs"] = {}
         for table in ("categories", "subcategories", "cost_centers", "parties"):
             if table == "subcategories":

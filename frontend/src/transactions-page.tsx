@@ -587,6 +587,7 @@ export function TransactionsPage({
           <div className="transaction-original">
             <button
               type="button"
+              disabled={!selected.editable}
               className="text-button"
               onClick={() =>
                 askAssistant({
