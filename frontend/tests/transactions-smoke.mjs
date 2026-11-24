@@ -234,12 +234,10 @@ try {
     "O próximo lançamento deve abrir com os dados originais visíveis no topo",
   );
   await page.setViewportSize({ width: 1280, height: 720 });
-  const dialogSize = await page
-    .getByRole("dialog")
-    .evaluate((element) => ({
-      scroll: element.scrollHeight,
-      visible: element.clientHeight,
-    }));
+  const dialogSize = await page.getByRole("dialog").evaluate((element) => ({
+    scroll: element.scrollHeight,
+    visible: element.clientHeight,
+  }));
   assert.ok(
     dialogSize.scroll <= dialogSize.visible + 1,
     "O formulário direto deve caber inteiro em uma janela desktop de 720px: " +
