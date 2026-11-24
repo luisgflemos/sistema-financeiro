@@ -437,6 +437,13 @@ try {
     "Arrastar não deve abrir a conversa",
   );
   const moved = await fin.boundingBox();
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+    true,
+    "Reposicionar a Fin não deve criar rolagem horizontal na página",
+  );
   assert.ok(
     Math.abs(moved.x - initial.x) > 100 && Math.abs(moved.y - initial.y) > 100,
     "A Fin deve mover-se nas duas direções",
