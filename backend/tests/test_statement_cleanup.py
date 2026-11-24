@@ -6,8 +6,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 from test_planning import link, new_plan
 from test_statements import source
+from test_statements import statements as statement_fixture  # noqa: F401
 from test_transactions import dimensions, imported
-from test_transactions import statements as statement_fixture  # noqa: F401
 
 
 @pytest.fixture
