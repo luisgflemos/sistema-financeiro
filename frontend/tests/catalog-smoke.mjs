@@ -251,9 +251,24 @@ try {
   await page
     .getByRole("button", { name: "Confirmar sugestões", exact: true })
     .click();
-  const beforeOpen = await nameBox.boundingBox();
+  await page
+    .getByRole("button", { name: "Confirmar sugestões", exact: true })
+    .waitFor({ state: "hidden" });
+  const logicalBounds = async () =>
+    nameBox.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const dialog = element.closest("dialog");
+      const parent = dialog.getBoundingClientRect();
+      return {
+        x: box.x - parent.x,
+        y: box.y - parent.y + dialog.scrollTop,
+        width: box.width,
+        height: box.height,
+      };
+    });
+  const beforeOpen = await logicalBounds();
   await page.getByLabel("Tipo *", { exact: true }).click();
-  const afterOpen = await nameBox.boundingBox();
+  const afterOpen = await logicalBounds();
   assert.deepEqual(
     afterOpen,
     beforeOpen,
