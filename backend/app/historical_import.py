@@ -74,6 +74,21 @@ def build_preview(connection, organization_id, payload):
         params,
     ).mappings():
         subs[(str(sub["category_id"]), normalize(sub["name"]))].append(dict(sub))
+    aliases = defaultdict(dict)
+    for sub in connection.execute(
+        text("""
+        SELECT s.*, e.old_json->>'name' AS former_name FROM subcategories s
+        JOIN categories c ON c.id=s.category_id JOIN audit_events e ON e.entity_id=s.id
+        WHERE c.organization_id=:org AND e.organization_id=:org
+        AND e.entity_type='subcategories' AND e.old_json->>'name' IS NOT NULL
+        AND e.old_json->>'category_id'=CAST(s.category_id AS text)
+    """),
+        params,
+    ).mappings():
+        aliases[(str(sub["category_id"]), normalize(sub["former_name"]))][str(sub["id"])] = dict(
+            sub
+        )
+    renamed = {}
     grouped = defaultdict(list)
     for source in source_rows:
         number = source["row"]
@@ -81,12 +96,25 @@ def build_preview(connection, organization_id, payload):
         if account["currency"] != "BRL":
             raise HTTPException(422, f"Linha {number}: a conta precisa usar BRL.")
         category = resolve(categories, source["category"], number, "classificação")
-        sub_matches = subs[(str(category["id"]), normalize(source["subcategory"]))]
+        sub_key = (str(category["id"]), normalize(source["subcategory"]))
+        proven = {str(s["id"]): s for s in subs[sub_key]}
+        proven.update(aliases[sub_key])
+        sub_matches = list(proven.values())
         if len(sub_matches) != 1 or not sub_matches[0]["active"]:
             raise HTTPException(
                 422,
                 f"Linha {number}: subclassificação não encontrada, inativa ou ambígua nesta classificação.",
             )
+        if normalize(sub_matches[0]["name"]) != normalize(source["subcategory"]):
+            renamed_key = (str(category["id"]), str(sub_matches[0]["id"]), source["subcategory"])
+            if renamed_key not in renamed:
+                renamed[renamed_key] = {
+                    "category": category["name"],
+                    "source": source["subcategory"],
+                    "current": sub_matches[0]["name"],
+                    "count": 0,
+                }
+            renamed[renamed_key]["count"] += 1
         transfer = normalize(source["category"]) == "transferencia bancaria"
         expected_kind = (
             "NEUTRAL" if transfer else "REVENUE" if source["direction"] == "CREDIT" else "EXPENSE"
@@ -185,6 +213,7 @@ def build_preview(connection, organization_id, payload):
             "source_sha256": source_hash,
             "preserves_equal_rows": True,
             "catalogs_changed": False,
+            "renamed_subcategories": list(renamed.values()),
         },
         raw,
         groups,

@@ -267,3 +267,58 @@ def test_relevant_examples_are_selected_beyond_recent_500():
     }
     history = recent + [old]
     assert relevant_history(history, [old], limit=1) == [old]
+
+
+def test_renamed_subcategory_requires_proven_same_identity_and_parent(statements):
+    client, _, base, _ = statements
+    _, values = catalogs(client, base)
+    category, sub = values["Recebimento"]
+    response = client.put(
+        base + "/subcategories/" + sub["id"],
+        json={"name": "PIX sintético renomeado", "category_id": category["id"], "active": True},
+    )
+    assert response.status_code == 200, response.text
+    payload = upload()
+    endpoint = base + "/historical-import"
+    preview = client.post(endpoint + "/preview", json=payload)
+    assert preview.status_code == 200, preview.text
+    assert preview.json()["renamed_subcategories"] == [
+        {
+            "category": "Recebimento",
+            "source": "PIX à Vista",
+            "current": "PIX sintético renomeado",
+            "count": 2,
+        }
+    ]
+    result = client.post(endpoint + "/commit", json={**payload, "token": preview.json()["token"]})
+    assert result.status_code == 200, result.text
+    credits = [
+        r
+        for r in client.get(base + "/transactions?state=all").json()["rows"]
+        if r["direction"] == "CREDIT"
+    ]
+    assert {r["subcategory_id"] for r in credits} == {sub["id"]}
+    assert all(
+        r["raw_payload"]["original_columns"]["Sub Classificação"] == "PIX à Vista" for r in credits
+    )
+
+
+def test_reused_old_subcategory_name_is_ambiguous(statements):
+    client, _, base, _ = statements
+    _, values = catalogs(client, base)
+    category, sub = values["Recebimento"]
+    assert (
+        client.put(
+            base + "/subcategories/" + sub["id"],
+            json={"name": "PIX sintético renomeado", "category_id": category["id"], "active": True},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            base + "/subcategories", json={"name": "PIX à Vista", "category_id": category["id"]}
+        ).status_code
+        == 201
+    )
+    assert client.post(base + "/historical-import/preview", json=upload()).status_code == 422
+    assert client.get(base + "/transactions?state=all").json()["total"] == 0

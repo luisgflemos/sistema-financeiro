@@ -22,6 +22,12 @@ type Preview = {
   groups: Group[];
   token: string;
   sheet: string;
+  renamed_subcategories: {
+    category: string;
+    source: string;
+    current: string;
+    count: number;
+  }[];
 };
 type Upload = { file_name: string; content: string };
 
@@ -180,6 +186,22 @@ export function HistoricalImport({
         {preview && (
           <section style={{ marginTop: 20 }}>
             <h3>{done ? "Importação Conferida" : "Conferência por Conta"}</h3>
+            {preview.renamed_subcategories.length > 0 && (
+              <div className="panel" style={{ padding: 12, marginBottom: 16 }}>
+                <strong>Vínculos preservados após renomeação</strong>
+                <p className="field-help">
+                  O histórico de alterações comprova que são os mesmos
+                  cadastros. Os nomes originais da planilha serão preservados na
+                  origem.
+                </p>
+                {preview.renamed_subcategories.map((item) => (
+                  <p key={item.category + item.source}>
+                    {item.category}: {item.source} → {item.current} ·{" "}
+                    {item.count.toLocaleString("pt-BR")} movimentos
+                  </p>
+                ))}
+              </div>
+            )}
             <p>
               <strong>
                 {preview.count.toLocaleString("pt-BR")} movimentos

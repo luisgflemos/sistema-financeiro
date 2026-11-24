@@ -1,5 +1,7 @@
 # Carga inicial do histórico identificado
 
+Renomeações de subclassificações são resolvidas somente quando a auditoria comprova o mesmo UUID e a mesma classificação pai. A prévia destaca o nome de origem e o nome atual. Nome atual e nomes anteriores que apontem para UUIDs distintos são ambíguos e bloqueiam a carga; não há correspondência aproximada ou suposição por haver apenas uma subclasse.
+
 Autorizada em 24/11/2026: importar a aba LANÇAMENTOS da base validada, com todas as ocorrências iguais preservadas. A exportação diária N-1 fornecida pelo usuário não deve perder linhas por coincidência de data, documento, descrição ou valor.
 
 O importador lê somente a aba LANÇAMENTOS (até 20 MB compactados, 400 MB descompactados, 100 MB de XML da aba e 100.000 registros), ignorando dimensões infladas por formatação. Campos financeiros e vínculos precisam ser valores; fórmulas auxiliares são preservadas como origem, sem execução. Nenhum dado real nem arquivo de produção entra no repositório ou nos testes.
