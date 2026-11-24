@@ -119,6 +119,14 @@ export function SearchSelect({
         aria-required={required}
         value={open ? query : (selected?.label ?? "")}
         placeholder="Digite para buscar"
+        onClick={() => {
+          if (!open) {
+            setQuery("");
+            onSearchChange?.("");
+            setHighlighted(0);
+            setOpen(true);
+          }
+        }}
         onFocus={() => {
           setQuery("");
           onSearchChange?.("");

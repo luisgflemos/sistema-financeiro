@@ -99,6 +99,13 @@ try {
     1,
   );
 
+  const organization = page.getByLabel("Organização", { exact: true });
+  await organization.click();
+  await page.getByRole("listbox").waitFor();
+  await organization.press("Escape");
+  await organization.click();
+  await page.getByRole("listbox").waitFor();
+  await organization.press("Escape");
   await open("Classificações");
   await page.locator(".catalog-toolbar").waitFor();
   const treeSearchX = (
