@@ -48,16 +48,16 @@ def test_scoped_removal_backup_restoration_and_reimport(statements):
         )
     }
     summary = client.get(endpoint + "/" + file_id + "/preview").json()
-    assert summary["movements"] == 3
+    assert summary["movements"] == 4
     assert summary["identifications"] == 1
     assert client.post(endpoint, json={"file_id": file_id, "token": "0" * 64}).status_code == 409
     response = client.post(endpoint, json={"file_id": file_id, "token": summary["token"]})
     assert response.status_code == 200, response.text
     removal_id = response.json()["removal_id"]
-    assert client.get(base + "/transactions").json()["total"] == 3
+    assert client.get(base + "/transactions?state=all").json()["total"] == 4
     assert all(
         row["account_id"] == accounts[1]
-        for row in client.get(base + "/transactions").json()["rows"]
+        for row in client.get(base + "/transactions?state=all").json()["rows"]
     )
     for path, records in before.items():
         assert client.get(base + "/" + path).json() == records
@@ -68,8 +68,8 @@ def test_scoped_removal_backup_restoration_and_reimport(statements):
     assert len(backup["transaction_identifications"]) == 1
     restored = client.post(endpoint + "/" + removal_id + "/restore", json={})
     assert restored.status_code == 200, restored.text
-    assert restored.json()["restored"] == 3
-    assert client.get(base + "/transactions").json()["total"] == 6
+    assert restored.json()["restored"] == 4
+    assert client.get(base + "/transactions?state=all").json()["total"] == 8
     assert client.get(base + "/transactions?state=identified").json()["total"] == 1
     assert client.get(endpoint).json() == []
     assert client.post(endpoint + "/" + removal_id + "/restore", json={}).status_code == 404
@@ -83,7 +83,7 @@ def test_scoped_removal_backup_restoration_and_reimport(statements):
     removal_id = response.json()["removal_id"]
     payload = {"files": [source()]}
     preview = client.post(base + "/statements/preview", json=payload).json()
-    assert preview["new"] == 3
+    assert preview["new"] == 4
     assert (
         client.post(
             base + "/statements/commit", json={**payload, "token": preview["token"]}
@@ -91,7 +91,7 @@ def test_scoped_removal_backup_restoration_and_reimport(statements):
         == 200
     )
     assert client.post(endpoint + "/" + removal_id + "/restore", json={}).status_code == 409
-    assert client.get(base + "/transactions").json()["total"] == 6
+    assert client.get(base + "/transactions?state=all").json()["total"] == 8
 
 
 def test_cross_organization_and_stale_preview_are_rejected(statements):
@@ -119,7 +119,7 @@ def test_cross_organization_and_stale_preview_are_rejected(statements):
         == 404
     )
     assert client.get(endpoint + "/" + str(uuid4()) + "/preview").status_code == 404
-    assert client.get(base + "/transactions").json()["total"] == 3
+    assert client.get(base + "/transactions?state=all").json()["total"] == 4
 
 
 def test_shared_movements_block_removal(statements):
@@ -135,7 +135,7 @@ def test_shared_movements_block_removal(statements):
     )
     response = client.get(base + "/statement-cleanup/" + rows[0]["import_file_id"] + "/preview")
     assert response.status_code == 409
-    assert client.get(base + "/transactions").json()["total"] == 3
+    assert client.get(base + "/transactions?state=all").json()["total"] == 4
 
 
 def test_settled_plans_are_never_removed(statements):
@@ -154,4 +154,4 @@ def test_settled_plans_are_never_removed(statements):
         == 409
     )
     assert client.get(base + "/planned-entries").json() == before
-    assert client.get(base + "/transactions").json()["total"] == 3
+    assert client.get(base + "/transactions?state=all").json()["total"] == 4
