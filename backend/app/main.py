@@ -13,6 +13,7 @@ from app.db import create_database_engine
 from app.organizations import router as organizations_router
 from app.planning import router as planning_router
 from app.recognition import router as recognition_router
+from app.statement_cleanup import router as statement_cleanup_router
 from app.statements import router as statements_router
 from app.table_imports import router as table_imports_router
 from app.transactions import router as transactions_router
@@ -36,6 +37,7 @@ app.include_router(catalog_import_router)
 app.include_router(organizations_router)
 app.include_router(table_imports_router)
 app.include_router(statements_router)
+app.include_router(statement_cleanup_router)
 app.include_router(transactions_router)
 app.include_router(recognition_router)
 app.include_router(assistant_router)

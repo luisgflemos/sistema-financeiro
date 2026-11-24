@@ -9,6 +9,7 @@ import type { RecordData } from "./catalogs";
 import { askAssistant } from "./assistant";
 import { EntryLinker } from "./entry-linker";
 import { categoryNature } from "./movement-nature";
+import { StatementCleanup } from "./statement-cleanup";
 
 type Movement = {
   editable: boolean;
@@ -86,6 +87,7 @@ export function TransactionsPage({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [importing, setImporting] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
   const [busyImport, setBusyImport] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
@@ -353,6 +355,11 @@ export function TransactionsPage({
               : "Importe os extratos e identifique os movimentos pendentes."}
           </p>
         </div>
+        {mode === "history" && (
+          <button type="button" onClick={() => setCleaning(true)}>
+            Retirar Lote de Teste
+          </button>
+        )}
         {mode === "import" && (
           <div className="actions">
             <button
@@ -383,6 +390,18 @@ export function TransactionsPage({
           </div>
         )}
       </div>
+      {cleaning && (
+        <StatementCleanup
+          base={base}
+          statements={statements}
+          onClose={() => setCleaning(false)}
+          onChanged={() => {
+            setStatementId("");
+            setPage(1);
+            setRefresh((value) => value + 1);
+          }}
+        />
+      )}
       {notice && (
         <p className="notice" role="status">
           {notice}
