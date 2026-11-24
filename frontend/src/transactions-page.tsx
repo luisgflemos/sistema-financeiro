@@ -776,7 +776,13 @@ export function TransactionsPage({
                 }}
               >
                 <fieldset disabled={saving}>
-                  <div className="fields">
+                  <div
+                    className={
+                      draft.movement_kind === "AUTOMATIC_PROCESS"
+                        ? "fields automatic-process-fields"
+                        : "fields"
+                    }
+                  >
                     <div className="field">
                       <label htmlFor="movement-kind">
                         Tratamento do movimento

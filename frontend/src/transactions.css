@@ -321,6 +321,9 @@
   align-items: start;
   row-gap: 0.75rem;
 }
+.form-modal:has(.transaction-original) .fields.automatic-process-fields {
+  grid-template-columns: minmax(0, 1fr);
+}
 .form-modal:has(.transaction-original) .transaction-save {
   margin-top: 0.75rem;
 }
