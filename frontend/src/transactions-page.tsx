@@ -596,20 +596,20 @@ export function TransactionsPage({
             <table className="transactions-table">
               <thead>
                 <tr>
-                  <th aria-sort={ariaSort("date", "account")}>
+                  <th scope="col" aria-sort={ariaSort("date", "account")}>
                     <span className="transaction-sort-pair">
                       {sortButton("date", "Data")}
                       <span aria-hidden="true">/</span>
                       {sortButton("account", "Conta")}
                     </span>
                   </th>
-                  <th aria-sort={ariaSort("description")}>
+                  <th scope="col" aria-sort={ariaSort("description")}>
                     {sortButton("description", "Histórico do Banco")}
                   </th>
-                  <th aria-sort={ariaSort("amount")}>
+                  <th scope="col" aria-sort={ariaSort("amount")}>
                     {sortButton("amount", "Valor")}
                   </th>
-                  <th aria-sort={ariaSort("identification")}>
+                  <th scope="col" aria-sort={ariaSort("identification")}>
                     {sortButton("identification", "Identificação")}
                   </th>
                   <th>
