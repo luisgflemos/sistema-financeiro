@@ -71,6 +71,10 @@ A diferença de R$ 5.000 corresponde à movimentação líquida entre conta corr
 
 ## Regras de transparência
 
+- Movimentos normais de crédito aceitam classificações de Receita; débitos, de Despesa. A mesma validação vale para lançamentos previstos e sugestões de reconhecimento.
+- Transferências entre contas próprias aceitam somente classificações Neutras quando informadas, sem obrigatoriedade de centro de custos ou outros vínculos gerenciais.
+- Processos Automáticos são neutros pelo próprio tratamento e dispensam classificação, subclassificação, centro de custos e cliente/fornecedor. Dimensões residuais são limpas ao salvar; informações originais do banco são preservadas. Sugestão generativa continua exigindo confirmação; padrões confiáveis já confirmados podem reconhecer automaticamente.
+
 - Sugerir não é confirmar; indicar o estado visual com clareza.
 - Exibir motivo da associação e da classificação quando automática.
 - No reconhecimento de ambiguidade, exigir ação humana.

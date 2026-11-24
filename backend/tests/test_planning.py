@@ -14,7 +14,7 @@ def statements(statement_fixture):  # noqa: F811
 
 
 def new_plan(client, base, amount="100.00", direction="CREDIT", **kwargs):
-    fields = dimensions(client, base)
+    fields = dimensions(client, base, kind="REVENUE" if direction == "CREDIT" else "EXPENSE")
     fields.pop("movement_kind")
     payload = {
         **fields,

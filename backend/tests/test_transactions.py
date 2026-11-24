@@ -19,13 +19,13 @@ def imported(client, base):
     return client.get(base + "/transactions").json()["rows"]
 
 
-def dimensions(client, base):
+def dimensions(client, base, kind="REVENUE"):
     party = client.post(
         base + "/parties",
         json={"display_name": "Cliente sintético", "type": "CUSTOMER"},
     ).json()
     category = client.post(
-        base + "/categories", json={"name": "Receita sintética", "kind": "REVENUE"}
+        base + "/categories", json={"name": "Classificação sintética " + kind, "kind": kind}
     ).json()
     sub = client.post(
         base + "/subcategories",

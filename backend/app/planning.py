@@ -142,6 +142,7 @@ def validate_fields(connection, org, payload):
                 for key in ("category_id", "subcategory_id", "cost_center_id", "party_id")
             }
         ),
+        direction=payload.direction,
     )
     if payload.account_id and not connection.scalar(
         text(

@@ -8,6 +8,7 @@ import { StatementImport, brl, brazilDate } from "./statement-import";
 import type { RecordData } from "./catalogs";
 import { askAssistant } from "./assistant";
 import { EntryLinker } from "./entry-linker";
+import { categoryNature } from "./movement-nature";
 
 type Movement = {
   editable: boolean;
@@ -99,6 +100,51 @@ export function TransactionsPage({
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  useEffect(() => {
+    if (!selected || !catalogs.categories) return;
+    setDraft((previous) => {
+      if (previous.movement_kind === "AUTOMATIC_PROCESS") {
+        if (
+          [
+            previous.party_id,
+            previous.category_id,
+            previous.subcategory_id,
+            previous.cost_center_id,
+          ].some(Boolean)
+        )
+          return {
+            ...previous,
+            party_id: "",
+            category_id: "",
+            subcategory_id: "",
+            cost_center_id: "",
+          };
+        return previous;
+      }
+      const nature = categoryNature(selected.direction, previous.movement_kind);
+      if (
+        previous.category_id &&
+        !catalogs.categories.some(
+          (row) =>
+            row.id === previous.category_id &&
+            row.active &&
+            row.kind === nature,
+        )
+      )
+        return { ...previous, category_id: "", subcategory_id: "" };
+      if (
+        previous.subcategory_id &&
+        !(catalogs.subcategories ?? []).some(
+          (row) =>
+            row.id === previous.subcategory_id &&
+            row.active &&
+            row.category_id === previous.category_id,
+        )
+      )
+        return { ...previous, subcategory_id: "" };
+      return previous;
+    });
+  }, [selected?.id, selected?.direction, draft.movement_kind, catalogs]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -275,7 +321,16 @@ export function TransactionsPage({
   }
   function options(key: string) {
     return (catalogs[key] ?? [])
-      .filter((row) => row.active)
+      .filter(
+        (row) =>
+          row.active &&
+          (key !== "categories" ||
+            row.kind ===
+              categoryNature(
+                selected?.direction ?? "CREDIT",
+                draft.movement_kind,
+              )),
+      )
       .map((row) => ({
         value: row.id,
         label: String(row.display_name ?? row.label ?? row.name ?? row.code),
@@ -464,19 +519,20 @@ export function TransactionsPage({
                     </td>
                     <td>
                       {row.raw_description}
-                      {(row.party_name ||
-                        row.category_name ||
-                        row.cost_center_name) && (
-                        <small>
-                          {[
-                            row.party_name,
-                            row.category_name,
-                            row.cost_center_name,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </small>
-                      )}
+                      {row.movement_kind !== "AUTOMATIC_PROCESS" &&
+                        (row.party_name ||
+                          row.category_name ||
+                          row.cost_center_name) && (
+                          <small>
+                            {[
+                              row.party_name,
+                              row.category_name,
+                              row.cost_center_name,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </small>
+                        )}
                       {row.notes && <small>{row.notes}</small>}
                       {row.planning_description && (
                         <small>Vinculado a: {row.planning_description}</small>
@@ -495,7 +551,12 @@ export function TransactionsPage({
                     <td>
                       <span
                         className={
-                          "transaction-state transaction-state-" + row.state
+                          "transaction-state transaction-state-" +
+                          (["AUTOMATIC_PROCESS", "INTERNAL_TRANSFER"].includes(
+                            row.movement_kind ?? "",
+                          )
+                            ? "neutral"
+                            : row.state)
                         }
                       >
                         {row.state === "identified"
@@ -659,7 +720,7 @@ export function TransactionsPage({
                 Documento: {selected.raw_payload.documento || "Não informado"} ·
                 Saldo informado: {brl(selected.raw_payload.saldo ?? "0")}
               </small>
-              {selected.editable && (
+              {selected.editable && draft.movement_kind === "NORMAL" && (
                 <div className="transaction-header-action">
                   <button
                     type="button"
@@ -741,17 +802,29 @@ export function TransactionsPage({
                           },
                         ]}
                         onChange={(value) =>
-                          setDraft({ ...draft, movement_kind: value })
+                          setDraft((previous) => ({
+                            ...previous,
+                            movement_kind: value,
+                            category_id: "",
+                            subcategory_id: "",
+                            ...(value === "AUTOMATIC_PROCESS"
+                              ? { party_id: "", cost_center_id: "" }
+                              : {}),
+                          }))
                         }
                       />
                     </div>
                     {draft.movement_kind !== "NORMAL" && (
                       <p className="transaction-neutral">
-                        O movimento permanece no extrato bancário, com
-                        tratamento neutro para a visão gerencial.
+                        {draft.movement_kind === "AUTOMATIC_PROCESS"
+                          ? "Processo automático neutro. Não exige classificação, subclassificação, centro de custos ou cliente/fornecedor. O registro original permanece no extrato, sem receita ou despesa gerencial."
+                          : "Transferência entre contas próprias: tratamento neutro no consolidado. A classificação, se informada, deve ser neutra; os demais vínculos são opcionais."}
                       </p>
                     )}
-                    {fieldLabels.map(([field, label, key]) => (
+                    {(draft.movement_kind === "AUTOMATIC_PROCESS"
+                      ? []
+                      : fieldLabels
+                    ).map(([field, label, key]) => (
                       <div className="field" key={field}>
                         <label
                           className="identification-label"

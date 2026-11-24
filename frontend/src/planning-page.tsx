@@ -5,6 +5,7 @@ import { SearchSelect } from "./search-select";
 import { CatalogSearch } from "./catalog-search";
 import { brl, brazilDate } from "./statement-import";
 import type { RecordData } from "./catalogs";
+import { categoryNature } from "./movement-nature";
 import "./planning.css";
 
 export type PlannedEntry = {
@@ -89,6 +90,22 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
     }[]
   >([]);
   useEffect(() => {
+    if (!form || !catalogs.categories) return;
+    setDraft((previous) => {
+      if (
+        previous.category_id &&
+        !catalogs.categories.some(
+          (row) =>
+            row.active &&
+            row.id === previous.category_id &&
+            row.kind === categoryNature(previous.direction),
+        )
+      )
+        return { ...previous, category_id: "", subcategory_id: "" };
+      return previous;
+    });
+  }, [form, draft.direction, catalogs]);
+  useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(query);
       setPage(1);
@@ -149,7 +166,12 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
   }, [base]);
   function options(key: string) {
     return (catalogs[key] ?? [])
-      .filter((row) => row.active)
+      .filter(
+        (row) =>
+          row.active &&
+          (key !== "categories" ||
+            row.kind === categoryNature(draft.direction)),
+      )
       .map((row) => ({
         value: row.id,
         label: String(row.display_name ?? row.label ?? row.name),

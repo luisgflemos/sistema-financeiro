@@ -71,7 +71,11 @@ def generative_suggestions(context):
         "Transferências próprias são INTERNAL_TRANSFER apenas com evidência de titularidade; PIX "
         "sozinho não comprova transferência própria. Nunca associe um nome ambíguo sem sinalizar "
         "LOW. Sugira apenas os vínculos com evidência e use null nos desconhecidos, para que o operador "
-        "complete. party_candidates informa correspondências documentais calculadas localmente; "
+        "complete. NORMAL com direction CREDIT só aceita categorias kind REVENUE; DEBIT só "
+        "aceita EXPENSE. INTERNAL_TRANSFER só aceita NEUTRAL. AUTOMATIC_PROCESS é neutro por "
+        "definição: retorne null para party_id, category_id, subcategory_id e cost_center_id. "
+        "Não replique exemplos históricos que contrariem essas regras. "
+        "party_candidates informa correspondências documentais calculadas localmente; "
         "vários candidatos exigem revisão. Não invente um cliente para preencher lacunas."
     )
     try:
@@ -292,18 +296,23 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
             tx_id = item["transaction_id"]
             if tx_id in accepted:
                 continue
+            current = transaction(connection, organization_id, UUID(tx_id))
             try:
                 payload = Identification(**{key: item.get(key) for key in IDENT_FIELDS})
-                validate_identification(
-                    connection, organization_id, payload, require_complete=False
+                values = validate_identification(
+                    connection,
+                    organization_id,
+                    payload,
+                    require_complete=False,
+                    direction=current["direction"],
                 )
+                payload = Identification(**values)
                 if payload.movement_kind == "NORMAL" and not any(
                     getattr(payload, key) for key in IDENT_FIELDS[:4]
                 ):
                     continue
             except (HTTPException, ValueError):
                 continue
-            current = transaction(connection, organization_id, UUID(tx_id))
             if current.get("version") or connection.scalar(
                 text("SELECT 1 FROM transaction_suggestions WHERE transaction_id = :id LIMIT 1"),
                 {"id": tx_id},
@@ -326,7 +335,9 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 {
                     "tx": tx_id,
                     "org": organization_id,
-                    "payload": json.dumps({key: item.get(key) for key in IDENT_FIELDS}),
+                    "payload": json.dumps(
+                        {key: payload.model_dump(mode="json")[key] for key in IDENT_FIELDS}
+                    ),
                     "reason": reason[:2000],
                     "confidence": confidence,
                     "model": model,

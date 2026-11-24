@@ -35,6 +35,14 @@ const expenseCategory = await api(base + "/categories", {
   name: "Despesas sintéticas",
   kind: "EXPENSE",
 });
+const neutralCategory = await api(base + "/categories", {
+  name: "Transferências sintéticas",
+  kind: "NEUTRAL",
+});
+await api(base + "/subcategories", {
+  name: "Entre contas sintéticas",
+  category_id: neutralCategory.id,
+});
 await api(base + "/subcategories", {
   name: "Aluguel sintético",
   category_id: expenseCategory.id,
@@ -128,6 +136,31 @@ try {
     ["Subclassificação", "Serviços sintéticos"],
     ["Centro de Custos", "Centro sintético"],
   ]) {
+    if (label === "Classificação") {
+      await page.getByLabel(label, { exact: true }).click();
+      assert.equal(
+        await page
+          .getByRole("option", { name: "Despesas sintéticas", exact: true })
+          .count(),
+        0,
+      );
+      assert.equal(
+        await page
+          .getByRole("option", {
+            name: "Transferências sintéticas",
+            exact: true,
+          })
+          .count(),
+        0,
+      );
+      assert.equal(
+        await page
+          .getByRole("option", { name: "Receitas sintéticas", exact: true })
+          .count(),
+        1,
+      );
+      await page.getByLabel(label, { exact: true }).press("Escape");
+    }
     await page
       .getByLabel(label, { exact: true })
       .fill(label === "Centro de Custos" ? "sintetico Centro" : value);
@@ -248,6 +281,63 @@ try {
     fullPage: true,
   });
   await page.setViewportSize({ width: 1280, height: 800 });
+  await page.getByLabel("Classificação", { exact: true }).click();
+  assert.equal(
+    await page
+      .getByRole("option", { name: "Receitas sintéticas", exact: true })
+      .count(),
+    0,
+  );
+  assert.equal(
+    await page
+      .getByRole("option", { name: "Despesas sintéticas", exact: true })
+      .count(),
+    1,
+  );
+  await page.getByLabel("Classificação", { exact: true }).press("Escape");
+  await page
+    .getByLabel("Tratamento do movimento", { exact: true })
+    .fill("Transferência");
+  await page
+    .getByRole("option", {
+      name: "Transferência entre contas próprias",
+      exact: true,
+    })
+    .click();
+  await page.getByLabel("Classificação", { exact: true }).click();
+  assert.equal(
+    await page
+      .getByRole("option", { name: "Despesas sintéticas", exact: true })
+      .count(),
+    0,
+  );
+  assert.equal(
+    await page
+      .getByRole("option", { name: "Receitas sintéticas", exact: true })
+      .count(),
+    0,
+  );
+  await page
+    .getByRole("option", { name: "Transferências sintéticas", exact: true })
+    .click();
+  await page
+    .getByLabel("Subclassificação", { exact: true })
+    .fill("Entre contas");
+  await page
+    .getByRole("option", { name: "Entre contas sintéticas", exact: true })
+    .click();
+  await page
+    .getByLabel("Tratamento do movimento", { exact: true })
+    .fill("Despesa");
+  await page.getByRole("option", { name: "Despesa", exact: true }).click();
+  assert.equal(
+    await page.getByLabel("Classificação", { exact: true }).inputValue(),
+    "Selecione",
+  );
+  assert.equal(
+    await page.getByLabel("Subclassificação", { exact: true }).inputValue(),
+    "Selecione",
+  );
   await page
     .getByRole("button", { name: "Ver extrato completo", exact: true })
     .click();
@@ -390,6 +480,61 @@ try {
     .waitFor();
   await plannedRow.getByText("Em aberto", { exact: true }).waitFor();
   assert.equal((await api(base + "/transactions?state=all")).total, 2);
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Histórico", exact: true })
+    .click();
+  await page
+    .getByRole("row")
+    .filter({ hasText: "TARIFA SINTETICA" })
+    .getByRole("button", { name: /Identificar movimento/ })
+    .click();
+  await page
+    .getByLabel("Tratamento do movimento", { exact: true })
+    .fill("Processos Automáticos");
+  await page
+    .getByRole("option", { name: "Processos Automáticos", exact: true })
+    .click();
+  for (const label of [
+    "Classificação",
+    "Subclassificação",
+    "Centro de Custos",
+    "Cliente / Fornecedor (opcional)",
+  ])
+    assert.equal(await page.getByLabel(label, { exact: true }).count(), 0);
+  assert.equal(
+    await page
+      .getByRole("button", {
+        name: "Identificar com Lançamento Prévio",
+        exact: true,
+      })
+      .count(),
+    0,
+  );
+  await page.screenshot({
+    path: "import-layout-automatic-neutral.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Salvar e fechar", exact: true })
+    .click();
+  await page
+    .getByRole("row")
+    .filter({ hasText: "TARIFA SINTETICA" })
+    .getByText("Processos Automáticos", { exact: true })
+    .waitFor();
+  const neutralMovement = (
+    await api(base + "/transactions?state=all")
+  ).rows.find((row) => row.raw_description === "TARIFA SINTETICA");
+  assert.equal(neutralMovement.movement_kind, "AUTOMATIC_PROCESS");
+  assert.equal(neutralMovement.amount, "10.00");
+  for (const field of [
+    "category_id",
+    "subcategory_id",
+    "cost_center_id",
+    "party_id",
+  ])
+    assert.equal(neutralMovement[field], null);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await page

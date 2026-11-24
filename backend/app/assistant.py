@@ -48,6 +48,10 @@ Os dados originais do banco (data, valor e descrição) são imutáveis. A ident
 exige classificação, subclassificação e centro de custos. Cliente/fornecedor e Descrição
 Complementar são opcionais. Subclassificação pertence à classificação. Conta bancária e
 centro de custos são independentes. Aplicações e resgates automáticos são Processos
+Automáticos neutros e dispensam classificação, subclassificação, centro de custos e
+cliente/fornecedor. Movimentos normais de crédito aceitam classificações de Receita;
+débitos aceitam Despesa; transferências próprias só aceitam classificações Neutras,
+quando informadas. Não indique classificações de outra natureza. Processos
 Automáticos: ficam no extrato, sem receita/despesa gerencial. Rendimentos, IOF, IR e tarifas
 reais são distintos. Transferências próprias são neutras no consolidado, sem apagar o
 reflexo em cada conta; PIX sozinho não prova transferência própria. Duplicidades são

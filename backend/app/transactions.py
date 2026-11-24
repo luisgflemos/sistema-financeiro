@@ -63,7 +63,16 @@ def transaction(connection, organization_id, transaction_id):
     return dict(result)
 
 
-def validate_identification(connection, organization_id, payload, require_complete=True):
+def normalize_identification(payload):
+    if payload.movement_kind == "AUTOMATIC_PROCESS":
+        return payload.model_copy(update={key: None for key in IDENT_FIELDS[:4]})
+    return payload
+
+
+def validate_identification(
+    connection, organization_id, payload, require_complete=True, direction=None
+):
+    payload = normalize_identification(payload)
     values = payload.model_dump()
     if (
         require_complete
@@ -85,6 +94,29 @@ def validate_identification(connection, organization_id, payload, require_comple
             {"id": values[field], "org": organization_id},
         ):
             raise HTTPException(422, "Selecione cadastros ativos desta organização.")
+    if values["category_id"]:
+        expected_kind = (
+            "NEUTRAL"
+            if payload.movement_kind == "INTERNAL_TRANSFER"
+            else "REVENUE"
+            if direction == "CREDIT"
+            else "EXPENSE"
+            if direction == "DEBIT"
+            else None
+        )
+        if (
+            expected_kind
+            and connection.scalar(
+                text("SELECT kind FROM categories WHERE id=:id"), {"id": values["category_id"]}
+            )
+            != expected_kind
+        ):
+            label = {"NEUTRAL": "neutra", "REVENUE": "de receita", "EXPENSE": "de despesa"}[
+                expected_kind
+            ]
+            raise HTTPException(
+                422, "Selecione uma classificação " + label + " para este tratamento."
+            )
     if values["subcategory_id"] and not connection.scalar(
         text("""
         SELECT 1 FROM subcategories s JOIN categories c ON c.id = s.category_id
@@ -102,7 +134,10 @@ def validate_identification(connection, organization_id, payload, require_comple
 
 
 def save_identification(connection, organization_id, record, payload, method="OPERATOR"):
-    values = validate_identification(connection, organization_id, payload)
+    payload = normalize_identification(payload)
+    values = validate_identification(
+        connection, organization_id, payload, direction=record["direction"]
+    )
     version = record.get("version") or 0
     if version != payload.expected_version:
         raise HTTPException(
