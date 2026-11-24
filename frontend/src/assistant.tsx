@@ -48,7 +48,10 @@ export function Assistant({
     window.addEventListener("finare:assistant", show);
     const observer = new MutationObserver(() => {
       const dialogs = document.querySelectorAll("dialog[open]");
-      setHost(dialogs.item(dialogs.length - 1) ?? document.body);
+      const dialog = dialogs.item(dialogs.length - 1);
+      setHost(
+        dialog?.querySelector(".modal-header") ?? dialog ?? document.body,
+      );
     });
     observer.observe(document.body, {
       childList: true,

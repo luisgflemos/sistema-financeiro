@@ -17,6 +17,18 @@
 .assistant-launcher:hover {
   background: #153757;
 }
+.modal-header > .assistant-launcher {
+  position: static;
+  order: 2;
+  font-size: 0;
+  padding: 8px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  box-shadow: none;
+}
+.modal-header > button:not(.assistant-launcher) {
+  order: 3;
+}
 .assistant-panel {
   position: fixed;
   z-index: 110;
