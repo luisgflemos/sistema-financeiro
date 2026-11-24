@@ -1,11 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageCircle, Send, X, Sparkles } from "lucide-react";
+import { Send, X } from "lucide-react";
 import { api } from "./api";
 import "./assistant.css";
 
 type Message = { role: "user" | "assistant"; content: string };
 type Context = { id: string; label: string };
+
+function FinIcon() {
+  return (
+    <span className="brand-symbol fin-symbol" aria-hidden="true">
+      <span />
+      <span />
+      <span />
+      <span />
+    </span>
+  );
+}
 
 export function askAssistant(context?: Context) {
   window.dispatchEvent(
@@ -123,7 +134,7 @@ export function Assistant({
           onClick={() => setOpen(true)}
           aria-label="Conversar com Assistente Finare"
         >
-          <MessageCircle size={20} /> Assistente Finare
+          <FinIcon /> <span className="fin-launcher-name">Fin</span>
         </button>
       )}
       {open && (
@@ -141,10 +152,10 @@ export function Assistant({
         >
           <header>
             <div>
-              <Sparkles size={20} />
+              <FinIcon />
               <div>
-                <strong>Assistente Finare</strong>
-                <small>Converse enquanto trabalha</small>
+                <strong>Fin</strong>
+                <small>Assistente Finare · Converse enquanto trabalha</small>
               </div>
             </div>
             <button
@@ -219,7 +230,7 @@ export function Assistant({
                 }
                 key={index}
               >
-                <small>{message.role === "user" ? "Você" : "Finare"}</small>
+                <small>{message.role === "user" ? "Você" : "Fin"}</small>
                 <p>{message.content}</p>
               </div>
             ))}
@@ -248,7 +259,7 @@ export function Assistant({
               value={question}
               maxLength={3000}
               rows={2}
-              placeholder="Pergunte à Finare…"
+              placeholder="Converse com a Fin…"
               onChange={(event) => setQuestion(event.target.value)}
               onKeyDown={(event) => {
                 if (

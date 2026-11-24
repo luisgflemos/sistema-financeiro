@@ -20,7 +20,7 @@
 .modal-header > .assistant-launcher {
   position: static;
   order: 2;
-  font-size: 0;
+  font-size: 14px;
   padding: 8px;
   flex-shrink: 0;
   border-radius: 8px;
@@ -28,6 +28,21 @@
 }
 .modal-header > button:not(.assistant-launcher) {
   order: 3;
+}
+.fin-symbol {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 24px;
+}
+.fin-launcher-name {
+  font-size: 16px;
+  color: white;
+  font-weight: 700;
+}
+.assistant-panel .fin-symbol {
+  flex-basis: 32px;
+  width: 32px;
+  height: 28px;
 }
 .assistant-panel {
   position: fixed;
