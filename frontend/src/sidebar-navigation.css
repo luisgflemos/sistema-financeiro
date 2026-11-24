@@ -1,0 +1,23 @@
+.sidebar .menu-group-toggle {
+  gap: 8px;
+}
+.sidebar .menu-group-toggle > svg:last-child {
+  margin-left: auto;
+  transition: transform 120ms ease;
+}
+.sidebar .menu-group-toggle[aria-expanded="true"] > svg:last-child {
+  transform: rotate(180deg);
+}
+.sidebar .side-submenu {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 16px 10px;
+  padding-left: 10px;
+  border-left: 1px solid #ffffff26;
+}
+.sidebar .side-submenu button {
+  padding: 10px 12px;
+  font-size: 14px;
+  min-width: 0;
+  text-align: left;
+}

@@ -1,5 +1,5 @@
 import "@fontsource-variable/inter";
-import { Layers3, ArrowLeftRight } from "lucide-react";
+import { Layers3, ArrowLeftRight, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
@@ -14,6 +14,7 @@ import { Assistant } from "./assistant";
 import { SearchSelect } from "./search-select";
 import "./style.css";
 import "./transactions.css";
+import "./sidebar-navigation.css";
 
 type CatalogId = (typeof catalogIds)[number];
 
@@ -88,6 +89,12 @@ function App({ onLogout }: { onLogout?: () => void }) {
     "bank-accounts",
   );
   const [lastCatalog, setLastCatalog] = useState<CatalogId>("bank-accounts");
+  const [openMenu, setOpenMenu] = useState<"catalogs" | "transactions" | null>(
+    "catalogs",
+  );
+  const [transactionView, setTransactionView] = useState<
+    "import" | "history" | "planning"
+  >("import");
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -132,28 +139,88 @@ function App({ onLogout }: { onLogout?: () => void }) {
         <nav aria-label="Menu principal">
           <button
             type="button"
-            aria-current={catalog !== "transactions" ? "page" : undefined}
+            className="menu-group-toggle"
+            aria-expanded={openMenu === "catalogs"}
+            aria-controls="catalog-sidebar-menu"
             disabled={!organizationId || loading}
             onClick={() => {
               setCatalog(lastCatalog);
+              setOpenMenu((previous) =>
+                previous === "catalogs" ? null : "catalogs",
+              );
               setCreating(false);
             }}
           >
             <Layers3 size={18} aria-hidden="true" />
             Cadastros
+            <ChevronDown size={16} aria-hidden="true" />
           </button>
+          {openMenu === "catalogs" && (
+            <div id="catalog-sidebar-menu" className="side-submenu">
+              {catalogIds.map((id) => (
+                <button
+                  type="button"
+                  key={id}
+                  disabled={!organizationId || loading}
+                  aria-current={catalog === id ? "page" : undefined}
+                  onClick={() => {
+                    setCatalog(id);
+                    setLastCatalog(id);
+                    setCreating(false);
+                  }}
+                >
+                  {catalogs[id].label}
+                </button>
+              ))}
+            </div>
+          )}
           <button
             type="button"
-            aria-current={catalog === "transactions" ? "page" : undefined}
+            className="menu-group-toggle"
+            aria-expanded={openMenu === "transactions"}
+            aria-controls="transaction-sidebar-menu"
             disabled={!organizationId || loading}
             onClick={() => {
               setCatalog("transactions");
+              setOpenMenu((previous) =>
+                previous === "transactions" ? null : "transactions",
+              );
               setCreating(false);
             }}
           >
             <ArrowLeftRight size={18} aria-hidden="true" />
             Transações
+            <ChevronDown size={16} aria-hidden="true" />
           </button>
+          {openMenu === "transactions" && (
+            <div id="transaction-sidebar-menu" className="side-submenu">
+              {(
+                [
+                  ["import", "Importar Extrato"],
+                  ["history", "Histórico"],
+                  ["planning", "Lançamentos"],
+                ] as const
+              ).map(([view, label]) => (
+                <button
+                  type="button"
+                  key={view}
+                  disabled={!organizationId || loading}
+                  aria-current={
+                    catalog === "transactions" && transactionView === view
+                      ? "page"
+                      : undefined
+                  }
+                  onClick={() => {
+                    setCatalog("transactions");
+                    setTransactionView(view);
+                    setCreating(false);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </nav>
       </aside>
       <main>
@@ -230,17 +297,13 @@ function App({ onLogout }: { onLogout?: () => void }) {
             <TransactionsWorkspace
               key={organizationId}
               organizationId={organizationId}
+              view={transactionView}
             />
           ) : (
             <CatalogWorkspace
               key={organizationId}
               organizationId={organizationId}
               selected={catalog}
-              onSelect={(id) => {
-                setCatalog(id);
-                setLastCatalog(id);
-                setCreating(false);
-              }}
             />
           )}
         </div>

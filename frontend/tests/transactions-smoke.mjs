@@ -244,7 +244,10 @@ try {
     .getByRole("row")
     .filter({ hasText: "PIX CLIENTE SINTETICO" })
     .waitFor();
-  await page.getByRole("tab", { name: "Lançamentos", exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Lançamentos", exact: true })
+    .click();
   await page.getByRole("button", { name: "Nova Despesa", exact: true }).click();
   await page
     .getByLabel("Descrição", { exact: true })
@@ -272,7 +275,8 @@ try {
   );
   await page.screenshot({ path: "import-layout-planning.png", fullPage: true });
   await page
-    .getByRole("tab", { name: "Importar Extrato", exact: true })
+    .getByRole("navigation")
+    .getByRole("button", { name: "Importar Extrato", exact: true })
     .click();
   await page
     .getByRole("row")
@@ -307,7 +311,10 @@ try {
   await page
     .getByText("Movimento vinculado e baixa registrada.", { exact: true })
     .waitFor();
-  await page.getByRole("tab", { name: "Histórico", exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Histórico", exact: true })
+    .click();
   await page.getByText("Baixa parcial sintética", { exact: true }).waitFor();
   await page
     .getByText("Vinculado a: Aluguel previsto sintético", { exact: true })
@@ -317,7 +324,10 @@ try {
     .filter({ hasText: "TARIFA SINTETICA" })
     .getByText("Identificado", { exact: true })
     .waitFor();
-  await page.getByRole("tab", { name: "Lançamentos", exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Lançamentos", exact: true })
+    .click();
   const plannedRow = page.getByRole("row").filter({ hasText: "31/01/2027" });
   await plannedRow
     .getByText("Parcialmente realizado", { exact: true })

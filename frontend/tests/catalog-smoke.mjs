@@ -14,13 +14,14 @@ try {
   await page.getByRole("button", { name: "Criar organização" }).click();
 
   async function open(name) {
+    const group = page
+      .getByRole("navigation")
+      .getByRole("button", { name: "Cadastros", exact: true });
+    if ((await group.getAttribute("aria-expanded")) !== "true")
+      await group.click();
     await page
       .getByRole("navigation")
-      .getByRole("button", { name: "Cadastros", exact: true })
-      .click();
-    await page
-      .getByRole("tablist", { name: "Áreas de Cadastros" })
-      .getByRole("tab", { name, exact: true })
+      .getByRole("button", { name, exact: true })
       .click();
     await page.getByRole("heading", { name, level: 1 }).waitFor();
   }
@@ -82,14 +83,8 @@ try {
   await page.getByText("Nenhum resultado").waitFor();
 
   const menu = page.getByRole("navigation", { name: "Menu principal" });
-  assert.equal(await menu.getByRole("button").count(), 2);
-  assert.equal(
-    await page
-      .getByRole("tablist", { name: "Áreas de Cadastros" })
-      .getByRole("tab")
-      .count(),
-    4,
-  );
+  assert.equal(await menu.getByRole("button").count(), 6);
+  assert.equal(await page.getByRole("tablist").count(), 0);
   assert.equal(
     await page
       .getByLabel("Organização", { exact: true })
