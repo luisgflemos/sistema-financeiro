@@ -1,4 +1,4 @@
-import { CircleMinus, Layers } from "lucide-react";
+import { ChevronDown, CircleMinus, Layers } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import type { Option } from "./catalogs";
 import "./search-select.css";
@@ -159,6 +159,11 @@ export function SearchSelect({
             if (filtered[highlighted]) choose(filtered[highlighted]);
           }
         }}
+      />
+      <ChevronDown
+        className={"search-select-chevron" + (open ? " is-open" : "")}
+        size={17}
+        aria-hidden="true"
       />
       {open && (
         <div

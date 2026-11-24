@@ -1,19 +1,12 @@
 import "@fontsource-variable/inter";
-import {
-  CreditCard,
-  Layers3,
-  Network,
-  Users,
-  ArrowLeftRight,
-} from "lucide-react";
+import { Layers3, ArrowLeftRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
 import { Modal } from "./modal";
 import { Brand } from "./brand";
-import { ClassificationTree } from "./classification-tree";
-import { CatalogPage } from "./catalog-page";
+import { CatalogWorkspace } from "./catalog-workspace";
 import { catalogIds, catalogs } from "./catalogs";
 import { TransactionsWorkspace } from "./transactions-workspace";
 import { SessionGate } from "./session";
@@ -25,13 +18,6 @@ import "./transactions.css";
 type CatalogId = (typeof catalogIds)[number];
 
 type Organization = { id: string; name: string };
-
-const catalogIcons = {
-  "bank-accounts": CreditCard,
-  categories: Layers3,
-  "cost-centers": Network,
-  parties: Users,
-};
 
 function OrganizationForm({
   onCreate,
@@ -95,17 +81,13 @@ function OrganizationForm({
   );
 }
 
-function CatalogIcon({ id }: { id: CatalogId }) {
-  const Icon = catalogIcons[id];
-  return <Icon aria-hidden="true" size={18} strokeWidth={1.75} />;
-}
-
 function App({ onLogout }: { onLogout?: () => void }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organizationId, setOrganizationId] = useState("");
   const [catalog, setCatalog] = useState<CatalogId | "transactions">(
     "bank-accounts",
   );
+  const [lastCatalog, setLastCatalog] = useState<CatalogId>("bank-accounts");
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -148,26 +130,18 @@ function App({ onLogout }: { onLogout?: () => void }) {
       <aside className="sidebar">
         <Brand />
         <nav aria-label="Menu principal">
-          <details className="nav-group" open>
-            <summary>Cadastros</summary>
-            <div className="nav-items">
-              {catalogIds.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  aria-current={catalog === id ? "page" : undefined}
-                  disabled={!organizationId || loading}
-                  onClick={() => {
-                    setCatalog(id);
-                    setCreating(false);
-                  }}
-                >
-                  <CatalogIcon id={id} />
-                  {catalogs[id].label}
-                </button>
-              ))}
-            </div>
-          </details>
+          <button
+            type="button"
+            aria-current={catalog !== "transactions" ? "page" : undefined}
+            disabled={!organizationId || loading}
+            onClick={() => {
+              setCatalog(lastCatalog);
+              setCreating(false);
+            }}
+          >
+            <Layers3 size={18} aria-hidden="true" />
+            Cadastros
+          </button>
           <button
             type="button"
             aria-current={catalog === "transactions" ? "page" : undefined}
@@ -257,16 +231,16 @@ function App({ onLogout }: { onLogout?: () => void }) {
               key={organizationId}
               organizationId={organizationId}
             />
-          ) : catalog === "categories" ? (
-            <ClassificationTree
+          ) : (
+            <CatalogWorkspace
               key={organizationId}
               organizationId={organizationId}
-            />
-          ) : (
-            <CatalogPage
-              key={`${organizationId}/${catalog}`}
-              id={catalog}
-              organizationId={organizationId}
+              selected={catalog}
+              onSelect={(id) => {
+                setCatalog(id);
+                setLastCatalog(id);
+                setCreating(false);
+              }}
             />
           )}
         </div>

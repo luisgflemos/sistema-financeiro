@@ -14,7 +14,14 @@ try {
   await page.getByRole("button", { name: "Criar organização" }).click();
 
   async function open(name) {
-    await page.getByRole("navigation").getByRole("button", { name }).click();
+    await page
+      .getByRole("navigation")
+      .getByRole("button", { name: "Cadastros", exact: true })
+      .click();
+    await page
+      .getByRole("tablist", { name: "Áreas de Cadastros" })
+      .getByRole("tab", { name, exact: true })
+      .click();
     await page.getByRole("heading", { name, level: 1 }).waitFor();
   }
 
@@ -75,12 +82,22 @@ try {
   await page.getByText("Nenhum resultado").waitFor();
 
   const menu = page.getByRole("navigation", { name: "Menu principal" });
-  const group = menu.getByText("Cadastros", { exact: true });
-  const menuItems = menu.locator(".nav-items").getByRole("button");
-  await group.click();
-  assert.equal(await menuItems.count(), 0);
-  await group.click();
-  assert.equal(await menuItems.count(), 4);
+  assert.equal(await menu.getByRole("button").count(), 2);
+  assert.equal(
+    await page
+      .getByRole("tablist", { name: "Áreas de Cadastros" })
+      .getByRole("tab")
+      .count(),
+    4,
+  );
+  assert.equal(
+    await page
+      .getByLabel("Organização", { exact: true })
+      .locator("..")
+      .locator(".search-select-chevron")
+      .count(),
+    1,
+  );
 
   await open("Classificações");
   await page.locator(".catalog-toolbar").waitFor();

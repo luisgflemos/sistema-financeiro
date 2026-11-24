@@ -5,6 +5,18 @@
   width: 100%;
   min-width: 0;
   font-weight: 400;
+  padding-right: 2.5rem;
+}
+.search-select-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.search-select-chevron.is-open {
+  transform: translateY(-50%) rotate(180deg);
 }
 .search-select:has([aria-expanded="true"]) {
   z-index: 30;

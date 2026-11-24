@@ -379,7 +379,7 @@ try {
     .click();
   await page
     .getByRole("navigation")
-    .getByRole("button", { name: "Contas Bancárias", exact: true })
+    .getByRole("button", { name: "Cadastros", exact: true })
     .click();
   await page
     .getByRole("button", {
