@@ -120,7 +120,34 @@ try {
     ["Subclassificação", "Serviços sintéticos"],
     ["Centro de Custos", "Centro sintético"],
   ]) {
-    await page.getByLabel(label, { exact: true }).fill(value);
+    await page
+      .getByLabel(label, { exact: true })
+      .fill(label === "Centro de Custos" ? "sintetico Centro" : value);
+    if (label === "Centro de Custos") {
+      assert.equal(
+        await page.getByRole("option").count(),
+        1,
+        "A busca deve aceitar palavras em outra ordem e sem acentos",
+      );
+      const box = await page.getByLabel(label, { exact: true }).boundingBox();
+      const complementary = await page
+        .getByLabel("Descrição Complementar", { exact: true })
+        .boundingBox();
+      assert.ok(
+        Math.abs(box.y - complementary.y) <= 2,
+        "Os campos da mesma linha devem alinhar pelo topo",
+      );
+      const list = await page.getByRole("listbox").boundingBox();
+      const modal = await page.getByRole("dialog").boundingBox();
+      assert.ok(
+        list.y >= modal.y && list.y + list.height <= modal.y + modal.height,
+        "A lista deve ficar dentro da área visível do pop-up",
+      );
+      await page.screenshot({
+        path: "import-layout-cost-center-search.png",
+        fullPage: true,
+      });
+    }
     await page.getByRole("option", { name: value, exact: true }).click();
   }
   await page
@@ -187,6 +214,12 @@ try {
     .getByRole("dialog")
     .getByText("TARIFA SINTETICA", { exact: true })
     .waitFor();
+  assert.equal(
+    await page
+      .getByLabel("Tratamento do movimento", { exact: true })
+      .inputValue(),
+    "Despesa",
+  );
   assert.equal(
     await page.getByRole("dialog").evaluate((element) => element.scrollTop),
     0,

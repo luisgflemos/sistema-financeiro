@@ -70,7 +70,8 @@ try {
   await page.getByRole("button", { name: "Editar Conta sintética" }).click();
   await page.getByRole("switch", { name: "Cadastro ativo" }).click();
   await save();
-  await page.getByLabel("Filtrar por situação").selectOption("active");
+  await page.getByLabel("Filtrar por situação").fill("Ativos");
+  await page.getByRole("option", { name: "Ativos", exact: true }).click();
   await page.getByText("Nenhum resultado").waitFor();
 
   const menu = page.getByRole("navigation", { name: "Menu principal" });
@@ -121,7 +122,8 @@ try {
     .getByRole("button", { name: "Nova classificação", exact: true })
     .click();
   await fill({ Nome: "Receitas de teste" });
-  await page.getByLabel("Natureza", { exact: true }).selectOption("REVENUE");
+  await page.getByLabel("Natureza", { exact: true }).fill("Receita");
+  await page.getByRole("option", { name: "Receita", exact: true }).click();
   await save();
   await page.getByRole("button", { name: /^Receitas de teste/ }).click();
   const sub = page.getByRole("region", {
@@ -171,10 +173,8 @@ try {
     .click();
   await fill({ Nome: "Unidade de teste" });
   const parents = page.getByLabel("Centro superior", { exact: true });
-  const parent = await parents
-    .getByRole("option", { name: /CC-\d+ · Sede de teste/ })
-    .getAttribute("value");
-  await parents.selectOption(parent);
+  await parents.fill("Sede de teste");
+  await page.getByRole("option", { name: /CC-\d+ · Sede de teste/ }).click();
   await save();
 
   await page
@@ -197,7 +197,8 @@ try {
     "Nome do Cliente": "Fornecedor sintético",
     "E-mail": "teste@example.test",
   });
-  await page.getByLabel("Tipo", { exact: true }).selectOption("SUPPLIER");
+  await page.getByLabel("Tipo", { exact: true }).fill("Fornecedor");
+  await page.getByRole("option", { name: "Fornecedor", exact: true }).click();
   await save();
 
   await page.getByRole("button", { name: "Importar", exact: true }).click();
@@ -282,9 +283,13 @@ try {
       .count(),
     0,
   );
-  await page.getByLabel("Filtrar por situação").selectOption("inactive");
+  await page.getByLabel("Filtrar por situação").fill("Inativos");
+  await page.getByRole("option", { name: "Inativos", exact: true }).click();
   await page.getByText("Nenhum resultado", { exact: true }).waitFor();
-  await page.getByLabel("Filtrar por situação").selectOption("all");
+  await page.getByLabel("Filtrar por situação").fill("Todas");
+  await page
+    .getByRole("option", { name: "Todas as situações", exact: true })
+    .click();
   await page.getByRole("button", { name: "Limpar pesquisa" }).click();
 
   await page.setViewportSize({ width: 390, height: 844 });

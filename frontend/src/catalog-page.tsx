@@ -261,37 +261,27 @@ export function CatalogPage({
                         }
                       />
                     ) : availableOptions ? (
-                      <select
+                      <SearchSelect
                         id={`${uid}-${field.name}`}
                         className={
                           field.name === "kind" ? `nature-${value}` : undefined
                         }
                         required={field.required}
                         value={value}
-                        onChange={(event) =>
+                        onChange={(selected) =>
                           setDraft({
                             ...draft,
-                            [field.name]: event.target.value,
+                            [field.name]: selected,
                           })
                         }
-                      >
-                        <option value="">
-                          {field.required ? "Selecione" : "Nenhum"}
-                        </option>
-                        {availableOptions.map((option) => (
-                          <option
-                            key={option.value}
-                            value={option.value}
-                            className={
-                              field.name === "kind"
-                                ? `nature-${option.value}`
-                                : undefined
-                            }
-                          >
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                        options={[
+                          {
+                            value: "",
+                            label: field.required ? "Selecione" : "Nenhum",
+                          },
+                          ...availableOptions,
+                        ]}
+                      />
                     ) : (
                       <input
                         id={`${uid}-${field.name}`}

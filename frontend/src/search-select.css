@@ -1,0 +1,51 @@
+.search-select {
+  min-width: 0;
+}
+.search-select > input {
+  width: 100%;
+  min-width: 0;
+  font-weight: 400;
+}
+.search-select:has([aria-expanded="true"]) {
+  z-index: 30;
+}
+.search-select .search-options {
+  color: var(--ink);
+  font-weight: 400;
+  font-size: 0.875rem;
+  text-align: left;
+}
+.search-select .search-options [role="option"] {
+  min-height: 44px;
+  line-height: 1.4;
+}
+.search-select.nature-REVENUE > input {
+  color: var(--revenue-ink);
+  background: var(--revenue-background);
+}
+.search-select.nature-EXPENSE > input {
+  color: var(--expense-ink);
+  background: var(--expense-background);
+}
+.search-select.nature-NEUTRAL > input {
+  color: var(--neutral-ink);
+  background: var(--neutral-background);
+}
+.catalog-toolbar > .search-select {
+  width: 100%;
+  min-width: 0;
+  font-size: 0.875rem;
+}
+.organization-tools > .search-select {
+  flex: 0 1 17rem;
+  min-width: 0;
+}
+.organization-tools > .search-select > input {
+  font-weight: 600;
+}
+@container (max-width: 650px) {
+  .catalog-toolbar > .search-select {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}

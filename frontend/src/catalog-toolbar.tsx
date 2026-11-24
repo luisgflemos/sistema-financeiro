@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CatalogSearch } from "./catalog-search";
+import { SearchSelect } from "./search-select";
 
 export function CatalogToolbar({
   title,
@@ -32,15 +33,16 @@ export function CatalogToolbar({
       </div>
       <CatalogSearch value={query} onChange={onQueryChange} />
       <div className="catalog-toolbar-actions">{children}</div>
-      <select
-        aria-label="Filtrar por situação"
+      <SearchSelect
+        ariaLabel="Filtrar por situação"
         value={filter}
-        onChange={(event) => onFilterChange(event.target.value)}
-      >
-        <option value="all">Todas as situações</option>
-        <option value="active">Ativos</option>
-        <option value="inactive">Inativos</option>
-      </select>
+        onChange={onFilterChange}
+        options={[
+          { value: "all", label: "Todas as situações" },
+          { value: "active", label: "Ativos" },
+          { value: "inactive", label: "Inativos" },
+        ]}
+      />
     </div>
   );
 }

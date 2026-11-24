@@ -343,16 +343,17 @@ export function TableImport({
               {!!preview?.sheets.length && (
                 <label>
                   Aba da planilha
-                  <select
+                  <SearchSelect
+                    ariaLabel="Aba da planilha"
                     value={source.sheet ?? preview.sheets[0]}
-                    onChange={(event) =>
-                      void reload({ ...source, sheet: event.target.value })
+                    onChange={(selected) =>
+                      void reload({ ...source, sheet: selected })
                     }
-                  >
-                    {preview.sheets.map((sheet) => (
-                      <option key={sheet}>{sheet}</option>
-                    ))}
-                  </select>
+                    options={preview.sheets.map((sheet) => ({
+                      value: sheet,
+                      label: sheet,
+                    }))}
+                  />
                 </label>
               )}
               <label>

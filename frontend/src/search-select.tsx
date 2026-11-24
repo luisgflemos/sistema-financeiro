@@ -1,6 +1,7 @@
 import { CircleMinus, Layers } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import type { Option } from "./catalogs";
+import "./search-select.css";
 
 function normalize(value: string) {
   return value
@@ -15,21 +16,74 @@ export function SearchSelect({
   options,
   required,
   onChange,
+  ariaLabel,
+  disabled,
+  className,
 }: {
-  id: string;
+  id?: string;
   value: string;
   options: (Option & { emphasis?: "skip" | "fixed" })[];
   required?: boolean;
   onChange: (value: string) => void;
+  ariaLabel?: string;
+  disabled?: boolean;
+  className?: string;
 }) {
+  const generated = useId();
+  const inputId = id ?? generated;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlighted, setHighlighted] = useState(0);
   const input = useRef<HTMLInputElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const [placement, setPlacement] = useState({ up: false, height: 256 });
   const selected = options.find((option) => option.value === value);
+  const words = normalize(query).trim().split(/\s+/).filter(Boolean);
   const filtered = options.filter((option) =>
-    normalize(option.label).includes(normalize(query)),
+    words.every((word) => normalize(option.label).includes(word)),
   );
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    function position() {
+      if (!input.current) return;
+      const rect = input.current.getBoundingClientRect();
+      const modal = input.current.closest("dialog")?.getBoundingClientRect();
+      const top = Math.max(8, modal ? modal.top + 8 : 8);
+      const bottom = Math.min(
+        window.innerHeight - 8,
+        modal ? modal.bottom - 8 : window.innerHeight - 8,
+      );
+      const above = Math.max(0, rect.top - top - 6);
+      const below = Math.max(0, bottom - rect.bottom - 6);
+      const needed = Math.min(256, Math.max(52, filtered.length * 46));
+      const up = below < needed && above > below;
+      setPlacement({
+        up,
+        height: Math.max(40, Math.min(256, up ? above : below)),
+      });
+    }
+    position();
+    window.addEventListener("resize", position);
+    window.addEventListener("scroll", position, true);
+    return () => {
+      window.removeEventListener("resize", position);
+      window.removeEventListener("scroll", position, true);
+    };
+  }, [open, filtered.length]);
+  useEffect(() => {
+    if (!open || !list.current) return;
+    const item = list.current
+      .querySelectorAll('[role="option"]')
+      .item(highlighted);
+    if (!item) return;
+    const box = list.current.getBoundingClientRect();
+    const option = item.getBoundingClientRect();
+    if (option.bottom > box.bottom)
+      list.current.scrollTop += option.bottom - box.bottom;
+    else if (option.top < box.top)
+      list.current.scrollTop -= box.top - option.top;
+  }, [highlighted, open]);
 
   useEffect(() => {
     input.current?.setCustomValidity(
@@ -44,21 +98,23 @@ export function SearchSelect({
   }
 
   return (
-    <div className="search-select">
+    <div className={["search-select", className ?? ""].join(" ")}>
       <input
         ref={input}
-        id={id}
+        id={inputId}
+        aria-label={ariaLabel}
+        disabled={disabled}
         role="combobox"
         autoComplete="off"
         aria-autocomplete="list"
         aria-expanded={open}
-        aria-controls={`${id}-options`}
+        aria-controls={`${inputId}-options`}
         aria-activedescendant={
           open && filtered[highlighted]
-            ? `${id}-option-${highlighted}`
+            ? `${inputId}-option-${highlighted}`
             : undefined
         }
-        required={required}
+        aria-required={required}
         value={open ? query : (selected?.label ?? "")}
         placeholder="Digite para buscar"
         onFocus={() => {
@@ -78,6 +134,7 @@ export function SearchSelect({
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault();
+            event.stopPropagation();
             setOpen(false);
           }
           if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -100,12 +157,22 @@ export function SearchSelect({
         }}
       />
       {open && (
-        <div className="search-options" role="listbox" id={`${id}-options`}>
+        <div
+          ref={list}
+          className="search-options"
+          role="listbox"
+          id={`${inputId}-options`}
+          style={{
+            top: placement.up ? "auto" : "calc(100% + 0.25rem)",
+            bottom: placement.up ? "calc(100% + 0.25rem)" : "auto",
+            maxHeight: placement.height,
+          }}
+        >
           {filtered.length ? (
             filtered.map((option, index) => (
               <div
                 key={option.value}
-                id={`${id}-option-${index}`}
+                id={`${inputId}-option-${index}`}
                 role="option"
                 aria-selected={option.value === value}
                 aria-label={option.label}

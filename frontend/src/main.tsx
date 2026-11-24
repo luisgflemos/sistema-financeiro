@@ -18,6 +18,7 @@ import { catalogIds, catalogs } from "./catalogs";
 import { TransactionsPage } from "./transactions-page";
 import { SessionGate } from "./session";
 import { Assistant } from "./assistant";
+import { SearchSelect } from "./search-select";
 import "./style.css";
 import "./transactions.css";
 
@@ -188,17 +189,15 @@ function App({ onLogout }: { onLogout?: () => void }) {
           </span>
           <div className="organization-tools">
             {organizations.length > 0 && (
-              <select
-                aria-label="Organização"
+              <SearchSelect
+                ariaLabel="Organização"
                 value={organizationId}
-                onChange={(event) => selectOrganization(event.target.value)}
-              >
-                {organizations.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+                onChange={selectOrganization}
+                options={organizations.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                }))}
+              />
             )}
             {organizationId && !creating && (
               <button type="button" onClick={() => setCreating(true)}>
