@@ -171,6 +171,21 @@ def restore(organization_id: UUID, removal_id: UUID, request: Request):
             )
             if backup is None:
                 raise HTTPException(404, "Cópia não encontrada ou já restaurada.")
+            # A reimportação pode ter bytes/hash diferentes e o mesmo movimento.
+            # Bloquear conservadoramente qualquer sobreposição, antes de inserir.
+            for raw in backup["old_json"]["bank_transactions"]:
+                movement = json.loads(raw)
+                exists = connection.scalar(
+                    text(
+                        "SELECT 1 FROM bank_transactions WHERE account_id=:account AND fingerprint=:fingerprint LIMIT 1"
+                    ),
+                    {"account": movement["account_id"], "fingerprint": movement["fingerprint"]},
+                )
+                if exists:
+                    raise HTTPException(
+                        409,
+                        "Há movimentos reimportados para esta conta e período. A restauração foi bloqueada para evitar duplicidades.",
+                    )
             for table in TABLES:
                 connection.execute(
                     text(

@@ -130,24 +130,26 @@ export function StatementCleanup({
           {error}
         </p>
       )}
-      <label htmlFor="cleanup-file">Extrato do teste</label>
-      <SearchSelect
-        id="cleanup-file"
-        value={fileId}
-        options={[
-          { value: "", label: "Selecione o extrato" },
-          ...statements.map((item) => ({
-            value: item.id,
-            label: `${item.account_label} · ${item.file_name}`,
-          })),
-        ]}
-        onChange={(value) => {
-          if (!busy) {
-            setFileId(value);
-            setNotice("");
-          }
-        }}
-      />
+      <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
+        <label htmlFor="cleanup-file">Extrato do teste</label>
+        <SearchSelect
+          id="cleanup-file"
+          value={fileId}
+          options={[
+            { value: "", label: "Selecione o extrato" },
+            ...statements.map((item) => ({
+              value: item.id,
+              label: `${item.account_label} · ${item.file_name}`,
+            })),
+          ]}
+          onChange={(value) => {
+            if (!busy) {
+              setFileId(value);
+              setNotice("");
+            }
+          }}
+        />
+      </div>
       {summary && (
         <section className="panel" style={{ padding: 20, marginTop: 16 }}>
           <h3>{summary.account_label}</h3>
