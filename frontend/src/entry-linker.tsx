@@ -16,6 +16,7 @@ export function EntryLinker({
   onDone,
   notes,
   onNotesChange,
+  enabled,
 }: {
   organizationId: string;
   movement: {
@@ -29,9 +30,9 @@ export function EntryLinker({
   onDone: (message: string) => void;
   notes: string;
   onNotesChange: (value: string) => void;
+  enabled: boolean;
 }) {
   const base = "/organizations/" + organizationId + "/planned-entries";
-  const [mode, setMode] = useState("direct");
   const [linked, setLinked] = useState<{ entry: PlannedEntry } | null>(null);
   const [entries, setEntries] = useState<PlannedEntry[]>([]);
   const [entryId, setEntryId] = useState("");
@@ -50,7 +51,6 @@ export function EntryLinker({
       .then((link) => {
         setLinked(link);
         if (link) {
-          setMode("existing");
           onModeChange(true);
         }
       })
@@ -60,7 +60,7 @@ export function EntryLinker({
     return () => controller.abort();
   }, [base, movement.id, onModeChange]);
   useEffect(() => {
-    if (mode !== "existing" || linked) return;
+    if (!enabled || linked) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setLoading(true);
@@ -87,7 +87,7 @@ export function EntryLinker({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [base, mode, linked, movement.direction, query]);
+  }, [base, enabled, linked, movement.direction, query]);
   const selected = entries.find((row) => row.id === entryId) ?? chosen;
   const candidates =
     selected && !entries.some((row) => row.id === selected.id)
@@ -139,8 +139,10 @@ export function EntryLinker({
       setBusy(false);
     }
   }
+  if (!enabled && !linked && !error) return null;
   return (
     <section
+      id="previous-entry-panel"
       className="planning-link-controls"
       aria-label="Vinculação ao planejamento"
     >
@@ -158,30 +160,18 @@ export function EntryLinker({
         </div>
       ) : (
         <>
-          <div className="field">
-            <label htmlFor="identification-path">
-              Como identificar este movimento?
-            </label>
-            <SearchSelect
-              id="identification-path"
-              value={mode}
-              disabled={busy}
-              onChange={(value) => {
-                setMode(value);
-                onModeChange(value === "existing");
-                setError("");
-              }}
-              options={[
-                { value: "direct", label: "Identificar diretamente" },
-                {
-                  value: "existing",
-                  label: "Vincular a receita ou despesa já lançada",
-                },
-              ]}
-            />
-          </div>
-          {mode === "existing" && (
+          {enabled && (
             <>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={busy}
+                  onClick={() => onModeChange(false)}
+                >
+                  ← Voltar à Identificação Direta
+                </button>
+              </div>
               <div className="field">
                 <label htmlFor="existing-planned-entry">
                   Lançamento existente
@@ -280,7 +270,7 @@ export function EntryLinker({
               )}
               {!loading && !entries.length && (
                 <p>
-                  Nenhum lançamento em aberto encontrado. Cadastre-o na aba
+                  Nenhum lançamento em aberto encontrado. Cadastre-o no menu
                   Lançamentos ou use a identificação direta.
                 </p>
               )}

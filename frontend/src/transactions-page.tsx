@@ -658,12 +658,26 @@ export function TransactionsPage({
               Documento: {selected.raw_payload.documento || "Não informado"} ·
               Saldo informado: {brl(selected.raw_payload.saldo ?? "0")}
             </small>
+            {selected.editable && (
+              <div className="transaction-header-action">
+                <button
+                  type="button"
+                  className="primary"
+                  aria-expanded={linkMode}
+                  aria-controls="previous-entry-panel"
+                  onClick={() => setLinkMode(true)}
+                >
+                  Identificar com Lançamento Prévio
+                </button>
+              </div>
+            )}
           </div>
           {selected.editable && (
             <EntryLinker
               key={selected.id}
               organizationId={organizationId}
               movement={selected}
+              enabled={linkMode}
               notes={draft.notes}
               onNotesChange={(value) =>
                 setDraft((previous) => ({ ...previous, notes: value }))

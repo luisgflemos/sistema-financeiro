@@ -283,15 +283,38 @@ try {
     .filter({ hasText: "TARIFA SINTETICA" })
     .getByRole("button", { name: /Identificar movimento/ })
     .click();
+  assert.equal(
+    await page
+      .getByLabel("Como identificar este movimento?", { exact: true })
+      .count(),
+    0,
+  );
+  const priorAction = page.getByRole("button", {
+    name: "Identificar com Lançamento Prévio",
+    exact: true,
+  });
+  const priorBounds = await priorAction.boundingBox();
+  const headerBounds = await page
+    .locator(".transaction-original")
+    .boundingBox();
+  assert.ok(
+    Math.abs(
+      priorBounds.x +
+        priorBounds.width -
+        (headerBounds.x + headerBounds.width - 17),
+    ) < 3,
+    "A ação deve estar alinhada à direita no cabeçalho",
+  );
+  await priorAction.click();
+  await page.getByLabel("Lançamento existente", { exact: true }).waitFor();
   await page
-    .getByLabel("Como identificar este movimento?", { exact: true })
-    .fill("Vincular");
-  await page
-    .getByRole("option", {
-      name: "Vincular a receita ou despesa já lançada",
+    .getByRole("button", {
+      name: "← Voltar à Identificação Direta",
       exact: true,
     })
     .click();
+  await page.getByLabel("Centro de Custos", { exact: true }).waitFor();
+  await priorAction.click();
   await page
     .getByLabel("Lançamento existente", { exact: true })
     .fill("Aluguel previsto sintético");

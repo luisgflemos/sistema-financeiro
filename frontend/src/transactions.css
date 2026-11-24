@@ -251,6 +251,15 @@
 .transaction-original > span {
   color: var(--muted);
 }
+.transaction-header-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.transaction-header-action > button {
+  max-width: 100%;
+  white-space: normal;
+}
 .transaction-ai {
   padding: 1rem;
   margin-bottom: 1rem;
