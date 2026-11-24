@@ -233,10 +233,23 @@ try {
     0,
     "O próximo lançamento deve abrir com os dados originais visíveis no topo",
   );
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const dialogSize = await page
+    .getByRole("dialog")
+    .evaluate((element) => ({
+      scroll: element.scrollHeight,
+      visible: element.clientHeight,
+    }));
+  assert.ok(
+    dialogSize.scroll <= dialogSize.visible + 1,
+    "O formulário direto deve caber inteiro em uma janela desktop de 720px: " +
+      JSON.stringify(dialogSize),
+  );
   await page.screenshot({
     path: "import-layout-transaction-detail.png",
     fullPage: true,
   });
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page
     .getByRole("button", { name: "Ver extrato completo", exact: true })
     .click();
@@ -301,9 +314,21 @@ try {
     Math.abs(
       priorBounds.x +
         priorBounds.width -
-        (headerBounds.x + headerBounds.width - 17),
+        (headerBounds.x + headerBounds.width - 13),
     ) < 3,
     "A ação deve estar alinhada à direita no cabeçalho",
+  );
+  const metadataBounds = await page
+    .locator(".transaction-header-footer > small")
+    .boundingBox();
+  assert.ok(
+    Math.abs(
+      priorBounds.y +
+        priorBounds.height / 2 -
+        metadataBounds.y -
+        metadataBounds.height / 2,
+    ) < 3,
+    "A ação deve compartilhar a linha dos dados de documento e saldo",
   );
   await priorAction.click();
   await page.getByLabel("Lançamento existente", { exact: true }).waitFor();

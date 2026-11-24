@@ -654,23 +654,25 @@ export function TransactionsPage({
               {selected.direction === "DEBIT" ? "− " : "+ "}
               {brl(selected.amount)}
             </strong>
-            <small>
-              Documento: {selected.raw_payload.documento || "Não informado"} ·
-              Saldo informado: {brl(selected.raw_payload.saldo ?? "0")}
-            </small>
-            {selected.editable && (
-              <div className="transaction-header-action">
-                <button
-                  type="button"
-                  className="primary"
-                  aria-expanded={linkMode}
-                  aria-controls="previous-entry-panel"
-                  onClick={() => setLinkMode(true)}
-                >
-                  Identificar com Lançamento Prévio
-                </button>
-              </div>
-            )}
+            <div className="transaction-header-footer">
+              <small>
+                Documento: {selected.raw_payload.documento || "Não informado"} ·
+                Saldo informado: {brl(selected.raw_payload.saldo ?? "0")}
+              </small>
+              {selected.editable && (
+                <div className="transaction-header-action">
+                  <button
+                    type="button"
+                    className="primary"
+                    aria-expanded={linkMode}
+                    aria-controls="previous-entry-panel"
+                    onClick={() => setLinkMode(true)}
+                  >
+                    Identificar com Lançamento Prévio
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           {selected.editable && (
             <EntryLinker

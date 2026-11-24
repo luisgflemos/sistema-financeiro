@@ -64,3 +64,8 @@ Criar uma aplicação web simples, rápida, acessível e auditável onde o **ext
 Novas caixas de seleção devem permitir filtrar por trechos do nome ou código, com busca sem distinção de acentos e suporte a teclado. Reutilizar o componente SearchSelect.
 
 Títulos de páginas e menus usam iniciais maiúsculas nas palavras principais. Padrão aprovado: Contas Bancárias, Centro de Custos, Clientes e Fornecedores e Classificações.
+
+## Coerência visual e uso do espaço
+
+Preservar o padrão visual aprovado entre telas. Alinhar ações secundárias às informações relacionadas e reutilizar tamanhos e espaçamentos consistentes. Preferir cabeçalhos compactos: uma ação isolada não deve criar uma linha alta ou obrigar rolagem desnecessária em formulários comuns de desktop. Antes de publicar mudanças de layout, conferir a tela completa, os botões finais e o comportamento em janelas menores. Manter legibilidade, navegação por teclado e áreas de interação adequadas no celular; permitir rolagem quando o conteúdo realmente exigir.
+
