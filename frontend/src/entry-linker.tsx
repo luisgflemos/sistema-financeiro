@@ -4,6 +4,11 @@ import { SearchSelect } from "./search-select";
 import { brl, brazilDate } from "./statement-import";
 import type { PlannedEntry } from "./planning-page";
 
+function cents(value: string) {
+  const [whole, fraction = ""] = value.split(".");
+  return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, "0").slice(0, 2));
+}
+
 export function EntryLinker({
   organizationId,
   movement,
@@ -89,10 +94,10 @@ export function EntryLinker({
       ? [selected, ...entries]
       : entries;
   const difference =
-    selected && Number(movement.amount) !== Number(selected.outstanding);
+    selected && cents(movement.amount) !== cents(selected.outstanding);
   const needsConfirmation =
     selected &&
-    (Number(movement.amount) > Number(selected.outstanding) ||
+    (cents(movement.amount) > cents(selected.outstanding) ||
       (finish && difference));
   async function link() {
     if (!selected) return;
@@ -225,12 +230,12 @@ export function EntryLinker({
                   </div>
                   {difference && (
                     <div className="planning-link-warning">
-                      {Number(movement.amount) < Number(selected.outstanding)
+                      {cents(movement.amount) < cents(selected.outstanding)
                         ? "O valor menor fará uma baixa parcial; o restante continuará em aberto."
                         : "O valor é maior que o saldo previsto. A diferença ficará registrada."}
                     </div>
                   )}
-                  {Number(movement.amount) < Number(selected.outstanding) && (
+                  {cents(movement.amount) < cents(selected.outstanding) && (
                     <label className="checkbox">
                       <input
                         type="checkbox"
