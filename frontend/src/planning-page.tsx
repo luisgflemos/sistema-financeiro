@@ -206,7 +206,9 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
             )
             .map(([key, value]) => [key, value || null]),
         ),
-        expected_amount: draft.expected_amount.replace(",", "."),
+        expected_amount: draft.expected_amount.includes(",")
+          ? draft.expected_amount.replaceAll(".", "").replace(",", ".")
+          : draft.expected_amount,
       };
       if (editing)
         await api(base + "/planned-entries/" + editing.id, {
@@ -259,6 +261,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
   }
   async function showDetail(row: PlannedEntry) {
     setError("");
+    setFormError("");
     try {
       setSettlements(
         await api(base + "/planned-entries/" + row.id + "/settlements"),

@@ -31,6 +31,7 @@ type Movement = {
   cost_center_id: string | null;
   movement_kind: string | null;
   notes: string | null;
+  planning_description: string | null;
   party_name: string | null;
   category_name: string | null;
   cost_center_name: string | null;
@@ -477,6 +478,9 @@ export function TransactionsPage({
                         </small>
                       )}
                       {row.notes && <small>{row.notes}</small>}
+                      {row.planning_description && (
+                        <small>Vinculado a: {row.planning_description}</small>
+                      )}
                     </td>
                     <td
                       className={
@@ -660,6 +664,10 @@ export function TransactionsPage({
               key={selected.id}
               organizationId={organizationId}
               movement={selected}
+              notes={draft.notes}
+              onNotesChange={(value) =>
+                setDraft((previous) => ({ ...previous, notes: value }))
+              }
               onModeChange={setLinkMode}
               onDone={(message) => {
                 setNotice(message);

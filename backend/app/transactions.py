@@ -282,6 +282,10 @@ def list_transactions(
                 CASE WHEN NOT t.editable THEN 'duplicate' WHEN i.id IS NOT NULL THEN 'identified'
                     WHEN s.id IS NOT NULL THEN 'suggested' ELSE 'pending' END AS state,
                 s.id AS suggestion_id, s.payload AS suggestion, s.reason, s.confidence,
+                (SELECT e.description FROM entry_settlements l JOIN planned_entries e ON e.id=l.entry_id
+                    WHERE l.transaction_id=t.id AND NOT EXISTS(
+                        SELECT 1 FROM settlement_reversals r WHERE r.settlement_id=l.id
+                    ) ORDER BY l.created_at DESC LIMIT 1) AS planning_description,
                 (SELECT c.name FROM categories c WHERE c.id = i.category_id) AS category_name,
                 (SELECT c.name FROM cost_centers c WHERE c.id = i.cost_center_id) AS cost_center_name,
                 (SELECT p.display_name FROM parties p WHERE p.id = i.party_id) AS party_name

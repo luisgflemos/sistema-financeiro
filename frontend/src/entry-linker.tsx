@@ -9,6 +9,8 @@ export function EntryLinker({
   movement,
   onModeChange,
   onDone,
+  notes,
+  onNotesChange,
 }: {
   organizationId: string;
   movement: {
@@ -20,6 +22,8 @@ export function EntryLinker({
   };
   onModeChange: (value: boolean) => void;
   onDone: (message: string) => void;
+  notes: string;
+  onNotesChange: (value: string) => void;
 }) {
   const base = "/organizations/" + organizationId + "/planned-entries";
   const [mode, setMode] = useState("direct");
@@ -103,7 +107,7 @@ export function EntryLinker({
           expected_entry_version: selected.version,
           finish,
           confirm_difference: confirmed,
-          notes: movement.notes,
+          notes,
         }),
       });
       onDone("Movimento vinculado e baixa registrada.");
@@ -249,6 +253,16 @@ export function EntryLinker({
                       Confirmo a baixa com diferença de valor
                     </label>
                   )}
+                  <label htmlFor="linked-complementary">
+                    Descrição Complementar (opcional)
+                  </label>
+                  <textarea
+                    id="linked-complementary"
+                    rows={2}
+                    maxLength={4000}
+                    value={notes}
+                    onChange={(event) => onNotesChange(event.target.value)}
+                  />
                   <button
                     type="button"
                     className="primary"

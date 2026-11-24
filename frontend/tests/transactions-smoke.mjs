@@ -295,12 +295,23 @@ try {
     .getByRole("option", { name: /Aluguel previsto sintético.*31\/01\/2027/ })
     .click();
   await page
+    .getByLabel("Descrição Complementar (opcional)", { exact: true })
+    .fill("Baixa parcial sintética");
+  await page.screenshot({
+    path: "import-layout-planning-link.png",
+    fullPage: true,
+  });
+  await page
     .getByRole("button", { name: "Vincular e dar baixa", exact: true })
     .click();
   await page
     .getByText("Movimento vinculado e baixa registrada.", { exact: true })
     .waitFor();
   await page.getByRole("tab", { name: "Histórico", exact: true }).click();
+  await page.getByText("Baixa parcial sintética", { exact: true }).waitFor();
+  await page
+    .getByText("Vinculado a: Aluguel previsto sintético", { exact: true })
+    .waitFor();
   await page
     .getByRole("row")
     .filter({ hasText: "TARIFA SINTETICA" })
