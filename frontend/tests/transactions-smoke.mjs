@@ -401,6 +401,83 @@ try {
     await page.getByLabel("Sua mensagem", { exact: true }).inputValue(),
     "Como começar?",
   );
+  await page
+    .getByRole("button", { name: "Minimizar assistente", exact: true })
+    .click();
+  const fin = page.getByRole("button", {
+    name: "Conversar com Assistente Finare",
+    exact: true,
+  });
+  const initial = await fin.boundingBox();
+  assert.ok(
+    initial.width <= 64 && initial.height <= 68,
+    "O acesso à Fin deve ser compacto",
+  );
+  const symbol = await fin.locator(".fin-symbol").boundingBox();
+  const name = await fin.locator(".fin-launcher-name").boundingBox();
+  assert.ok(
+    name.y >= symbol.y + symbol.height,
+    "O nome deve ficar abaixo do logo",
+  );
+  await page.mouse.move(
+    initial.x + initial.width / 2,
+    initial.y + initial.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(90, 430, { steps: 12 });
+  await page.mouse.up();
+  assert.equal(
+    await page
+      .getByRole("region", {
+        name: "Conversa com Assistente Finare",
+        exact: true,
+      })
+      .count(),
+    0,
+    "Arrastar não deve abrir a conversa",
+  );
+  const moved = await fin.boundingBox();
+  assert.ok(
+    Math.abs(moved.x - initial.x) > 100 && Math.abs(moved.y - initial.y) > 100,
+    "A Fin deve mover-se nas duas direções",
+  );
+  await page.screenshot({
+    path: "import-layout-fin-draggable.png",
+    fullPage: true,
+  });
+  await page.reload();
+  await fin.waitFor();
+  const restored = await fin.boundingBox();
+  assert.ok(
+    Math.abs(restored.x - moved.x) < 2 && Math.abs(restored.y - moved.y) < 2,
+    "A posição deve ser lembrada após recarregar",
+  );
+  await fin.click();
+  await page
+    .getByRole("region", {
+      name: "Conversa com Assistente Finare",
+      exact: true,
+    })
+    .waitFor();
+  await page
+    .getByRole("button", { name: "Minimizar assistente", exact: true })
+    .click();
+  await fin.focus();
+  await fin.press("Alt+ArrowRight");
+  const keyboard = await fin.boundingBox();
+  assert.ok(
+    keyboard.x > restored.x,
+    "O reposicionamento também deve funcionar por teclado",
+  );
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const resized = await fin.boundingBox();
+  assert.ok(
+    resized.x >= 0 &&
+      resized.y >= 0 &&
+      resized.x + resized.width <= 1280 &&
+      resized.y + resized.height <= 800,
+    "O botão deve permanecer visível ao redimensionar",
+  );
 } finally {
   await browser.close();
 }

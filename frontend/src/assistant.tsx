@@ -6,6 +6,22 @@ import "./assistant.css";
 
 type Message = { role: "user" | "assistant"; content: string };
 type Context = { id: string; label: string };
+type Position = { x: number; y: number };
+const POSITION_KEY = "finare.fin-position";
+
+function savedPosition(): Position | null {
+  try {
+    const value = JSON.parse(localStorage.getItem(POSITION_KEY) ?? "null");
+    if (value && Number.isFinite(value.x) && Number.isFinite(value.y))
+      return {
+        x: Math.max(0, Math.min(1, value.x)),
+        y: Math.max(0, Math.min(1, value.y)),
+      };
+  } catch {
+    /* A posição é opcional se o navegador bloquear o armazenamento. */
+  }
+  return null;
+}
 
 function FinIcon() {
   return (
@@ -41,6 +57,45 @@ export function Assistant({
   const controller = useRef<AbortController | null>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<Position | null>(savedPosition);
+  const [viewport, setViewport] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef<{
+    id: number;
+    x: number;
+    y: number;
+    left: number;
+    top: number;
+    moved: boolean;
+    position: Position | null;
+  } | null>(null);
+  const suppressClick = useRef(false);
+  function place(left: number, top: number, persist = false) {
+    const rangeX = Math.max(0, window.innerWidth - 76),
+      rangeY = Math.max(0, window.innerHeight - 80);
+    const next = {
+      x: rangeX ? Math.max(0, Math.min(1, (left - 8) / rangeX)) : 0,
+      y: rangeY ? Math.max(0, Math.min(1, (top - 8) / rangeY)) : 0,
+    };
+    setPosition(next);
+    if (drag.current) drag.current.position = next;
+    if (persist) {
+      try {
+        localStorage.setItem(POSITION_KEY, JSON.stringify(next));
+      } catch {
+        /* Sem persistência, o botão continua móvel nesta sessão. */
+      }
+    }
+  }
+  useEffect(() => {
+    const resize = () =>
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
 
   useEffect(() => {
     function show(event: Event) {
@@ -131,11 +186,111 @@ export function Assistant({
         !open && (
           <button
             type="button"
-            className="assistant-launcher"
-            onClick={() => setOpen(true)}
+            className={"assistant-launcher" + (dragging ? " is-dragging" : "")}
+            title="Fin — arraste para mover; clique para conversar"
+            style={
+              position
+                ? {
+                    position: "fixed",
+                    left: 8 + position.x * Math.max(0, viewport.width - 76),
+                    top: 8 + position.y * Math.max(0, viewport.height - 80),
+                    right: "auto",
+                    bottom: "auto",
+                  }
+                : undefined
+            }
+            onPointerDown={(event) => {
+              if (!event.isPrimary || event.button !== 0) return;
+              const rect = event.currentTarget.getBoundingClientRect();
+              suppressClick.current = false;
+              drag.current = {
+                id: event.pointerId,
+                x: event.clientX,
+                y: event.clientY,
+                left: rect.left,
+                top: rect.top,
+                moved: false,
+                position,
+              };
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerMove={(event) => {
+              const current = drag.current;
+              if (!current || current.id !== event.pointerId) return;
+              const dx = event.clientX - current.x,
+                dy = event.clientY - current.y;
+              if (!current.moved && Math.hypot(dx, dy) < 5) return;
+              current.moved = true;
+              setDragging(true);
+              place(current.left + dx, current.top + dy);
+            }}
+            onPointerUp={(event) => {
+              const current = drag.current;
+              if (!current || current.id !== event.pointerId) return;
+              suppressClick.current = current.moved;
+              if (current.moved && current.position) {
+                try {
+                  localStorage.setItem(
+                    POSITION_KEY,
+                    JSON.stringify(current.position),
+                  );
+                } catch {
+                  /* Opcional. */
+                }
+              }
+              drag.current = null;
+              setDragging(false);
+              if (event.currentTarget.hasPointerCapture(event.pointerId))
+                event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+            onPointerCancel={() => {
+              drag.current = null;
+              setDragging(false);
+              suppressClick.current = true;
+            }}
+            onKeyDown={(event) => {
+              if (
+                event.altKey &&
+                ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+                  event.key,
+                )
+              ) {
+                event.preventDefault();
+                const rect = event.currentTarget.getBoundingClientRect();
+                place(
+                  rect.left +
+                    (event.key === "ArrowLeft"
+                      ? -16
+                      : event.key === "ArrowRight"
+                        ? 16
+                        : 0),
+                  rect.top +
+                    (event.key === "ArrowUp"
+                      ? -16
+                      : event.key === "ArrowDown"
+                        ? 16
+                        : 0),
+                  true,
+                );
+              }
+            }}
+            onClick={(event) => {
+              if (suppressClick.current && event.detail !== 0) {
+                suppressClick.current = false;
+                event.preventDefault();
+                return;
+              }
+              suppressClick.current = false;
+              setOpen(true);
+            }}
             aria-label="Conversar com Assistente Finare"
+            aria-describedby="fin-move-help"
           >
             <FinIcon /> <span className="fin-launcher-name">Fin</span>
+            <span id="fin-move-help" className="sr-only">
+              Arraste para reposicionar. Use Alt e as setas pelo teclado. Clique
+              para conversar.
+            </span>
           </button>
         ),
         host,

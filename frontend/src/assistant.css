@@ -4,24 +4,41 @@
   bottom: 20px;
   z-index: 100;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  background: #0b1f3b;
-  color: white;
-  border: 1px solid #a7f3d0;
-  border-radius: 28px;
-  padding: 13px 18px;
+  justify-content: center;
+  gap: 3px;
+  width: 60px;
+  height: 64px;
+  background: white;
+  color: #0b1f3b;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 7px;
   font-weight: 700;
-  box-shadow: 0 6px 24px #0b1f3b26;
+  box-shadow: 0 4px 16px #0b1f3b1f;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
 }
-.assistant-launcher:hover {
-  background: #153757;
+.assistant-launcher:hover:not(:disabled) {
+  background: #f0fdf4;
+}
+.assistant-launcher.is-dragging {
+  cursor: grabbing;
+}
+.assistant-launcher .fin-symbol {
+  flex: 0 0 26px;
+  width: 32px;
+  height: 26px;
 }
 .modal-header > .assistant-launcher {
   position: static;
   order: 2;
   font-size: 14px;
-  padding: 8px;
+  padding: 6px;
+  width: 52px;
+  height: 58px;
   flex-shrink: 0;
   border-radius: 8px;
   box-shadow: none;
@@ -35,8 +52,9 @@
   height: 24px;
 }
 .fin-launcher-name {
-  font-size: 16px;
-  color: white;
+  font-size: 12px;
+  line-height: 14px;
+  color: #0b1f3b;
   font-weight: 700;
 }
 .assistant-panel .fin-symbol {
@@ -221,6 +239,6 @@
     right: 12px;
     bottom: 12px;
     font-size: 13px;
-    padding: 10px 14px;
+    padding: 7px;
   }
 }
