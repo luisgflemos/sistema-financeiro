@@ -17,6 +17,7 @@ import { CatalogPage } from "./catalog-page";
 import { catalogIds, catalogs } from "./catalogs";
 import { TransactionsPage } from "./transactions-page";
 import { SessionGate } from "./session";
+import { Assistant } from "./assistant";
 import "./style.css";
 import "./transactions.css";
 
@@ -271,6 +272,15 @@ function App({ onLogout }: { onLogout?: () => void }) {
           )}
         </div>
       </main>
+      {organizationId && (
+        <Assistant
+          key={organizationId}
+          organizationId={organizationId}
+          screen={
+            catalog === "transactions" ? "Transações" : catalogs[catalog].label
+          }
+        />
+      )}
     </div>
   );
 }

@@ -126,6 +126,60 @@ try {
   await page
     .getByLabel("Descrição Complementar", { exact: true })
     .fill("Detalhe sintético para revisão.");
+  let chatCalls = 0;
+  await page.route("**/assistant/chat", async (route) => {
+    const data = route.request().postDataJSON();
+    assert.ok(data.transaction_id);
+    assert.equal(data.messages.at(-1).role, "user");
+    if (chatCalls) assert.equal(data.messages.at(-2).role, "assistant");
+    chatCalls++;
+    await route.fulfill({
+      json: {
+        answer: "Orientação sintética: revise os campos antes de salvar.",
+      },
+    });
+  });
+  await page
+    .getByRole("button", {
+      name: "Conversar sobre este lançamento",
+      exact: true,
+    })
+    .click();
+  const chat = page.getByRole("region", {
+    name: "Conversa com Assistente Finare",
+    exact: true,
+  });
+  await chat
+    .getByLabel("Sua mensagem", { exact: true })
+    .fill("Por que esta sugestão?");
+  await chat.getByRole("button", { name: "Enviar", exact: true }).click();
+  await chat
+    .getByText("Orientação sintética: revise os campos antes de salvar.", {
+      exact: true,
+    })
+    .waitFor();
+  await chat
+    .getByLabel("Sua mensagem", { exact: true })
+    .fill("Qual o próximo passo?");
+  await chat.getByRole("button", { name: "Enviar", exact: true }).click();
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll(".assistant-message-assistant").length === 2,
+  );
+  assert.equal(chatCalls, 2);
+  await page.screenshot({
+    path: "import-layout-assistant-detail.png",
+    fullPage: true,
+  });
+  await chat
+    .getByRole("button", { name: "Minimizar assistente", exact: true })
+    .click();
+  assert.equal(
+    await page
+      .getByLabel("Descrição Complementar", { exact: true })
+      .inputValue(),
+    "Detalhe sintético para revisão.",
+  );
   await page
     .getByRole("button", { name: "Salvar e próximo", exact: true })
     .click();
@@ -168,6 +222,40 @@ try {
     path: "import-layout-transactions-mobile.png",
     fullPage: true,
   });
+  await page
+    .getByRole("button", {
+      name: "Conversar com Assistente Finare",
+      exact: true,
+    })
+    .click();
+  await page.getByLabel("Sua mensagem", { exact: true }).fill("Como começar?");
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+    true,
+  );
+  await page.screenshot({
+    path: "import-layout-assistant-mobile.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Minimizar assistente", exact: true })
+    .click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "Contas Bancárias", exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "Conversar com Assistente Finare",
+      exact: true,
+    })
+    .click();
+  assert.equal(
+    await page.getByLabel("Sua mensagem", { exact: true }).inputValue(),
+    "Como começar?",
+  );
 } finally {
   await browser.close();
 }

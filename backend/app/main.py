@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request, Response, status
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.assistant import router as assistant_router
 from app.bank_accounts import router as bank_accounts_router
 from app.catalog_import import router as catalog_import_router
 from app.catalogs import router as catalogs_router
@@ -36,6 +37,7 @@ app.include_router(table_imports_router)
 app.include_router(statements_router)
 app.include_router(transactions_router)
 app.include_router(recognition_router)
+app.include_router(assistant_router)
 
 
 @app.get("/health")

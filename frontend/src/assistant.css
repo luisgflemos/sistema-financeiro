@@ -1,0 +1,199 @@
+.assistant-launcher {
+  position: fixed;
+  right: 24px;
+  bottom: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0b1f3b;
+  color: white;
+  border: 1px solid #a7f3d0;
+  border-radius: 28px;
+  padding: 13px 18px;
+  font-weight: 700;
+  box-shadow: 0 6px 24px #0b1f3b26;
+}
+.assistant-launcher:hover {
+  background: #153757;
+}
+.assistant-panel {
+  position: fixed;
+  z-index: 110;
+  right: 16px;
+  bottom: 16px;
+  width: min(420px, calc(100vw - 32px));
+  height: min(720px, calc(100dvh - 32px));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: #fff;
+  color: #0b1f3b;
+  border: 1px solid #bfcadd;
+  border-radius: 16px;
+  box-shadow: 0 12px 48px #0b1f3b40;
+  text-align: left;
+  font-size: 14px;
+}
+.assistant-panel > header {
+  background: #0b1f3b;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  gap: 8px;
+}
+.assistant-panel > header > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.assistant-panel > header strong {
+  font-size: 18px;
+  display: block;
+}
+.assistant-panel > header small {
+  display: block;
+  color: #a7f3d0;
+  margin-top: 3px;
+}
+.assistant-panel > header button {
+  color: white;
+  background: transparent;
+  padding: 6px;
+  min-width: 32px;
+  border-color: #69829c;
+  display: flex;
+}
+.assistant-context {
+  padding: 12px 16px;
+  background: #f0fdf4;
+  border-bottom: 1px solid #bbf7d0;
+}
+.assistant-context span {
+  display: block;
+  color: #166534;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.assistant-context strong {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  max-height: 45px;
+  overflow: auto;
+}
+.assistant-context button {
+  font-size: 12px;
+  margin-top: 8px;
+  padding: 5px 8px;
+}
+.assistant-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.assistant-welcome p {
+  color: #52657b;
+  line-height: 1.5;
+}
+.assistant-starters {
+  display: grid;
+  gap: 8px;
+}
+.assistant-starters button {
+  font-size: 13px;
+  text-align: left;
+  white-space: normal;
+  background: #f8fafc;
+  padding: 10px;
+}
+.assistant-message {
+  max-width: 96%;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #f1f5f9;
+}
+.assistant-message-user {
+  background: #dcfce7;
+  align-self: flex-end;
+}
+.assistant-message small {
+  font-size: 11px;
+  font-weight: 700;
+  color: #52657b;
+}
+.assistant-message p {
+  margin: 5px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  color: #0b1f3b;
+}
+.assistant-thinking {
+  color: #52657b;
+  font-size: 13px;
+}
+.assistant-error {
+  margin: 0;
+  padding: 10px 16px;
+  color: #991b1b;
+  background: #fef2f2;
+  font-size: 13px;
+}
+.assistant-panel > form {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  gap: 8px;
+  background: white;
+}
+.assistant-panel > form label {
+  font-size: 12px;
+  font-weight: 600;
+}
+.assistant-panel > form textarea {
+  font-size: 14px;
+  min-height: 60px;
+  max-height: 120px;
+  resize: vertical;
+}
+.assistant-panel > form > div {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+.assistant-panel > form button {
+  font-size: 13px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.assistant-panel > form > small {
+  color: #52657b;
+  font-size: 11px;
+  line-height: 1.4;
+}
+@media (max-width: 480px) {
+  .assistant-panel {
+    right: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
+  }
+  .assistant-launcher {
+    right: 12px;
+    bottom: 12px;
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+}

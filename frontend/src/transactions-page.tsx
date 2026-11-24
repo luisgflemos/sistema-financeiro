@@ -6,6 +6,7 @@ import { SearchSelect } from "./search-select";
 import { CatalogSearch } from "./catalog-search";
 import { StatementImport, brl, brazilDate } from "./statement-import";
 import type { RecordData } from "./catalogs";
+import { askAssistant } from "./assistant";
 
 type Movement = {
   editable: boolean;
@@ -584,6 +585,18 @@ export function TransactionsPage({
           onClose={() => setSelected(null)}
         >
           <div className="transaction-original">
+            <button
+              type="button"
+              className="text-button"
+              onClick={() =>
+                askAssistant({
+                  id: selected.id,
+                  label: selected.raw_description,
+                })
+              }
+            >
+              Conversar sobre este lançamento
+            </button>
             <div className="transaction-overview-actions">
               <button
                 type="button"
