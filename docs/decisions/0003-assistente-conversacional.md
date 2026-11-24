@@ -1,6 +1,6 @@
-# Assistente de conversa durante o uso da Finare
+# Fin — assistente de conversa durante o uso da Finare
 
-O assistente fica disponível em Cadastros e Transações, por botão fixo e painel lateral minimizável. Também pode ser aberto no detalhe para conversar sobre o movimento selecionado. Permanece disponível nos pop-ups, sem apagar os formulários em andamento. Trocar de organização ou sair da sessão limpa a conversa local.
+A Fin fica disponível em Cadastros e Transações, por botão flutuante com seu nome e o símbolo da Finare, que abre uma janela de conversa minimizável. Também pode ser aberta no detalhe para conversar sobre o movimento selecionado. Permanece acessível no cabeçalho dos pop-ups, sem cobrir suas ações ou apagar os formulários em andamento. Trocar de organização ou sair da sessão limpa a conversa local.
 
 O backend usa a mesma configuração OpenAI Responses da identificação, com store=false, sem ferramentas de escrita. O contexto é consultado pelo servidor, limitado à organização e, quando selecionado, à transação. Inclui cadastros ativos sem documentos/contatos, até vinte exemplos confirmados e a sugestão atual. Não é consulta irrestrita ao histórico: os recortes e suas limitações são informados ao modelo. Documentos presentes nas descrições e perguntas são reduzidos. Não são enviados arquivos ou credenciais bancárias.
 

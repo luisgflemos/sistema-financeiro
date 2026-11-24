@@ -233,25 +233,6 @@ try {
     path: "import-layout-assistant-mobile.png",
     fullPage: true,
   });
-  console.log(
-    "assistant layout",
-    await page.evaluate(() => ({
-      width: innerWidth,
-      scroll: document.documentElement.scrollWidth,
-      outside: Array.from(document.querySelectorAll("body *"))
-        .filter((element) => {
-          const r = element.getBoundingClientRect();
-          return r.width > 0 && (r.right > innerWidth + 1 || r.left < -1);
-        })
-        .map((element) => ({
-          tag: element.tagName,
-          css: element.className,
-          right: element.getBoundingClientRect().right,
-          left: element.getBoundingClientRect().left,
-        }))
-        .slice(0, 20),
-    })),
-  );
   assert.equal(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
