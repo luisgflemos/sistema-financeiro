@@ -16,6 +16,10 @@
   background: #0b1f3b;
   color: white;
 }
+.transaction-tabs button[aria-selected="true"]:hover:not(:disabled) {
+  background: #0b1f3b;
+  color: white;
+}
 .planning-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
