@@ -171,6 +171,14 @@ def identify(
     with request.app.state.database.begin() as connection:
         lock_organization(connection, organization_id)
         record = transaction(connection, organization_id, transaction_id)
+        from app.planning import ACTIVE_LINK
+
+        if connection.execute(
+            text(ACTIVE_LINK), {"org": organization_id, "tx": transaction_id}
+        ).first():
+            raise HTTPException(
+                409, "Desvincule o lançamento antes de alterar a identificação diretamente."
+            )
         return save_identification(connection, organization_id, record, payload)
 
 

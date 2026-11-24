@@ -19,6 +19,7 @@ export function SearchSelect({
   ariaLabel,
   disabled,
   className,
+  onSearchChange,
 }: {
   id?: string;
   value: string;
@@ -28,6 +29,7 @@ export function SearchSelect({
   ariaLabel?: string;
   disabled?: boolean;
   className?: string;
+  onSearchChange?: (value: string) => void;
 }) {
   const generated = useId();
   const inputId = id ?? generated;
@@ -119,11 +121,13 @@ export function SearchSelect({
         placeholder="Digite para buscar"
         onFocus={() => {
           setQuery("");
+          onSearchChange?.("");
           setHighlighted(0);
           setOpen(true);
         }}
         onChange={(event) => {
           setQuery(event.target.value);
+          onSearchChange?.(event.target.value);
           setHighlighted(0);
           setOpen(true);
         }}

@@ -31,6 +31,14 @@ const category = await api(base + "/categories", {
   name: "Receitas sintéticas",
   kind: "REVENUE",
 });
+const expenseCategory = await api(base + "/categories", {
+  name: "Despesas sintéticas",
+  kind: "EXPENSE",
+});
+await api(base + "/subcategories", {
+  name: "Aluguel sintético",
+  category_id: expenseCategory.id,
+});
 await api(base + "/subcategories", {
   name: "Serviços sintéticos",
   category_id: category.id,
@@ -236,6 +244,85 @@ try {
     .getByRole("row")
     .filter({ hasText: "PIX CLIENTE SINTETICO" })
     .waitFor();
+  await page.getByRole("tab", { name: "Lançamentos", exact: true }).click();
+  await page.getByRole("button", { name: "Nova Despesa", exact: true }).click();
+  await page
+    .getByLabel("Descrição", { exact: true })
+    .fill("Aluguel previsto sintético");
+  await page.getByLabel("Vencimento", { exact: true }).fill("2027-01-31");
+  await page.getByLabel("Valor previsto (R$)", { exact: true }).fill("30,00");
+  for (const [label, value] of [
+    ["Classificação", "Despesas sintéticas"],
+    ["Subclassificação", "Aluguel sintético"],
+    ["Centro de Custos", "Centro sintético"],
+    ["Recorrência", "Mensal"],
+  ]) {
+    await page.getByLabel(label, { exact: true }).fill(value);
+    await page.getByRole("option", { name: value, exact: true }).click();
+  }
+  await page.getByLabel("Quantidade de ocorrências", { exact: true }).fill("2");
+  await page
+    .getByRole("button", { name: "Salvar Lançamento", exact: true })
+    .click();
+  await page.getByRole("row").filter({ hasText: "31/01/2027" }).waitFor();
+  assert.equal(
+    (await api(base + "/transactions?state=all")).total,
+    2,
+    "Previsões não criam movimentos bancários",
+  );
+  await page.screenshot({ path: "import-layout-planning.png", fullPage: true });
+  await page
+    .getByRole("tab", { name: "Importar Extrato", exact: true })
+    .click();
+  await page
+    .getByRole("row")
+    .filter({ hasText: "TARIFA SINTETICA" })
+    .getByRole("button", { name: /Identificar movimento/ })
+    .click();
+  await page
+    .getByLabel("Como identificar este movimento?", { exact: true })
+    .fill("Vincular");
+  await page
+    .getByRole("option", {
+      name: "Vincular a receita ou despesa já lançada",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByLabel("Lançamento existente", { exact: true })
+    .fill("Aluguel previsto sintético");
+  await page
+    .getByRole("option", { name: /Aluguel previsto sintético.*31\/01\/2027/ })
+    .click();
+  await page
+    .getByRole("button", { name: "Vincular e dar baixa", exact: true })
+    .click();
+  await page
+    .getByText("Movimento vinculado e baixa registrada.", { exact: true })
+    .waitFor();
+  await page.getByRole("tab", { name: "Histórico", exact: true }).click();
+  await page
+    .getByRole("row")
+    .filter({ hasText: "TARIFA SINTETICA" })
+    .getByText("Identificado", { exact: true })
+    .waitFor();
+  await page.getByRole("tab", { name: "Lançamentos", exact: true }).click();
+  const plannedRow = page.getByRole("row").filter({ hasText: "31/01/2027" });
+  await plannedRow
+    .getByText("Parcialmente realizado", { exact: true })
+    .waitFor();
+  await plannedRow.getByRole("button", { name: "Baixas", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Desvincular movimento", exact: true })
+    .click();
+  await page
+    .getByText(
+      "Vínculo desfeito. O saldo em aberto foi recalculado; o movimento bancário foi preservado.",
+      { exact: true },
+    )
+    .waitFor();
+  await plannedRow.getByText("Em aberto", { exact: true }).waitFor();
+  assert.equal((await api(base + "/transactions?state=all")).total, 2);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await page

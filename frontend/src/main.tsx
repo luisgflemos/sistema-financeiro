@@ -15,7 +15,7 @@ import { Brand } from "./brand";
 import { ClassificationTree } from "./classification-tree";
 import { CatalogPage } from "./catalog-page";
 import { catalogIds, catalogs } from "./catalogs";
-import { TransactionsPage } from "./transactions-page";
+import { TransactionsWorkspace } from "./transactions-workspace";
 import { SessionGate } from "./session";
 import { Assistant } from "./assistant";
 import { SearchSelect } from "./search-select";
@@ -253,7 +253,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
               </button>
             </>
           ) : catalog === "transactions" ? (
-            <TransactionsPage
+            <TransactionsWorkspace
               key={organizationId}
               organizationId={organizationId}
             />

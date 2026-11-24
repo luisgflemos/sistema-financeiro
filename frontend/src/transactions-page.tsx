@@ -7,6 +7,7 @@ import { CatalogSearch } from "./catalog-search";
 import { StatementImport, brl, brazilDate } from "./statement-import";
 import type { RecordData } from "./catalogs";
 import { askAssistant } from "./assistant";
+import { EntryLinker } from "./entry-linker";
 
 type Movement = {
   editable: boolean;
@@ -56,15 +57,18 @@ const states = [
 
 export function TransactionsPage({
   organizationId,
+  mode = "import",
 }: {
   organizationId: string;
+  mode?: "import" | "history";
 }) {
   const base = "/organizations/" + organizationId;
   const [catalogs, setCatalogs] = useState<Catalogs>({});
   const [rows, setRows] = useState<Movement[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [state, setState] = useState("pending");
+  const [state, setState] = useState(mode === "history" ? "all" : "pending");
+  const [linkMode, setLinkMode] = useState(false);
   const [account, setAccount] = useState("");
   const [statementId, setStatementId] = useState("");
   const [statements, setStatements] = useState<
@@ -183,6 +187,7 @@ export function TransactionsPage({
   ]);
 
   function edit(row: Movement) {
+    setLinkMode(false);
     const source = row.version ? row : (row.suggestion ?? row);
     setDraft({
       party_id: String(source.party_id ?? ""),
@@ -285,38 +290,42 @@ export function TransactionsPage({
     <>
       <div className="page-heading">
         <div>
-          <h1>Transações</h1>
+          <h1>{mode === "history" ? "Histórico" : "Transações"}</h1>
           <p className="page-subtitle">
-            Do extrato à identificação, em uma única fila.
+            {mode === "history"
+              ? "Movimentos bancários importados, com identificação e rastreabilidade."
+              : "Importe os extratos e identifique os movimentos pendentes."}
           </p>
         </div>
-        <div className="actions">
-          <button
-            type="button"
-            disabled={aiBusy || !aiEnabled}
-            title={
-              !aiEnabled
-                ? "Configure OPENAI_API_KEY no Railway"
-                : "Analisar pendências com IA generativa"
-            }
-            onClick={() => void recognize(total === 0)}
-          >
-            <Sparkles size={17} />
-            {aiBusy
-              ? "IA analisando…"
-              : total === 0
-                ? "Testar IA"
-                : "Identificar com IA"}
-          </button>
-          <button
-            type="button"
-            className="primary"
-            onClick={() => setImporting(true)}
-          >
-            <Upload size={17} />
-            Importar Extratos
-          </button>
-        </div>
+        {mode === "import" && (
+          <div className="actions">
+            <button
+              type="button"
+              disabled={aiBusy || !aiEnabled}
+              title={
+                !aiEnabled
+                  ? "Configure OPENAI_API_KEY no Railway"
+                  : "Analisar pendências com IA generativa"
+              }
+              onClick={() => void recognize(total === 0)}
+            >
+              <Sparkles size={17} />
+              {aiBusy
+                ? "IA analisando…"
+                : total === 0
+                  ? "Testar IA"
+                  : "Identificar com IA"}
+            </button>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => setImporting(true)}
+            >
+              <Upload size={17} />
+              Importar Extratos
+            </button>
+          </div>
+        )}
       </div>
       {notice && (
         <p className="notice" role="status">
@@ -646,7 +655,20 @@ export function TransactionsPage({
               Saldo informado: {brl(selected.raw_payload.saldo ?? "0")}
             </small>
           </div>
-          {!selected.version && selected.suggestion && (
+          {selected.editable && (
+            <EntryLinker
+              key={selected.id}
+              organizationId={organizationId}
+              movement={selected}
+              onModeChange={setLinkMode}
+              onDone={(message) => {
+                setNotice(message);
+                setRefresh((value) => value + 1);
+                setSelected(null);
+              }}
+            />
+          )}
+          {!linkMode && !selected.version && selected.suggestion && (
             <div className="transaction-ai">
               <strong>
                 <Sparkles size={17} /> Sugestão da IA · Confiança{" "}
@@ -661,122 +683,124 @@ export function TransactionsPage({
             </div>
           )}
           {selected.editable ? (
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                void save(true);
-              }}
-            >
-              <fieldset disabled={saving}>
-                <div className="fields">
-                  <div className="field">
-                    <label htmlFor="movement-kind">
-                      Tratamento do movimento
-                    </label>
-                    <SearchSelect
-                      id="movement-kind"
-                      value={draft.movement_kind}
-                      options={[
-                        {
-                          value: "NORMAL",
-                          label:
-                            selected.direction === "CREDIT"
-                              ? "Receita"
-                              : "Despesa",
-                        },
-                        {
-                          value: "AUTOMATIC_PROCESS",
-                          label: "Processos Automáticos",
-                        },
-                        {
-                          value: "INTERNAL_TRANSFER",
-                          label: "Transferência entre contas próprias",
-                        },
-                      ]}
-                      onChange={(value) =>
-                        setDraft({ ...draft, movement_kind: value })
-                      }
-                    />
-                  </div>
-                  {draft.movement_kind !== "NORMAL" && (
-                    <p className="transaction-neutral">
-                      O movimento permanece no extrato bancário, com tratamento
-                      neutro para a visão gerencial.
-                    </p>
-                  )}
-                  {fieldLabels.map(([field, label, key]) => (
-                    <div className="field" key={field}>
-                      <label
-                        className="identification-label"
-                        htmlFor={"identify-" + field}
-                      >
-                        {label}
+            !linkMode && (
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void save(true);
+                }}
+              >
+                <fieldset disabled={saving}>
+                  <div className="fields">
+                    <div className="field">
+                      <label htmlFor="movement-kind">
+                        Tratamento do movimento
                       </label>
                       <SearchSelect
-                        id={"identify-" + field}
-                        value={draft[field as keyof Draft]}
-                        required={
-                          draft.movement_kind === "NORMAL" &&
-                          field !== "party_id"
-                        }
+                        id="movement-kind"
+                        value={draft.movement_kind}
                         options={[
-                          { value: "", label: "Selecione" },
-                          ...(key === "subcategories"
-                            ? (catalogs[key] ?? [])
-                                .filter(
-                                  (row) =>
-                                    row.active &&
-                                    row.category_id === draft.category_id,
-                                )
-                                .map((row) => ({
-                                  value: row.id,
-                                  label: String(row.name),
-                                }))
-                            : options(key)),
+                          {
+                            value: "NORMAL",
+                            label:
+                              selected.direction === "CREDIT"
+                                ? "Receita"
+                                : "Despesa",
+                          },
+                          {
+                            value: "AUTOMATIC_PROCESS",
+                            label: "Processos Automáticos",
+                          },
+                          {
+                            value: "INTERNAL_TRANSFER",
+                            label: "Transferência entre contas próprias",
+                          },
                         ]}
                         onChange={(value) =>
-                          setDraft((previous) => ({
-                            ...previous,
-                            [field]: value,
-                            ...(field === "category_id"
-                              ? { subcategory_id: "" }
-                              : {}),
-                          }))
+                          setDraft({ ...draft, movement_kind: value })
                         }
                       />
                     </div>
-                  ))}
-                  <div className="field complementary-field">
-                    <label htmlFor="identification-complementary">
-                      Descrição Complementar
-                    </label>
-                    <textarea
-                      id="identification-complementary"
-                      aria-describedby="identification-complementary-hint"
-                      value={draft.notes}
-                      onChange={(event) =>
-                        setDraft({ ...draft, notes: event.target.value })
-                      }
-                      maxLength={4000}
-                      rows={2}
-                    />
-                    <small id="identification-complementary-hint">
-                      Opcional. Complementa o lançamento sem alterar o histórico
-                      do banco.
-                    </small>
+                    {draft.movement_kind !== "NORMAL" && (
+                      <p className="transaction-neutral">
+                        O movimento permanece no extrato bancário, com
+                        tratamento neutro para a visão gerencial.
+                      </p>
+                    )}
+                    {fieldLabels.map(([field, label, key]) => (
+                      <div className="field" key={field}>
+                        <label
+                          className="identification-label"
+                          htmlFor={"identify-" + field}
+                        >
+                          {label}
+                        </label>
+                        <SearchSelect
+                          id={"identify-" + field}
+                          value={draft[field as keyof Draft]}
+                          required={
+                            draft.movement_kind === "NORMAL" &&
+                            field !== "party_id"
+                          }
+                          options={[
+                            { value: "", label: "Selecione" },
+                            ...(key === "subcategories"
+                              ? (catalogs[key] ?? [])
+                                  .filter(
+                                    (row) =>
+                                      row.active &&
+                                      row.category_id === draft.category_id,
+                                  )
+                                  .map((row) => ({
+                                    value: row.id,
+                                    label: String(row.name),
+                                  }))
+                              : options(key)),
+                          ]}
+                          onChange={(value) =>
+                            setDraft((previous) => ({
+                              ...previous,
+                              [field]: value,
+                              ...(field === "category_id"
+                                ? { subcategory_id: "" }
+                                : {}),
+                            }))
+                          }
+                        />
+                      </div>
+                    ))}
+                    <div className="field complementary-field">
+                      <label htmlFor="identification-complementary">
+                        Descrição Complementar
+                      </label>
+                      <textarea
+                        id="identification-complementary"
+                        aria-describedby="identification-complementary-hint"
+                        value={draft.notes}
+                        onChange={(event) =>
+                          setDraft({ ...draft, notes: event.target.value })
+                        }
+                        maxLength={4000}
+                        rows={2}
+                      />
+                      <small id="identification-complementary-hint">
+                        Opcional. Complementa o lançamento sem alterar o
+                        histórico do banco.
+                      </small>
+                    </div>
                   </div>
-                </div>
-                <div className="actions transaction-save">
-                  <button className="primary" type="submit">
-                    {saving ? "Salvando…" : "Salvar e próximo"}
-                    <ArrowRight size={17} />
-                  </button>
-                  <button type="button" onClick={() => void save(false)}>
-                    Salvar e fechar
-                  </button>
-                </div>
-              </fieldset>
-            </form>
+                  <div className="actions transaction-save">
+                    <button className="primary" type="submit">
+                      {saving ? "Salvando…" : "Salvar e próximo"}
+                      <ArrowRight size={17} />
+                    </button>
+                    <button type="button" onClick={() => void save(false)}>
+                      Salvar e fechar
+                    </button>
+                  </div>
+                </fieldset>
+              </form>
+            )
           ) : (
             <p className="notice">
               Esta linha foi desconsiderada na importação para evitar

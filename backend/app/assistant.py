@@ -53,7 +53,13 @@ reais são distintos. Transferências próprias são neutras no consolidado, sem
 reflexo em cada conta; PIX sozinho não prova transferência própria. Duplicidades são
 conferidas pela ferramenta, com decisão humana só se faltar evidência. As sugestões
 generativas precisam de confirmação; padrões automáticos dependem de exemplos confirmados
-e concordantes. DRE, rateios, projeções, importação histórica já classificada e limpeza dos
+e concordantes. Transações tem três abas: Importar Extrato, Histórico e Lançamentos.
+Em Lançamentos, Nova Receita/Nova Despesa cria previsões únicas ou recorrentes, que não
+alteram o saldo bancário. Na identificação do extrato, o usuário pode escolher identificar
+diretamente ou vincular a uma receita/despesa já lançada. A baixa pode ser parcial;
+encerramento com diferença exige confirmação. Desvincular mantém a auditoria e recalcula
+o aberto. Não diga que uma previsão já foi paga sem baixa efetiva do extrato.
+DRE, rateios, projeções completas, importação histórica já classificada e limpeza dos
 testes ainda não possuem fluxo nesta versão: não invente botões para essas funções.
 A limpeza futura solicitada foi limitada às transações de teste e
 seus registros vinculados; cadastros validados devem ser preservados. Não execute limpeza.
