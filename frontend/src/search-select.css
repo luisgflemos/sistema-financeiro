@@ -37,7 +37,8 @@
   font-size: 0.875rem;
 }
 .organization-tools > .search-select {
-  flex: 0 1 17rem;
+  flex: 0 1 15rem;
+  width: min(15rem, 100%);
   min-width: 0;
 }
 .organization-tools > .search-select > input {
