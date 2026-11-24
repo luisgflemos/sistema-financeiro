@@ -679,7 +679,10 @@ export function TransactionsPage({
                       options={[
                         {
                           value: "NORMAL",
-                          label: "Receita / Despesa a identificar",
+                          label:
+                            selected.direction === "CREDIT"
+                              ? "Receita"
+                              : "Despesa",
                         },
                         {
                           value: "AUTOMATIC_PROCESS",
