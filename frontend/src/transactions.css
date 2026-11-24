@@ -2,6 +2,9 @@
   margin: 0.5rem 0 0;
   font-size: 0.875rem;
 }
+.table-scroll:has(.transactions-table) {
+  position: relative;
+}
 .page-heading .actions > button,
 .transaction-save button {
   display: inline-flex;

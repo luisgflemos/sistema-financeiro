@@ -125,181 +125,186 @@ export function Assistant({
     }
   }
 
-  return createPortal(
+  return (
     <>
-      {!open && (
-        <button
-          type="button"
-          className="assistant-launcher"
-          onClick={() => setOpen(true)}
-          aria-label="Conversar com Assistente Finare"
-        >
-          <FinIcon /> <span className="fin-launcher-name">Fin</span>
-        </button>
-      )}
-      {open && (
-        <aside
-          className="assistant-panel"
-          role="region"
-          aria-label="Conversa com Assistente Finare"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.preventDefault();
-              event.stopPropagation();
-              setOpen(false);
-            }
-          }}
-        >
-          <header>
-            <div>
-              <FinIcon />
-              <div>
-                <strong>Fin</strong>
-                <small>Assistente Finare · Converse enquanto trabalha</small>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Minimizar assistente"
-            >
-              <X size={20} />
-            </button>
-          </header>
-          <div className="assistant-context">
-            <span>
-              {context ? "Sobre este lançamento" : "Orientação na Finare"}
-            </span>
-            <strong>{context?.label ?? screen}</strong>
-            {context && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  setContext(null);
-                  setMessages([]);
-                  setError("");
-                }}
-              >
-                Voltar à conversa geral
-              </button>
-            )}
-          </div>
-          <div
-            className="assistant-messages"
-            role="log"
-            aria-live="polite"
-            aria-relevant="additions text"
+      {createPortal(
+        !open && (
+          <button
+            type="button"
+            className="assistant-launcher"
+            onClick={() => setOpen(true)}
+            aria-label="Conversar com Assistente Finare"
           >
-            {!messages.length && (
-              <div className="assistant-welcome">
-                <strong>Como posso ajudar?</strong>
-                <p>
-                  Posso explicar sugestões, orientar o preenchimento e tirar
-                  dúvidas sobre os lançamentos.
-                </p>
-                <div className="assistant-starters">
-                  {(context
-                    ? [
-                        "Explique a sugestão deste lançamento",
-                        "O que falta para identificar este movimento?",
-                      ]
-                    : [
-                        "Como identificar os movimentos do extrato?",
-                        "Como a Finare aprende com meu histórico?",
-                      ]
-                  ).map((text) => (
-                    <button
-                      type="button"
-                      key={text}
-                      onClick={() => {
-                        setQuestion(text);
-                        input.current?.focus();
-                      }}
-                    >
-                      {text}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {messages.map((message, index) => (
-              <div
-                className={
-                  "assistant-message assistant-message-" + message.role
-                }
-                key={index}
-              >
-                <small>{message.role === "user" ? "Você" : "Fin"}</small>
-                <p>{message.content}</p>
-              </div>
-            ))}
-            {busy && (
-              <p role="status" className="assistant-thinking">
-                Preparando uma resposta…
-              </p>
-            )}
-            <div ref={bottom} />
-          </div>
-          {error && (
-            <p className="assistant-error" role="alert">
-              {error}
-            </p>
-          )}
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void send();
+            <FinIcon /> <span className="fin-launcher-name">Fin</span>
+          </button>
+        ),
+        host,
+      )}
+      {createPortal(
+        open && (
+          <aside
+            className="assistant-panel"
+            role="region"
+            aria-label="Conversa com Assistente Finare"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                event.stopPropagation();
+                setOpen(false);
+              }
             }}
           >
-            <label htmlFor="assistant-question">Sua mensagem</label>
-            <textarea
-              id="assistant-question"
-              ref={input}
-              value={question}
-              maxLength={3000}
-              rows={2}
-              placeholder="Converse com a Fin…"
-              onChange={(event) => setQuestion(event.target.value)}
-              onKeyDown={(event) => {
-                if (
-                  event.key === "Enter" &&
-                  !event.shiftKey &&
-                  !event.nativeEvent.isComposing
-                ) {
-                  event.preventDefault();
-                  void send();
-                }
-              }}
-            />
-            <div>
+            <header>
+              <div>
+                <FinIcon />
+                <div>
+                  <strong>Fin</strong>
+                  <small>Assistente Finare · Converse enquanto trabalha</small>
+                </div>
+              </div>
               <button
                 type="button"
-                disabled={busy || !messages.length}
-                onClick={() => {
-                  setMessages([]);
-                  setError("");
-                  setQuestion("");
-                }}
+                onClick={() => setOpen(false)}
+                aria-label="Minimizar assistente"
               >
-                Nova conversa
+                <X size={20} />
               </button>
-              <button
-                type="submit"
-                className="primary"
-                disabled={busy || !question.trim()}
-              >
-                <Send size={16} /> Enviar
-              </button>
+            </header>
+            <div className="assistant-context">
+              <span>
+                {context ? "Sobre este lançamento" : "Orientação na Finare"}
+              </span>
+              <strong>{context?.label ?? screen}</strong>
+              {context && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    setContext(null);
+                    setMessages([]);
+                    setError("");
+                  }}
+                >
+                  Voltar à conversa geral
+                </button>
+              )}
             </div>
-            <small>
-              Sugestões precisam de revisão. A conversa não altera cadastros ou
-              lançamentos.
-            </small>
-          </form>
-        </aside>
+            <div
+              className="assistant-messages"
+              role="log"
+              aria-live="polite"
+              aria-relevant="additions text"
+            >
+              {!messages.length && (
+                <div className="assistant-welcome">
+                  <strong>Como posso ajudar?</strong>
+                  <p>
+                    Posso explicar sugestões, orientar o preenchimento e tirar
+                    dúvidas sobre os lançamentos.
+                  </p>
+                  <div className="assistant-starters">
+                    {(context
+                      ? [
+                          "Explique a sugestão deste lançamento",
+                          "O que falta para identificar este movimento?",
+                        ]
+                      : [
+                          "Como identificar os movimentos do extrato?",
+                          "Como a Finare aprende com meu histórico?",
+                        ]
+                    ).map((text) => (
+                      <button
+                        type="button"
+                        key={text}
+                        onClick={() => {
+                          setQuestion(text);
+                          input.current?.focus();
+                        }}
+                      >
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {messages.map((message, index) => (
+                <div
+                  className={
+                    "assistant-message assistant-message-" + message.role
+                  }
+                  key={index}
+                >
+                  <small>{message.role === "user" ? "Você" : "Fin"}</small>
+                  <p>{message.content}</p>
+                </div>
+              ))}
+              {busy && (
+                <p role="status" className="assistant-thinking">
+                  Preparando uma resposta…
+                </p>
+              )}
+              <div ref={bottom} />
+            </div>
+            {error && (
+              <p className="assistant-error" role="alert">
+                {error}
+              </p>
+            )}
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                void send();
+              }}
+            >
+              <label htmlFor="assistant-question">Sua mensagem</label>
+              <textarea
+                id="assistant-question"
+                ref={input}
+                value={question}
+                maxLength={3000}
+                rows={2}
+                placeholder="Converse com a Fin…"
+                onChange={(event) => setQuestion(event.target.value)}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === "Enter" &&
+                    !event.shiftKey &&
+                    !event.nativeEvent.isComposing
+                  ) {
+                    event.preventDefault();
+                    void send();
+                  }
+                }}
+              />
+              <div>
+                <button
+                  type="button"
+                  disabled={busy || !messages.length}
+                  onClick={() => {
+                    setMessages([]);
+                    setError("");
+                    setQuestion("");
+                  }}
+                >
+                  Nova conversa
+                </button>
+                <button
+                  type="submit"
+                  className="primary"
+                  disabled={busy || !question.trim()}
+                >
+                  <Send size={16} /> Enviar
+                </button>
+              </div>
+              <small>
+                Sugestões precisam de revisão. A conversa não altera cadastros
+                ou lançamentos.
+              </small>
+            </form>
+          </aside>
+        ),
+        host.closest("dialog") ?? document.body,
       )}
-    </>,
-    host,
+    </>
   );
 }
