@@ -10,6 +10,7 @@ import { askAssistant } from "./assistant";
 import { EntryLinker } from "./entry-linker";
 import { categoryNature } from "./movement-nature";
 import { StatementCleanup } from "./statement-cleanup";
+import { HistoricalImport } from "./historical-import";
 
 type Movement = {
   editable: boolean;
@@ -88,6 +89,7 @@ export function TransactionsPage({
   const [notice, setNotice] = useState("");
   const [importing, setImporting] = useState(false);
   const [cleaning, setCleaning] = useState(false);
+  const [historicalImport, setHistoricalImport] = useState(false);
   const [busyImport, setBusyImport] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
@@ -356,9 +358,19 @@ export function TransactionsPage({
           </p>
         </div>
         {mode === "history" && (
-          <button type="button" onClick={() => setCleaning(true)}>
-            Retirar Lote de Teste
-          </button>
+          <div className="actions">
+            <button
+              type="button"
+              className="primary"
+              onClick={() => setHistoricalImport(true)}
+            >
+              <Upload size={17} />
+              Importar Base Histórica
+            </button>
+            <button type="button" onClick={() => setCleaning(true)}>
+              Retirar Lote de Teste
+            </button>
+          </div>
         )}
         {mode === "import" && (
           <div className="actions">
@@ -390,6 +402,21 @@ export function TransactionsPage({
           </div>
         )}
       </div>
+      {historicalImport && (
+        <HistoricalImport
+          organizationId={organizationId}
+          onClose={() => setHistoricalImport(false)}
+          onDone={(count) => {
+            setStatementId("");
+            setState("all");
+            setPage(1);
+            setRefresh((value) => value + 1);
+            setNotice(
+              `${count.toLocaleString("pt-BR")} movimentos importados da base histórica.`,
+            );
+          }}
+        />
+      )}
       {cleaning && (
         <StatementCleanup
           base={base}

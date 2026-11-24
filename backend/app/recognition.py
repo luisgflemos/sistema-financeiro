@@ -149,6 +149,25 @@ def suggested_tuple(values):
     return tuple(str(values.get(key) or "") for key in IDENT_FIELDS)
 
 
+def relevant_history(history, movements, limit=150):
+    """Busca exemplos relevantes em toda a base, sem enviar todo o histórico à IA."""
+    targets = [(row, set(row["raw_description"].upper().split())) for row in movements]
+
+    def score(example):
+        words = set(example["raw_description"].upper().split())
+        return max(
+            (
+                len(words & tokens) / max(1, len(words | tokens))
+                + 0.25 * (str(example["account_id"]) == str(row["account_id"]))
+                + 0.25 * (example["direction"] == row["direction"])
+                for row, tokens in targets
+            ),
+            default=0,
+        )
+
+    return sorted(history, key=score, reverse=True)[:limit]
+
+
 @router.get("/config")
 def config(organization_id: UUID):
     return {"enabled": bool(os.environ.get("OPENAI_API_KEY"))}
@@ -183,7 +202,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                     + LATEST
                     + """
             WHERE a.organization_id = :org AND i.method IN ('OPERATOR', 'AI_CONFIRMED')
-            ORDER BY i.created_at DESC LIMIT 500
+            ORDER BY t.posted_on DESC, i.created_at DESC, t.id
         """
                 ),
                 {"org": organization_id},
@@ -280,7 +299,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
     items, model = generative_suggestions(
         {
             "movements": [compact(row) for row in remaining],
-            "confirmed_examples": [compact(row) for row in history[:150]],
+            "confirmed_examples": [compact(row) for row in relevant_history(history, remaining)],
             "catalogs": catalogs,
         }
     )

@@ -10,6 +10,7 @@ from app.bank_accounts import router as bank_accounts_router
 from app.catalog_import import router as catalog_import_router
 from app.catalogs import router as catalogs_router
 from app.db import create_database_engine
+from app.historical_import import router as historical_import_router
 from app.organizations import router as organizations_router
 from app.planning import router as planning_router
 from app.recognition import router as recognition_router
@@ -38,6 +39,7 @@ app.include_router(organizations_router)
 app.include_router(table_imports_router)
 app.include_router(statements_router)
 app.include_router(statement_cleanup_router)
+app.include_router(historical_import_router)
 app.include_router(transactions_router)
 app.include_router(recognition_router)
 app.include_router(assistant_router)

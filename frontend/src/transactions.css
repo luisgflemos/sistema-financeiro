@@ -383,3 +383,22 @@ textarea {
     min-width: 0;
   }
 }
+.form-modal:has(.historical-import) {
+  width: min(1040px, calc(100vw - 32px));
+}
+
+.historical-import table {
+  width: 100%;
+}
+
+.historical-import th,
+.historical-import td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.historical-import th {
+  background: #0b1f3b;
+  color: #fff;
+}
