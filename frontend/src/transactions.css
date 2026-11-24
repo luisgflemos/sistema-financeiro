@@ -402,3 +402,27 @@ textarea {
   background: #0b1f3b;
   color: #fff;
 }
+.transactions-table .transaction-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.transactions-table .transaction-sort:hover,
+.transactions-table .transaction-sort[data-active="true"] {
+  color: #08783e;
+}
+.transaction-sort-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

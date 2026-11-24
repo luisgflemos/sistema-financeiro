@@ -96,6 +96,54 @@ try {
     .getByRole("button", { name: "Importar e identificar", exact: true })
     .click();
   await page.getByText("PIX CLIENTE SINTETICO", { exact: true }).waitFor();
+  async function sortBy(label, field, order) {
+    const responsePromise = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        url.pathname.endsWith("/transactions") &&
+        url.searchParams.get("sort_by") === field &&
+        url.searchParams.get("sort_order") === order
+      );
+    });
+    await page
+      .getByRole("button", {
+        name: `Ordenar por ${label}: ${order === "asc" ? "crescente" : "decrescente"}`,
+        exact: true,
+      })
+      .click();
+    const response = await responsePromise;
+    assert.equal(response.status(), 200);
+    const result = await response.json();
+    assert.equal(result.total, 2);
+    const header = page.getByRole("columnheader").filter({
+      has: page.getByRole("button", {
+        name: new RegExp(`^Ordenar por ${label}:`),
+      }),
+    });
+    assert.equal(
+      await header.getAttribute("aria-sort"),
+      order === "asc" ? "ascending" : "descending",
+    );
+    return result;
+  }
+  assert.equal(
+    (await sortBy("Valor", "amount", "asc")).rows[0].direction,
+    "DEBIT",
+  );
+  assert.equal(
+    (await sortBy("Valor", "amount", "desc")).rows[0].direction,
+    "CREDIT",
+  );
+  await page.screenshot({ path: "import-layout-sorting.png", fullPage: true });
+  for (const [label, field] of [
+    ["Conta", "account"],
+    ["Histórico do Banco", "description"],
+    ["Identificação", "identification"],
+    ["Data", "date"],
+  ]) {
+    await sortBy(label, field, "asc");
+    await sortBy(label, field, "desc");
+  }
   await page.screenshot({
     path: "import-layout-transactions.png",
     fullPage: true,

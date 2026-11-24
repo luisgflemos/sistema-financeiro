@@ -229,6 +229,8 @@ def list_transactions(
     end: str | None = None,
     direction: Literal["CREDIT", "DEBIT"] | None = None,
     page: int = Query(default=1, ge=1),
+    sort_by: Literal["date", "account", "description", "amount", "identification"] = "date",
+    sort_order: Literal["asc", "desc"] = "desc",
 ):
     from datetime import date
 
@@ -298,6 +300,28 @@ def list_transactions(
         ) s ON true
     """
     )
+    # Identificadores e expressões vêm exclusivamente desta lista interna.
+    # O valor é ordenado com sinal, tal como aparece no extrato.
+    sort_columns = {
+        "date": "t.posted_on",
+        "account": "lower(a.label)",
+        "description": "lower(t.raw_description)",
+        "amount": "CASE WHEN t.direction='DEBIT' THEN -t.amount ELSE t.amount END",
+        "identification": """CASE WHEN NOT t.editable THEN 'Já existente'
+            WHEN i.id IS NOT NULL THEN CASE i.movement_kind
+                WHEN 'AUTOMATIC_PROCESS' THEN 'Processos Automáticos'
+                WHEN 'INTERNAL_TRANSFER' THEN 'Transferência própria'
+                ELSE CASE WHEN i.method='PATTERN' THEN 'Automático' ELSE 'Identificado' END END
+            WHEN s.id IS NOT NULL THEN 'Sugestão da IA' ELSE 'Pendente' END""",
+    }
+    ordering = (
+        " ORDER BY "
+        + sort_columns[sort_by]
+        + " "
+        + sort_order.upper()
+        + ", t.posted_on DESC, lower(a.label), t.import_file_id, t.source_row, t.id"
+        + " LIMIT 100 OFFSET :offset"
+    )
     with request.app.state.database.connect() as connection:
         if not connection.scalar(
             text("SELECT 1 FROM organizations WHERE id = :org"),
@@ -327,7 +351,7 @@ def list_transactions(
         """
                 + joins
                 + conditions
-                + " ORDER BY t.posted_on DESC, t.import_file_id, t.source_row LIMIT 100 OFFSET :offset"
+                + ordering
             ),
             params,
         ).mappings()

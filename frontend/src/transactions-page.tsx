@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Sparkles, Upload, ArrowRight } from "lucide-react";
+import {
+  Sparkles,
+  Upload,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import { api } from "./api";
 import { Modal } from "./modal";
 import { SearchSelect } from "./search-select";
@@ -52,6 +59,12 @@ type Draft = {
   notes: string;
 };
 type Catalogs = Record<string, RecordData[]>;
+type SortField =
+  | "date"
+  | "account"
+  | "description"
+  | "amount"
+  | "identification";
 const states = [
   { value: "pending", label: "Pendentes de identificação" },
   { value: "suggested", label: "Sugestões da IA" },
@@ -71,6 +84,9 @@ export function TransactionsPage({
   const [rows, setRows] = useState<Movement[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<{ field: SortField; order: "asc" | "desc" }>(
+    { field: "date", order: "desc" },
+  );
   const [state, setState] = useState(mode === "history" ? "all" : "pending");
   const [linkMode, setLinkMode] = useState(false);
   const [account, setAccount] = useState("");
@@ -202,6 +218,8 @@ export function TransactionsPage({
       state,
       query: search,
       page: String(page),
+      sort_by: sort.field,
+      sort_order: sort.order,
     });
     if (account) params.set("account_id", account);
     if (statementId) params.set("statement_id", statementId);
@@ -234,6 +252,7 @@ export function TransactionsPage({
     direction,
     search,
     page,
+    sort,
     refresh,
   ]);
 
@@ -346,6 +365,40 @@ export function TransactionsPage({
     ["subcategory_id", "Subclassificação", "subcategories"],
     ["cost_center_id", "Centro de Custos", "cost-centers"],
   ];
+  function sortButton(field: SortField, label: string) {
+    const active = sort.field === field;
+    const nextOrder = active && sort.order === "asc" ? "desc" : "asc";
+    const Icon = active
+      ? sort.order === "asc"
+        ? ArrowUp
+        : ArrowDown
+      : ArrowUpDown;
+    return (
+      <button
+        type="button"
+        className="transaction-sort"
+        data-active={active}
+        aria-label={`Ordenar por ${label}: ${nextOrder === "asc" ? "crescente" : "decrescente"}`}
+        title={`Ordenar por ${label} (${nextOrder === "asc" ? "crescente" : "decrescente"})`}
+        onClick={() => {
+          setSort({ field, order: nextOrder });
+          setPage(1);
+        }}
+      >
+        {label}
+        <Icon size={14} aria-hidden="true" />
+      </button>
+    );
+  }
+  function ariaSort(
+    ...fields: SortField[]
+  ): "ascending" | "descending" | "none" {
+    return fields.includes(sort.field)
+      ? sort.order === "asc"
+        ? "ascending"
+        : "descending"
+      : "none";
+  }
   return (
     <>
       <div className="page-heading">
@@ -543,10 +596,22 @@ export function TransactionsPage({
             <table className="transactions-table">
               <thead>
                 <tr>
-                  <th>Data / Conta</th>
-                  <th>Histórico do Banco</th>
-                  <th>Valor</th>
-                  <th>Identificação</th>
+                  <th aria-sort={ariaSort("date", "account")}>
+                    <span className="transaction-sort-pair">
+                      {sortButton("date", "Data")}
+                      <span aria-hidden="true">/</span>
+                      {sortButton("account", "Conta")}
+                    </span>
+                  </th>
+                  <th aria-sort={ariaSort("description")}>
+                    {sortButton("description", "Histórico do Banco")}
+                  </th>
+                  <th aria-sort={ariaSort("amount")}>
+                    {sortButton("amount", "Valor")}
+                  </th>
+                  <th aria-sort={ariaSort("identification")}>
+                    {sortButton("identification", "Identificação")}
+                  </th>
                   <th>
                     <span className="sr-only">Ações</span>
                   </th>
