@@ -1198,8 +1198,27 @@ export function TransactionsPage({
                         />
                       </div>
                     ))}
+                    <div className="field complementary-field">
+                      <label htmlFor="identification-complementary">
+                        Descrição Complementar (opcional)
+                      </label>
+                      <textarea
+                        id="identification-complementary"
+                        aria-label="Descrição Complementar"
+                        value={draft.notes}
+                        onChange={(event) => {
+                          manualFields("notes");
+                          setDraft({ ...draft, notes: event.target.value });
+                        }}
+                        maxLength={4000}
+                        rows={1}
+                      />
+                    </div>
                     {showCustomerGroup && (
-                      <div className={"field" + aiClass("customer_group_id")}>
+                      <div
+                        style={{ gridColumn: "1 / -1" }}
+                        className={"field" + aiClass("customer_group_id")}
+                      >
                         <label htmlFor="identify-customer-group">
                           Grupo de Clientes (opcional)
                           {aiBadge("customer_group_id")}
@@ -1230,27 +1249,6 @@ export function TransactionsPage({
                         )}
                       </div>
                     )}
-                    <div
-                      className="field complementary-field"
-                      style={
-                        showCustomerGroup ? { gridColumn: "1 / -1" } : undefined
-                      }
-                    >
-                      <label htmlFor="identification-complementary">
-                        Descrição Complementar (opcional)
-                      </label>
-                      <textarea
-                        id="identification-complementary"
-                        aria-label="Descrição Complementar"
-                        value={draft.notes}
-                        onChange={(event) => {
-                          manualFields("notes");
-                          setDraft({ ...draft, notes: event.target.value });
-                        }}
-                        maxLength={4000}
-                        rows={1}
-                      />
-                    </div>
                   </div>
                   <div className="actions transaction-save">
                     <button className="primary" type="submit">

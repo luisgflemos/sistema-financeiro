@@ -219,14 +219,9 @@ try {
         "A busca deve aceitar palavras em outra ordem e sem acentos",
       );
       const box = await page.getByLabel(label, { exact: true }).boundingBox();
-      const group = page.getByLabel("Grupo de Clientes (opcional)", {
-        exact: true,
-      });
-      const complementary = await (
-        (await group.count())
-          ? group
-          : page.getByLabel("Descrição Complementar", { exact: true })
-      ).boundingBox();
+      const complementary = await page
+        .getByLabel("Descrição Complementar", { exact: true })
+        .boundingBox();
       assert.ok(
         Math.abs(box.y - complementary.y) <= 2,
         "Os campos da mesma linha devem alinhar pelo topo",
