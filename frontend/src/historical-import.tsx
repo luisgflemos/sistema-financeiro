@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FileUp, Check } from "lucide-react";
 import { api } from "./api";
 import { Modal } from "./modal";
+import { SearchSelect } from "./search-select";
 import { brl, brazilDate } from "./statement-import";
 
 type Group = {
@@ -29,7 +30,11 @@ type Preview = {
     count: number;
   }[];
 };
-type Upload = { file_name: string; content: string };
+type Upload = {
+  file_name: string;
+  content: string;
+  mode: "initial" | "append";
+};
 
 function cents(value: string) {
   const [whole, fraction = ""] = value.split(".");
@@ -46,6 +51,7 @@ export function HistoricalImport({
   onDone: (count: number) => void;
 }) {
   const [upload, setUpload] = useState<Upload | null>(null);
+  const [mode, setMode] = useState<"initial" | "append">("initial");
   const [preview, setPreview] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -76,7 +82,7 @@ export function HistoricalImport({
           reject(new Error("Não foi possível ler o arquivo."));
         reader.readAsDataURL(file);
       });
-      const data = { file_name: file.name, content };
+      const data = { file_name: file.name, content, mode };
       setUpload(data);
       setPreview(
         await api<Preview>(base + "/preview", {
@@ -99,15 +105,18 @@ export function HistoricalImport({
     setBusy(true);
     setError("");
     try {
-      const result = await api<{ imported: number; repeated: boolean }>(
-        base + "/commit",
-        {
-          method: "POST",
-          body: JSON.stringify({ ...upload, token: preview.token }),
-        },
-      );
+      const result = await api<{
+        imported: number;
+        repeated: boolean;
+        file_ids: string[];
+      }>(base + "/commit", {
+        method: "POST",
+        body: JSON.stringify({ ...upload, token: preview.token }),
+      });
+      const filters = new URLSearchParams();
+      result.file_ids.forEach((id) => filters.append("file_ids", id));
       const stored = await api<(Group & { identified: number })[]>(
-        base + "/summary",
+        base + "/summary?" + filters,
       );
       const valid = preview.groups.every((expected) =>
         stored.some(
@@ -162,8 +171,30 @@ export function HistoricalImport({
         )}
         {!done && (
           <div style={{ display: "grid", gap: 8 }}>
+            <label htmlFor="historical-mode">Tipo de carga</label>
+            <SearchSelect
+              id="historical-mode"
+              value={mode}
+              disabled={busy}
+              options={[
+                { value: "initial", label: "Carga inicial" },
+                { value: "append", label: "Acrescentar período ao histórico" },
+              ]}
+              onChange={(value) => {
+                setMode(value === "append" ? "append" : "initial");
+                setUpload(null);
+                setPreview(null);
+                setError("");
+              }}
+            />
+            <span className="field-help">
+              {mode === "append"
+                ? "Use um arquivo contendo apenas o novo período. Contas com movimentos sobrepostos serão bloqueadas. O histórico existente será preservado."
+                : "Para uma base vazia ou a repetição exata da carga inicial."}
+            </span>
             <label htmlFor="historical-file">Planilha histórica XLSX</label>
             <input
+              key={mode}
               id="historical-file"
               type="file"
               accept=".xlsx"

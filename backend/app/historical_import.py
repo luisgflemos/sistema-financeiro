@@ -4,9 +4,10 @@ import json
 from collections import defaultdict
 from decimal import Decimal
 from hashlib import sha256
+from typing import Literal
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
 
@@ -23,6 +24,7 @@ class HistoricalUpload(BaseModel):
     file_name: str = Field(min_length=1, max_length=250)
     content: str = Field(max_length=28 * 1024 * 1024)
     token: str | None = Field(default=None, max_length=64)
+    mode: Literal["initial", "append"] = "initial"
 
 
 def index(rows, key):
@@ -181,16 +183,37 @@ def build_preview(connection, organization_id, payload):
     """),
         {"org": organization_id, "existing": existing_ids},
     )
-    if other:
+    if other and payload.mode == "initial":
         raise HTTPException(
             409,
             "A carga histórica inicial requer o histórico vazio ou a repetição exata da base já importada. Existem outros movimentos; nenhum registro foi alterado.",
         )
+    if payload.mode == "append":
+        for summary, _, existing in groups:
+            if existing:
+                continue
+            overlap = connection.scalar(
+                text("""
+                SELECT count(*) FROM bank_transactions
+                WHERE account_id=:account AND posted_on BETWEEN :start AND :end
+            """),
+                {
+                    "account": summary["account_id"],
+                    "start": summary["period_start"],
+                    "end": summary["period_end"],
+                },
+            )
+            if overlap:
+                raise HTTPException(
+                    409,
+                    f"A conta {summary['account_label']} já possui movimentos no período {summary['period_start']} a {summary['period_end']}. O acréscimo foi bloqueado; nenhum registro foi alterado.",
+                )
     source_hash = sha256(raw).hexdigest()
     token = sha256(
         json.dumps(
             {
                 "source": source_hash,
+                "mode": payload.mode,
                 "groups": summaries,
                 "bindings": [
                     [r["category_id"], r["subcategory_id"], r["cost_center_id"], r["movement_kind"]]
@@ -204,6 +227,7 @@ def build_preview(connection, organization_id, payload):
     return (
         {
             "sheet": sheet_name,
+            "mode": payload.mode,
             "count": len(source_rows),
             "new": sum(s["count"] for s in summaries if not s["repeated"]),
             "credits": f"{sum((Decimal(s['credits']) for s in summaries), Decimal(0)):.2f}",
@@ -358,7 +382,9 @@ def commit(organization_id: UUID, payload: HistoricalUpload, request: Request):
 
 
 @router.get("/summary")
-def imported_summary(organization_id: UUID, request: Request):
+def imported_summary(
+    organization_id: UUID, request: Request, file_ids: list[UUID] | None = Query(default=None)
+):
     with request.app.state.database.connect() as connection:
         rows = connection.execute(
             text("""
@@ -369,8 +395,15 @@ def imported_summary(organization_id: UUID, request: Request):
             FROM bank_transactions t JOIN import_files f ON f.id=t.import_file_id
             JOIN bank_accounts a ON a.id=t.account_id
             LEFT JOIN transaction_identifications i ON i.transaction_id=t.id AND i.version=1
-            WHERE a.organization_id=:org AND f.parser_version=:version GROUP BY a.label ORDER BY a.label
+            WHERE a.organization_id=:org AND f.parser_version=:version
+                AND (NOT :filtered OR t.import_file_id=ANY(CAST(:files AS uuid[])))
+            GROUP BY a.label ORDER BY a.label
         """),
-            {"org": organization_id, "version": VERSION},
+            {
+                "org": organization_id,
+                "version": VERSION,
+                "filtered": file_ids is not None,
+                "files": file_ids or [],
+            },
         ).mappings()
         return [dict(row) for row in rows]

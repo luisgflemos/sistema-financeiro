@@ -129,6 +129,56 @@ try {
   });
   assert.equal(result.imported, 0);
   assert.equal((await api(base + "/transactions?state=all")).total, 3);
+  // Acrescenta período novo sem comparar a conferência com o histórico acumulado.
+  const appendedContent = execFileSync(
+    "docker",
+    [
+      "compose",
+      "exec",
+      "-T",
+      "api",
+      "python",
+      "-c",
+      python
+        .replaceAll("datetime(2025,1,2)", "datetime(2026,11,23)")
+        .replaceAll("datetime(2025,1,3)", "datetime(2026,11,23)"),
+    ],
+    { encoding: "utf-8", cwd: ".." },
+  ).trim();
+  await page
+    .getByRole("button", { name: "Importar Base Histórica", exact: true })
+    .click();
+  await modal.getByLabel("Tipo de carga", { exact: true }).fill("Acrescentar");
+  await page
+    .getByRole("option", {
+      name: "Acrescentar período ao histórico",
+      exact: true,
+    })
+    .click();
+  await modal
+    .getByLabel("Planilha histórica XLSX", { exact: true })
+    .setInputFiles({
+      name: "historico-novo-periodo.xlsx",
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      buffer: Buffer.from(appendedContent, "base64"),
+    });
+  await modal
+    .getByRole("button", {
+      name: "Importar 3 Movimentos Identificados",
+      exact: true,
+    })
+    .click();
+  await modal
+    .getByRole("status")
+    .filter({ hasText: "Base histórica gravada e identificada" })
+    .waitFor();
+  assert.equal((await api(base + "/transactions?state=identified")).total, 6);
+  assert.deepEqual(await api(base + "/bank-accounts"), accounts);
+  await page.screenshot({
+    path: "import-layout-historical-append-complete.png",
+    fullPage: true,
+  });
 } finally {
   await browser.close();
 }
