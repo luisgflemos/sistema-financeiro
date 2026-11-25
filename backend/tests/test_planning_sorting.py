@@ -1,7 +1,6 @@
 from decimal import Decimal
 
 import pytest
-
 from test_planning import link, new_plan
 from test_statements import statements as statement_fixture  # noqa: F401
 from test_transactions import imported
