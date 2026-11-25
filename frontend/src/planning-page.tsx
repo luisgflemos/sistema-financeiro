@@ -38,6 +38,28 @@ const labels: Record<string, string> = {
   cancelled: "Cancelado",
 };
 type Draft = Record<string, string>;
+function lastDueDate(draft: Draft) {
+  const count = Number(draft.occurrences);
+  if (!draft.due_on || !Number.isInteger(count) || count < 1 || count > 120)
+    return "";
+  const first = new Date(draft.due_on + "T12:00:00Z");
+  if (Number.isNaN(first.getTime())) return "";
+  if (draft.frequency === "WEEKLY")
+    first.setUTCDate(first.getUTCDate() + 7 * (count - 1));
+  else if (draft.frequency !== "ONCE") {
+    const day = first.getUTCDate();
+    first.setUTCDate(1);
+    first.setUTCMonth(
+      first.getUTCMonth() +
+        (count - 1) * (draft.frequency === "MONTHLY" ? 1 : 12),
+    );
+    const end = new Date(
+      Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0),
+    );
+    first.setUTCDate(Math.min(day, end.getUTCDate()));
+  }
+  return first.toISOString().slice(0, 10);
+}
 const blank = (direction: string): Draft => ({
   description: "",
   due_on: new Date().toLocaleDateString("sv-SE"),
@@ -663,7 +685,10 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                   {draft.expected_amount
                     ? brl(moneyDecimal(draft.expected_amount))
                     : "Informe o valor"}{" "}
-                  por ocorrência. A quantidade inclui o primeiro vencimento.
+                  por ocorrência.{" "}
+                  {lastDueDate(draft) &&
+                    `De ${brazilDate(draft.due_on)} a ${brazilDate(lastDueDate(draft))}. `}
+                  A quantidade inclui o primeiro vencimento.
                 </p>
               )}
               {editing && (
