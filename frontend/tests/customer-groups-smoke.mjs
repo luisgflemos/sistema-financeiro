@@ -151,6 +151,15 @@ try {
     name: "Identificar Movimento",
     exact: true,
   });
+  console.log(
+    "Grupo diagnóstico",
+    JSON.stringify((await api(base + "/transactions?state=identified")).rows),
+  );
+  console.log("Grupo campos", await tx.innerText());
+  await page.screenshot({
+    path: "import-layout-customer-group-before.png",
+    fullPage: true,
+  });
   await tx
     .getByRole("combobox", {
       name: "Grupo de Clientes (opcional)",
