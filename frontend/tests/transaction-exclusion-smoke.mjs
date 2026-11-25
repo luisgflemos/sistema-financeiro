@@ -30,7 +30,7 @@ const content =
   "AGENCIA;0001;CONTA;123456\n;;;;\nData;Histórico;Documento;Valor (R$);Saldo (R$)\n" +
   Array.from(
     { length: 105 },
-    (_, i) => `02/01/2026;MOVIMENTO SINTETICO ${i};${i};1;${i + 1}\n`,
+    (_, i) => `02/01/2026;MOVIMENTO SINTETICO ${i};${i};1;${105 - i}\n`,
   ).join("");
 const files = [
   {
@@ -136,3 +136,4 @@ try {
 } finally {
   await browser.close();
 }
+
