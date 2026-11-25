@@ -392,6 +392,8 @@ def exclusion_preview(
             "blocked": sum(not row["can_delete"] for row in rows),
             "revision": revision,
             "version": old["version"],
+            "description": old["description"],
+            "total_expected": f"{sum((Decimal(row['expected_amount']) for row in rows), Decimal(0)):.2f}",
             "first_due_on": rows[0]["due_on"],
             "last_due_on": rows[-1]["due_on"],
         }

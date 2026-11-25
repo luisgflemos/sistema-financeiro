@@ -110,6 +110,8 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
     blocked: number;
     revision: string;
     version: number;
+    description: string;
+    total_expected: string;
     first_due_on: string;
     last_due_on: string;
   } | null>(null);
@@ -840,8 +842,11 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
           onClose={() => setExcluding(null)}
         >
           <p>
-            Excluir <strong>{excluding.description}</strong> da listagem e das
-            projeções?
+            Excluir{" "}
+            <strong>
+              {exclusionPreview?.description ?? excluding.description}
+            </strong>{" "}
+            da listagem e das projeções?
           </p>
           <p>
             Use para registros feitos por engano ou em duplicidade. A auditoria
@@ -879,6 +884,10 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
               <p>
                 {brazilDate(exclusionPreview.first_due_on)} a{" "}
                 {brazilDate(exclusionPreview.last_due_on)}
+              </p>
+              <p>
+                Valor previsto total:{" "}
+                <strong>{brl(exclusionPreview.total_expected)}</strong>
               </p>
               {!!exclusionPreview.blocked && (
                 <p className="error">
