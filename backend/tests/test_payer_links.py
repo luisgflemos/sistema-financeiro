@@ -77,13 +77,24 @@ def test_batch_preserves_bank_dimensions_versions_and_learns_confirmed_party(sta
     assert client.get(base + "/parties").json() == masters
     assert len(rows) == 4
     assert (
-        connection.scalar(text("SELECT count(*) FROM audit_events WHERE entity_type='payer_links'"))
+        connection.scalar(
+            text(
+                "SELECT count(*) FROM audit_events WHERE entity_type='payer_links' AND organization_id=:org"
+            ),
+            {"org": base.split("/")[2]},
+        )
         == 1
     )
     repeated, check = preview(client, base, payload())
     assert check["new"] == 0
     assert client.post(base + "/payer-links/commit", json=repeated).json()["linked"] == 0
-    assert connection.scalar(text("SELECT count(*) FROM transaction_identifications")) == 6
+    assert (
+        connection.scalar(
+            text("SELECT count(*) FROM transaction_identifications WHERE organization_id=:org"),
+            {"org": base.split("/")[2]},
+        )
+        == 6
+    )
 
 
 def test_scope_count_totals_and_no_conflicting_overwrite(statements):
@@ -127,7 +138,10 @@ def test_stale_preview_and_file_changes_cannot_partially_commit(statements):
     )
     assert (
         connection.scalar(
-            text("SELECT count(*) FROM transaction_identifications WHERE party_id IS NOT NULL")
+            text(
+                "SELECT count(*) FROM transaction_identifications WHERE party_id IS NOT NULL AND organization_id=:org"
+            ),
+            {"org": base.split("/")[2]},
         )
         == 0
     )
