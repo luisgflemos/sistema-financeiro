@@ -16,7 +16,6 @@ import type { RecordData } from "./catalogs";
 import { askAssistant } from "./assistant";
 import { EntryLinker } from "./entry-linker";
 import { categoryNature } from "./movement-nature";
-import { StatementCleanup } from "./statement-cleanup";
 import { HistoricalImport } from "./historical-import";
 
 type Movement = {
@@ -104,7 +103,6 @@ export function TransactionsPage({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [importing, setImporting] = useState(false);
-  const [cleaning, setCleaning] = useState(false);
   const [historicalImport, setHistoricalImport] = useState(false);
   const [busyImport, setBusyImport] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
@@ -420,9 +418,6 @@ export function TransactionsPage({
               <Upload size={17} />
               Importar Base Histórica
             </button>
-            <button type="button" onClick={() => setCleaning(true)}>
-              Retirar Lote de Teste
-            </button>
           </div>
         )}
         {mode === "import" && (
@@ -467,18 +462,6 @@ export function TransactionsPage({
             setNotice(
               `${count.toLocaleString("pt-BR")} movimentos importados da base histórica.`,
             );
-          }}
-        />
-      )}
-      {cleaning && (
-        <StatementCleanup
-          base={base}
-          statements={statements}
-          onClose={() => setCleaning(false)}
-          onChanged={() => {
-            setStatementId("");
-            setPage(1);
-            setRefresh((value) => value + 1);
           }}
         />
       )}

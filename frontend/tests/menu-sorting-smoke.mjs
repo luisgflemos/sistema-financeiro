@@ -98,7 +98,7 @@ try {
       const button = table.getByRole("button", {
         name: new RegExp(`^Ordenar por ${label}:`),
       });
-      const header = table.getByRole("columnheader").filter({ has: button });
+      const header = button.locator("..");
       await button.click();
       const first = await header.getAttribute("aria-sort");
       assert.ok(["ascending", "descending"].includes(first));

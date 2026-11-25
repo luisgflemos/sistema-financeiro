@@ -59,47 +59,14 @@ try {
     .getByRole("button", { name: "Histórico", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Retirar Lote de Teste", exact: true })
-    .click();
-  const modal = page.getByRole("dialog", {
-    name: "Retirar Lote de Teste",
-    exact: true,
-  });
-  await modal.getByLabel("Extrato do teste", { exact: true }).click();
-  await page
-    .getByRole("option", {
-      name: "Conta sintética de teste · lote-teste.csv",
-      exact: true,
-    })
-    .click();
-  await modal.getByText("2 movimentos", { exact: true }).waitFor();
-  await page.screenshot({
-    path: "import-layout-cleanup-preview.png",
-    fullPage: true,
-  });
-  await modal
-    .getByRole("button", {
-      name: "Retirar Movimentos deste Extrato",
-      exact: true,
-    })
-    .click();
-  await modal
-    .getByRole("status")
-    .filter({ hasText: "2 movimentos retirados" })
+    .getByRole("columnheader", { name: /Histórico do Banco/ })
     .waitFor();
-  assert.equal((await api(base + "/transactions")).total, 0);
-  assert.deepEqual(await api(base + "/bank-accounts"), accounts);
-  await page.screenshot({
-    path: "import-layout-cleanup-result.png",
-    fullPage: true,
-  });
-  await modal
-    .getByRole("button", { name: "Restaurar Lote", exact: true })
-    .click();
-  await modal
-    .getByRole("status")
-    .filter({ hasText: "2 movimentos restaurados" })
-    .waitFor();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Retirar Lote de Teste", exact: true })
+      .count(),
+    0,
+  );
   assert.equal((await api(base + "/transactions")).total, 2);
   assert.deepEqual(await api(base + "/bank-accounts"), accounts);
 } finally {
