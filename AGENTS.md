@@ -69,5 +69,7 @@ Títulos de páginas e menus usam iniciais maiúsculas nas palavras principais. 
 
 ## Coerência visual e uso do espaço
 
+As ações por registro em tabelas e listas usam ActionButton: botão quadrado com ícone, nome acessível e tooltip ao passar o cursor ou receber foco por teclado. Usar ícones consistentes para editar, baixas, cancelar, excluir, identificar/revisar, detalhar, remover arquivo e desvincular. Preservar nomes acessíveis contextualizados, bloqueios e confirmações existentes.
+
 Preservar o padrão visual aprovado entre telas. Alinhar ações secundárias às informações relacionadas e reutilizar tamanhos e espaçamentos consistentes. Preferir cabeçalhos compactos: uma ação isolada não deve criar uma linha alta ou obrigar rolagem desnecessária em formulários comuns de desktop. Antes de publicar mudanças de layout, conferir a tela completa, os botões finais e o comportamento em janelas menores. Manter legibilidade, navegação por teclado e áreas de interação adequadas no celular; permitir rolagem quando o conteúdo realmente exigir.
 

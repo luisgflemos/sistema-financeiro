@@ -91,6 +91,29 @@ try {
     org.id,
   );
   await page.reload();
+  async function checkIconAction() {
+    const action = page.locator(".row-action").first();
+    const button = action.getByRole("button");
+    await button.waitFor();
+    assert.equal((await button.textContent()).trim(), "");
+    assert.ok(await button.getAttribute("aria-label"));
+    const bounds = await button.boundingBox();
+    const icon = await button.locator("svg").boundingBox();
+    assert.equal(bounds.width, 40);
+    assert.equal(bounds.height, 40);
+    assert.ok(
+      Math.abs(bounds.x + bounds.width / 2 - icon.x - icon.width / 2) < 1,
+    );
+    assert.ok(
+      Math.abs(bounds.y + bounds.height / 2 - icon.y - icon.height / 2) < 1,
+    );
+    await action.hover();
+    await action.getByRole("tooltip").waitFor();
+    assert.ok((await action.getByRole("tooltip").innerText()).length);
+    await page.getByRole("heading", { level: 1 }).hover();
+    await button.focus();
+    await action.getByRole("tooltip").waitFor();
+  }
   async function checkColumns(labels) {
     const table = page.getByRole("table");
     await table.waitFor();
@@ -107,6 +130,7 @@ try {
     }
   }
   await checkColumns(["Nome da conta", "Código", "Banco", "Conta", "Situação"]);
+  await checkIconAction();
   await page
     .getByRole("button", { name: /^Ordenar por Nome da conta:/ })
     .click();
@@ -132,6 +156,7 @@ try {
       .getByRole("button", { name: menu, exact: true })
       .click();
     await checkColumns(labels);
+    await checkIconAction();
   }
   await page
     .getByRole("button", { name: "Expandir tudo", exact: true })
@@ -180,6 +205,19 @@ try {
     "Em aberto",
     "Situação",
   ]);
+  await checkIconAction();
+  for (const label of ["Editar", "Baixas", "Cancelar", "Excluir"]) {
+    const action = page
+      .locator(".row-actions")
+      .first()
+      .getByRole("button", { name: label, exact: true });
+    await action.hover();
+    await action.locator("..").getByRole("tooltip").waitFor();
+    assert.equal(
+      await action.locator("..").getByRole("tooltip").innerText(),
+      label,
+    );
+  }
   await page.screenshot({
     path: "import-layout-sort-planning.png",
     fullPage: true,

@@ -9,6 +9,8 @@ import { CatalogToolbar } from "./catalog-toolbar";
 import { catalogs } from "./catalogs";
 import type { CatalogId, RecordData } from "./catalogs";
 import { SortHeader, useTableSort } from "./table-sort";
+import { Pencil } from "lucide-react";
+import { ActionButton } from "./action-button";
 
 type Draft = Record<string, string | boolean>;
 
@@ -529,15 +531,13 @@ export function CatalogPage({
                               </span>
                             </td>
                             <td>
-                              <button
-                                type="button"
-                                className="text-button"
+                              <ActionButton
+                                label="Editar"
+                                icon={Pencil}
                                 disabled={saving}
                                 onClick={() => begin(record)}
-                                aria-label={`Editar ${title(record)}`}
-                              >
-                                Editar
-                              </button>
+                                ariaLabel={`Editar ${title(record)}`}
+                              />
                             </td>
                           </tr>
                           {expanded === record.id && (

@@ -522,6 +522,18 @@ try {
   await plannedRow
     .getByText("Parcialmente realizado", { exact: true })
     .waitFor();
+  const protectedExclusion = plannedRow.getByRole("button", {
+    name: "Excluir",
+    exact: true,
+  });
+  assert.equal(await protectedExclusion.isEnabled(), false);
+  await protectedExclusion.locator("..").hover();
+  await protectedExclusion.locator("..").getByRole("tooltip").waitFor();
+  assert.ok(
+    (
+      await protectedExclusion.locator("..").getByRole("tooltip").innerText()
+    ).includes("histórico de baixas"),
+  );
   await plannedRow.getByRole("button", { name: "Baixas", exact: true }).click();
   await page
     .getByRole("button", { name: "Desvincular movimento", exact: true })

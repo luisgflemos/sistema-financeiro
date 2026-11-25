@@ -2,13 +2,14 @@ import { Fragment, useEffect, useState } from "react";
 import { api } from "./api";
 import { matchesCatalog } from "./catalog-search";
 import { CatalogToolbar } from "./catalog-toolbar";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Pencil } from "lucide-react";
 import { NatureBadge } from "./nature";
 import { Modal } from "./modal";
 import { TableImport } from "./table-import";
 import { CatalogPage } from "./catalog-page";
 import type { RecordData } from "./catalogs";
 import { SortHeader, useTableSort } from "./table-sort";
+import { ActionButton } from "./action-button";
 
 type Editor = { category?: RecordData; record?: RecordData; key: number };
 
@@ -296,14 +297,12 @@ export function ClassificationTree({
                           </td>
                           <td>{status(parent)}</td>
                           <td>
-                            <button
-                              type="button"
-                              className="text-button"
-                              aria-label={`Editar ${parent.name}`}
+                            <ActionButton
+                              label="Editar"
+                              icon={Pencil}
+                              ariaLabel={`Editar ${parent.name}`}
                               onClick={() => openEditor(parent)}
-                            >
-                              Editar
-                            </button>
+                            />
                           </td>
                         </tr>
                         {isOpen && (
@@ -323,14 +322,12 @@ export function ClassificationTree({
                                 <td>—</td>
                                 <td>{status(sub)}</td>
                                 <td>
-                                  <button
-                                    type="button"
-                                    className="text-button"
-                                    aria-label={`Editar ${sub.name} em ${parent.name}`}
+                                  <ActionButton
+                                    label="Editar"
+                                    icon={Pencil}
+                                    ariaLabel={`Editar ${sub.name} em ${parent.name}`}
                                     onClick={() => openEditor(sub, parent)}
-                                  >
-                                    Editar
-                                  </button>
+                                  />
                                 </td>
                               </tr>
                             ))}

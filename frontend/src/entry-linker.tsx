@@ -3,6 +3,8 @@ import { api } from "./api";
 import { SearchSelect } from "./search-select";
 import { brl, brazilDate } from "./statement-import";
 import type { PlannedEntry } from "./planning-page";
+import { Unlink } from "lucide-react";
+import { ActionButton } from "./action-button";
 
 function cents(value: string) {
   const [whole, fraction = ""] = value.split(".");
@@ -154,9 +156,13 @@ export function EntryLinker({
             {brl(linked.entry.expected_amount)} · Realizado:{" "}
             {brl(linked.entry.paid)}
           </p>
-          <button type="button" disabled={busy} onClick={() => void reverse()}>
-            Desvincular lançamento
-          </button>
+          <ActionButton
+            label="Desvincular lançamento"
+            icon={Unlink}
+            tone="neutral"
+            disabled={busy}
+            onClick={() => void reverse()}
+          />
         </div>
       ) : (
         <>

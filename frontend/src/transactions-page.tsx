@@ -6,6 +6,9 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  Pencil,
+  Eye,
+  ListChecks,
 } from "lucide-react";
 import { api } from "./api";
 import { Modal } from "./modal";
@@ -17,6 +20,7 @@ import { askAssistant } from "./assistant";
 import { EntryLinker } from "./entry-linker";
 import { categoryNature } from "./movement-nature";
 import { HistoricalImport } from "./historical-import";
+import { ActionButton } from "./action-button";
 
 type Movement = {
   editable: boolean;
@@ -669,24 +673,29 @@ export function TransactionsPage({
                       </span>
                     </td>
                     <td>
-                      <button
-                        className="text-button"
-                        type="button"
-                        aria-label={
+                      <ActionButton
+                        label={
+                          !row.editable
+                            ? "Ver detalhe"
+                            : row.version
+                              ? "Revisar"
+                              : "Identificar"
+                        }
+                        icon={
+                          !row.editable
+                            ? Eye
+                            : row.version
+                              ? Pencil
+                              : ListChecks
+                        }
+                        ariaLabel={
                           "Identificar movimento de " +
                           brazilDate(row.posted_on) +
                           " " +
                           row.raw_description
                         }
                         onClick={() => edit(row)}
-                      >
-                        {!row.editable
-                          ? "Ver detalhe"
-                          : row.version
-                            ? "Revisar"
-                            : "Identificar"}
-                        <ArrowRight size={15} />
-                      </button>
+                      />
                     </td>
                   </tr>
                 ))}

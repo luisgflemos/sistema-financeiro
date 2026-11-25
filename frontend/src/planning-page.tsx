@@ -8,6 +8,8 @@ import type { RecordData } from "./catalogs";
 import { categoryNature } from "./movement-nature";
 import { SortHeader, useTableSort } from "./table-sort";
 import { MoneyInput, moneyDecimal } from "./money-input";
+import { Pencil, ListChecks, Ban, Trash2, Unlink } from "lucide-react";
+import { ActionButton } from "./action-button";
 import "./planning.css";
 
 export type PlannedEntry = {
@@ -562,50 +564,43 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                       )}
                     </td>
                     <td>
-                      <div className="actions">
+                      <div className="row-actions">
                         {row.state === "open" && (
-                          <button
-                            className="text-button"
+                          <ActionButton
+                            label="Editar"
+                            icon={Pencil}
                             onClick={() => start(row.direction, row)}
-                          >
-                            Editar
-                          </button>
+                          />
                         )}
-                        <button
-                          className="text-button"
+                        <ActionButton
+                          label="Baixas"
+                          icon={ListChecks}
                           onClick={() => void showDetail(row)}
-                        >
-                          Baixas
-                        </button>
+                        />
                         {["open", "partial"].includes(row.state) && (
-                          <button
-                            className="text-button"
+                          <ActionButton
+                            label="Cancelar"
+                            icon={Ban}
+                            tone="neutral"
                             onClick={() => {
                               setFormError("");
                               setCancelling(row);
                             }}
-                          >
-                            Cancelar
-                          </button>
+                          />
                         )}
-                        <button
-                          type="button"
-                          className="text-button planning-delete"
+                        <ActionButton
+                          label="Excluir"
+                          icon={Trash2}
+                          tone="danger"
                           disabled={!row.can_delete}
-                          title={
-                            row.can_delete
-                              ? "Excluir lançamento criado por engano"
-                              : "Lançamentos com histórico de baixas não podem ser excluídos"
-                          }
+                          disabledReason="Lançamentos com histórico de baixas não podem ser excluídos"
                           onClick={() => {
                             setExclusionScope("current");
                             setExclusionPreview(null);
                             setFormError("");
                             setExcluding(row);
                           }}
-                        >
-                          Excluir
-                        </button>
+                        />
                       </div>
                     </td>
                   </tr>
@@ -959,12 +954,13 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                   {item.reversed ? "Vínculo desfeito" : "Vínculo ativo"}
                 </small>
                 {!item.reversed && (
-                  <button
+                  <ActionButton
+                    label="Desvincular movimento"
+                    icon={Unlink}
+                    tone="neutral"
                     disabled={busy}
                     onClick={() => void reverse(item.transaction_id)}
-                  >
-                    Desvincular movimento
-                  </button>
+                  />
                 )}
               </div>
             ))

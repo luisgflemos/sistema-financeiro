@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { FileUp, Check, Trash2 } from "lucide-react";
+import { ActionButton } from "./action-button";
 import { api } from "./api";
 import { SearchSelect } from "./search-select";
 
@@ -203,10 +204,11 @@ export function StatementImport({
                     </small>
                   )}
                 </div>
-                <button
-                  type="button"
-                  className="text-button"
-                  aria-label={"Remover " + file.file_name}
+                <ActionButton
+                  label="Remover arquivo"
+                  icon={Trash2}
+                  tone="danger"
+                  ariaLabel={"Remover " + file.file_name}
                   onClick={() => {
                     const next = files.filter(
                       (_, position) => position !== index,
@@ -215,9 +217,7 @@ export function StatementImport({
                     setPreview(null);
                     if (next.length) void analyze(next);
                   }}
-                >
-                  <Trash2 size={17} />
-                </button>
+                />
               </header>
               {item && (
                 <>
