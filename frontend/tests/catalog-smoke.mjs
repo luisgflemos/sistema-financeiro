@@ -83,7 +83,7 @@ try {
   await page.getByText("Nenhum resultado").waitFor();
 
   const menu = page.getByRole("navigation", { name: "Menu principal" });
-  assert.equal(await menu.getByRole("button").count(), 6);
+  assert.equal(await menu.getByRole("button").count(), 7);
   assert.equal(await page.getByRole("tablist").count(), 0);
   assert.equal(
     await page
