@@ -6,13 +6,14 @@ from sqlalchemy import text
 from test_statements import statements as statement_fixture  # noqa: F401
 from test_transactions import dimensions, imported
 
-from app import recognition
+from app import assistant, recognition
 from app.history_context import (
     complete_suggestion,
     confirmed,
     document_index,
     full_overview,
     related_evidence,
+    reviewed_confidence,
 )
 
 
@@ -82,6 +83,9 @@ def test_entire_base_supports_each_field_without_inventing_cost_center():
     result = complete_suggestion(suggestion, facts, catalogs)
     assert result["category_id"] == category and result["subcategory_id"] == sub
     assert result["cost_center_id"] is None
+    assert reviewed_confidence("HIGH", result, facts) == "MEDIUM"
+    # Nem uma proposta completa deve esconder divergências do histórico.
+    assert reviewed_confidence("HIGH", {**result, "cost_center_id": first}, facts) == "MEDIUM"
     # Uma nova decisão confirmada muda a análise; não há cache ou aprendizado circular.
     changed = {**related[0], "source_transaction_id": str(uuid4()), "subcategory_id": str(uuid4())}
     new_facts, _ = related_evidence(confirmed(history + [changed]), target, catalogs, docs)
@@ -143,3 +147,29 @@ def test_targeted_recheck_appends_suggestions_without_confirming_bank_data(state
         client.post(base + "/recognition/run", json={"transaction_id": current["id"]}).status_code
         == 409
     )
+
+
+def test_chat_refreshes_entire_history_after_a_new_confirmation(statements, monkeypatch):
+    client, _, base, _ = statements
+    rows = imported(client, base)
+    snapshots = []
+
+    def fake(messages, context):
+        snapshots.append(context["historical_analysis"])
+        assert context["historical_analysis"]["records_scanned"] == 4
+        return "Análise sintética sem alterações."
+
+    monkeypatch.setattr(assistant, "generate_answer", fake)
+    question = {"messages": [{"role": "user", "content": "Analise o histórico"}]}
+    assert client.post(base + "/assistant/chat", json=question).status_code == 200
+    current = next(row for row in rows if row["direction"] == "CREDIT")
+    assert (
+        client.put(
+            base + "/transactions/" + current["id"] + "/identification",
+            json=dimensions(client, base),
+        ).status_code
+        == 200
+    )
+    assert client.post(base + "/assistant/chat", json=question).status_code == 200
+    assert snapshots[0]["confirmed_learning_records"] == 0
+    assert snapshots[1]["confirmed_learning_records"] == 1

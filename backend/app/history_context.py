@@ -230,3 +230,16 @@ def evidence_reason(evidence, catalogs):
             "Parte do histórico foi relacionada pelo nome no texto bancário; esse vínculo é contextual e exige revisão."
         )
     return " ".join(parts)
+
+
+def reviewed_confidence(confidence, values, evidence):
+    if confidence != "HIGH" or values.get("movement_kind") != "NORMAL":
+        return confidence
+    required = ("category_id", "subcategory_id", "cost_center_id")
+    if any(not values.get(field) for field in required):
+        return "MEDIUM"
+    if evidence.get("matching_records", 0) >= 3 and any(
+        not evidence.get("fields", {}).get(field, {}).get("unanimous") for field in required
+    ):
+        return "MEDIUM"
+    return confidence

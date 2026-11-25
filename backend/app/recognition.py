@@ -20,6 +20,7 @@ from app.history_context import (
     full_overview,
     load_history,
     related_evidence,
+    reviewed_confidence,
 )
 from app.transactions import (
     IDENT_FIELDS,
@@ -379,15 +380,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 continue
             confidence = item.get("confidence")
             reason = item.get("reason")
-            if (
-                confidence == "HIGH"
-                and payload.movement_kind == "NORMAL"
-                and any(
-                    not getattr(payload, field)
-                    for field in ("category_id", "subcategory_id", "cost_center_id")
-                )
-            ):
-                confidence = "MEDIUM"
+            confidence = reviewed_confidence(confidence, values, facts)
             reason = evidence_reason(facts, catalogs) or reason
             if (
                 confidence not in {"HIGH", "MEDIUM", "LOW"}
