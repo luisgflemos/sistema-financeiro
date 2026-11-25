@@ -60,19 +60,19 @@
   margin-top: 4px;
   font-weight: 400;
 }
-.planning-state-open {
+.transaction-state.planning-state-open {
   background: #fef3c7;
   color: #854d0e;
 }
-.planning-state-partial {
+.transaction-state.planning-state-partial {
   background: #dbeafe;
   color: #1e40af;
 }
-.planning-state-realized {
+.transaction-state.planning-state-realized {
   background: #dcfce7;
   color: #166534;
 }
-.planning-state-cancelled {
+.transaction-state.planning-state-cancelled {
   background: #e5e7eb;
   color: #475569;
 }
