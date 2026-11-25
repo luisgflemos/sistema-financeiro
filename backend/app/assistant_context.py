@@ -135,6 +135,11 @@ def historical_pattern_answer(question, context):
         return "Não encontrei histórico confirmado que possa ser relacionado com segurança a este cliente ou movimento. Isso não prova ausência de padrão na empresa; falta uma associação segura para esta consulta. Confira o cliente e os dados do movimento."
     names = catalog_names(context)
     parts = []
+    active = {
+        str(row["id"]): row.get("active", True)
+        for rows in context.get("catalogs", {}).values()
+        for row in rows
+    }
     candidates = scoped.get("party_candidates", [])
     identifier = (
         candidates[0]
@@ -182,6 +187,11 @@ def historical_pattern_answer(question, context):
                 values += f"; não informado ({evidence['missing']}/{count})"
             parts.append(f"{label}: {values.lstrip('; ') or 'não informado'}.")
             if ranked and count >= 3:
+                if not active.get(ranked[0][0], False):
+                    parts.append(
+                        "O cadastro predominante está inativo ou indisponível; não é elegível para uma nova identificação."
+                    )
+                    continue
                 if evidence.get("unanimous"):
                     parts.append("Padrão unânime neste conjunto.")
                 elif ranked[0][1] >= 2 and (len(ranked) == 1 or ranked[0][1] > ranked[1][1]):
