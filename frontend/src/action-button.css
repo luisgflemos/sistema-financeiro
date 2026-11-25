@@ -82,3 +82,7 @@
 .row-action:focus-within .row-action-tooltip {
   display: block;
 }
+.row-action[data-tooltip-align="start"] .row-action-tooltip {
+  right: auto;
+  left: 0;
+}

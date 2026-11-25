@@ -10,6 +10,7 @@ export function ActionButton({
   disabled = false,
   disabledReason,
   tone = "default",
+  tooltipAlign = "end",
 }: {
   label: string;
   ariaLabel?: string;
@@ -18,10 +19,16 @@ export function ActionButton({
   disabled?: boolean;
   disabledReason?: string;
   tone?: "default" | "neutral" | "danger";
+  tooltipAlign?: "start" | "end";
 }) {
   const tooltipId = useId();
   return (
-    <span className="row-action" data-tone={tone} data-disabled={disabled}>
+    <span
+      className="row-action"
+      data-tone={tone}
+      data-disabled={disabled}
+      data-tooltip-align={tooltipAlign}
+    >
       <button
         type="button"
         className="row-action-button"

@@ -956,6 +956,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                 {!item.reversed && (
                   <ActionButton
                     label="Desvincular movimento"
+                    tooltipAlign="start"
                     icon={Unlink}
                     tone="neutral"
                     disabled={busy}

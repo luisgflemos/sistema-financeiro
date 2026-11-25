@@ -158,6 +158,7 @@ export function EntryLinker({
           </p>
           <ActionButton
             label="Desvincular lançamento"
+            tooltipAlign="start"
             icon={Unlink}
             tone="neutral"
             disabled={busy}
