@@ -17,6 +17,7 @@ from app.history_context import (
     complete_suggestion,
     confirmed,
     evidence_reason,
+    field_confidences,
     full_overview,
     load_history,
     related_evidence,
@@ -91,6 +92,9 @@ def generative_suggestions(context):
         " historical_analysis analisa toda a base disponível localmente; evidence_by_movement "
         "contém contagens completas por campo, inclusive conflitos. Os exemplos textuais são apenas "
         "ilustrativos. Aproveite subclassificação consistente mesmo se o centro de custos divergir, "
+        "e sugira o máximo de campos com evidência. Um valor predominante não unânime pode ser "
+        "sugerido com confiança MEDIUM ou LOW e contagens para revisão. Em empate, não escolha "
+        "arbitrariamente. Não deixe centro de custos vazio só porque existem exceções ao padrão, "
         "sem confirmar automaticamente. Correspondência por nome não é vínculo confirmado de cliente. "
         "Escreva pagador ou recebedor, nunca traduza party como partido. Justifique usando contagens, "
         "sem alegar que PIX sozinho indica faturamento. Sugestão parcial não recebe confiança HIGH."
@@ -388,6 +392,8 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 or not reason.strip()
             ):
                 continue
+            suggestion_data = {key: payload.model_dump(mode="json")[key] for key in IDENT_FIELDS}
+            suggestion_data["field_confidence"] = field_confidences(values, facts, confidence)
             suggestion_id = connection.scalar(
                 text("""
                 INSERT INTO transaction_suggestions(
@@ -397,9 +403,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 {
                     "tx": tx_id,
                     "org": organization_id,
-                    "payload": json.dumps(
-                        {key: payload.model_dump(mode="json")[key] for key in IDENT_FIELDS}
-                    ),
+                    "payload": json.dumps(suggestion_data),
                     "reason": reason[:2000],
                     "confidence": confidence,
                     "model": model,
@@ -410,9 +414,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 {
                     "transaction_id": tx_id,
                     "suggestion_id": str(suggestion_id),
-                    "suggestion": {
-                        key: payload.model_dump(mode="json")[key] for key in IDENT_FIELDS
-                    },
+                    "suggestion": suggestion_data,
                     "reason": reason[:2000],
                     "confidence": confidence,
                 }

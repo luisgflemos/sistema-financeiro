@@ -183,8 +183,13 @@ def complete_suggestion(item, evidence, catalogs):
     if (
         result.get("movement_kind") != "NORMAL"
         or evidence["matching_records"] < 3
-        or evidence["party_candidates"] != [str(result.get("party_id") or "")]
+        or len(evidence["party_candidates"]) != 1
     ):
+        return result
+    candidate = evidence["party_candidates"][0]
+    if not result.get("party_id"):
+        result["party_id"] = candidate
+    if str(result["party_id"]) != candidate:
         return result
     for field, table in (
         ("category_id", "categories"),
@@ -192,17 +197,48 @@ def complete_suggestion(item, evidence, catalogs):
         ("cost_center_id", "cost_centers"),
     ):
         observation = evidence["fields"].get(field, {})
-        if result.get(field) or not observation.get("unanimous"):
+        if result.get(field):
             continue
-        identifier = next(iter(observation["values"]))
-        option = next(
-            (row for row in catalogs.get(table, []) if str(row["id"]) == identifier), None
+        available = {str(row["id"]): row for row in catalogs.get(table, [])}
+        ranked = sorted(
+            (
+                (identifier, count)
+                for identifier, count in observation.get("values", {}).items()
+                if identifier in available
+                and (
+                    field != "subcategory_id"
+                    or str(available[identifier]["category_id"]) == str(result.get("category_id"))
+                )
+                and (
+                    field != "category_id"
+                    or available[identifier].get("kind")
+                    == ("REVENUE" if evidence.get("direction") == "CREDIT" else "EXPENSE")
+                )
+            ),
+            key=lambda pair: -pair[1],
         )
-        if option and (
-            field != "subcategory_id"
-            or str(option["category_id"]) == str(result.get("category_id"))
+        # Predominância é sugestão, nunca confirmação. Empate não escolhe arbitrariamente.
+        if ranked and ranked[0][1] >= 2 and (len(ranked) == 1 or ranked[0][1] > ranked[1][1]):
+            result[field] = ranked[0][0]
+    return result
+
+
+def field_confidences(values, evidence, fallback):
+    result = {}
+    total = evidence.get("matching_records", 0)
+    for field in (*FIELDS, "movement_kind"):
+        if not values.get(field):
+            continue
+        confidence = fallback
+        counts = evidence.get("fields", {}).get(field, {}).get("values", {})
+        if total >= 3 and field in FIELDS[:3]:
+            count = counts.get(str(values[field]), 0)
+            confidence = "HIGH" if count == total else "MEDIUM" if count > total / 2 else "LOW"
+        elif field == "party_id" and evidence.get("match_basis", {}).get(
+            "unique_name_in_bank_text"
         ):
-            result[field] = identifier
+            confidence = "MEDIUM"
+        result[field] = confidence
     return result
 
 

@@ -50,7 +50,7 @@ type Movement = {
   category_name: string | null;
   cost_center_name: string | null;
   suggestion_id: string | null;
-  suggestion: Record<string, string | null> | null;
+  suggestion: Record<string, unknown> | null;
   reason: string | null;
   confidence: string | null;
 };
@@ -325,16 +325,36 @@ export function TransactionsPage({
       aiFields.has(field) &&
       !!draft[field] &&
       draft[field] === selected.suggestion?.[field]
-      ? selected.confidence === "HIGH"
+      ? fieldConfidence(field) === "HIGH"
         ? " ai-field-high"
         : " ai-field-review"
       : "";
+  }
+  function fieldConfidence(field: keyof Draft) {
+    const fields = selected?.suggestion?.field_confidence;
+    const confidence =
+      fields && typeof fields === "object"
+        ? (fields as Record<string, string>)[field]
+        : undefined;
+    return confidence ?? overallConfidence();
+  }
+  function overallConfidence() {
+    const suggestion = selected?.suggestion;
+    if (
+      selected?.confidence === "HIGH" &&
+      suggestion?.movement_kind === "NORMAL" &&
+      ["category_id", "subcategory_id", "cost_center_id"].some(
+        (key) => !suggestion[key],
+      )
+    )
+      return "MEDIUM";
+    return selected?.confidence;
   }
   function aiBadge(field: keyof Draft) {
     return aiClass(field) ? (
       <span className="ai-field-badge" aria-hidden="true">
         <Sparkles size={12} aria-hidden="true" />
-        {selected?.confidence === "HIGH" ? "IA · Alta" : "IA · Revisar"}
+        {fieldConfidence(field) === "HIGH" ? "IA · Alta" : "IA · Revisar"}
       </span>
     ) : null;
   }
@@ -973,16 +993,16 @@ export function TransactionsPage({
             <div
               className={
                 "transaction-ai " +
-                (selected.confidence === "HIGH"
+                (overallConfidence() === "HIGH"
                   ? "ai-confidence-high"
                   : "ai-confidence-review")
               }
             >
               <strong>
                 <Sparkles size={17} /> Sugestão da IA · Confiança{" "}
-                {selected.confidence === "HIGH"
+                {overallConfidence() === "HIGH"
                   ? "alta"
-                  : selected.confidence === "MEDIUM"
+                  : overallConfidence() === "MEDIUM"
                     ? "média"
                     : "baixa"}
               </strong>

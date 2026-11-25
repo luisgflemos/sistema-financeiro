@@ -11,6 +11,7 @@ from app.history_context import (
     complete_suggestion,
     confirmed,
     document_index,
+    field_confidences,
     full_overview,
     related_evidence,
     reviewed_confidence,
@@ -83,7 +84,10 @@ def test_entire_base_supports_each_field_without_inventing_cost_center():
     }
     result = complete_suggestion(suggestion, facts, catalogs)
     assert result["category_id"] == category and result["subcategory_id"] == sub
-    assert result["cost_center_id"] is None
+    assert result["cost_center_id"] == first
+    confidence = field_confidences(result, facts, "MEDIUM")
+    assert confidence["subcategory_id"] == "HIGH"
+    assert confidence["cost_center_id"] == "MEDIUM"
     assert reviewed_confidence("HIGH", result, facts) == "MEDIUM"
     # Nem uma proposta completa deve esconder divergências do histórico.
     assert reviewed_confidence("HIGH", {**result, "cost_center_id": first}, facts) == "MEDIUM"
@@ -92,9 +96,13 @@ def test_entire_base_supports_each_field_without_inventing_cost_center():
     new_facts, _ = related_evidence(confirmed(history + [changed]), target, catalogs, docs)
     assert new_facts["matching_records"] == 6
     assert not new_facts["fields"]["subcategory_id"]["unanimous"]
-    assert complete_suggestion(suggestion, new_facts, catalogs)["subcategory_id"] is None
+    assert complete_suggestion(suggestion, new_facts, catalogs)["subcategory_id"] == sub
     automatic = {**changed, "method": "PATTERN"}
     assert len(confirmed(history + [automatic])) == 205
+    tied, _ = related_evidence(
+        [related[0], related[1], related[3], related[4]], target, catalogs, docs
+    )
+    assert complete_suggestion(suggestion, tied, catalogs)["cost_center_id"] is None
     # Nomes que se sobrepõem a dois cadastros não são fundidos.
     catalogs["parties"].append({"id": str(uuid4()), "name": "Cliente Modelo Comercio"})
     ambiguous, _ = related_evidence(history, target, catalogs, docs)
@@ -242,6 +250,8 @@ def test_recheck_completes_subclassification_from_sixteen_legacy_confirmations(
     assert response.status_code == 200, response.text
     result = response.json()["updated_suggestions"][0]
     assert result["suggestion"]["subcategory_id"] == sub
-    assert result["suggestion"]["cost_center_id"] is None
+    assert result["suggestion"]["cost_center_id"] == values["cost_center_id"]
+    assert result["suggestion"]["field_confidence"]["cost_center_id"] == "MEDIUM"
+    assert result["suggestion"]["field_confidence"]["subcategory_id"] == "HIGH"
     assert result["confidence"] == "MEDIUM"
     assert "PIX Faturado (16/16)" in result["reason"]

@@ -110,7 +110,15 @@ try {
           {
             transaction_id: original.id,
             suggestion_id: "00000000-0000-4000-8000-000000000002",
-            suggestion,
+            suggestion: {
+              ...suggestion,
+              field_confidence: {
+                party_id: "MEDIUM",
+                category_id: "HIGH",
+                subcategory_id: "HIGH",
+                cost_center_id: "MEDIUM",
+              },
+            },
             confidence,
             reason: "Evidência atualizada sintética.",
           },
@@ -145,12 +153,33 @@ try {
     fullPage: true,
   });
   await dialog
+    .getByRole("button", { name: "Reavaliar sugestão", exact: true })
+    .click();
+  await dialog
+    .getByText("Evidência atualizada sintética.", { exact: true })
+    .waitFor();
+  assert.equal(await dialog.locator(".ai-field-high").count(), 2);
+  assert.equal(await dialog.locator(".ai-field-review").count(), 2);
+  assert.ok(
+    (
+      await dialog
+        .locator("#identify-cost_center_id")
+        .locator("..")
+        .locator("..")
+        .getAttribute("class")
+    ).includes("ai-field-review"),
+  );
+  await page.screenshot({
+    path: "import-layout-ai-fields-mixed.png",
+    fullPage: true,
+  });
+  await dialog
     .getByLabel("Centro de Custos", { exact: true })
     .fill("Centro manual");
   await page
     .getByRole("option", { name: "Centro manual", exact: true })
     .click();
-  assert.equal(await dialog.locator(".ai-field-high").count(), 3);
+  assert.equal(await dialog.locator(".ai-field-high").count(), 2);
   await dialog
     .getByRole("button", { name: "Reavaliar sugestão", exact: true })
     .click();
@@ -161,8 +190,8 @@ try {
     await dialog.getByLabel("Centro de Custos", { exact: true }).inputValue(),
     "Centro manual",
   );
-  assert.equal(await dialog.locator(".ai-field-review").count(), 3);
-  assert.equal(await dialog.locator(".ai-field-high").count(), 0);
+  assert.equal(await dialog.locator(".ai-field-review").count(), 1);
+  assert.equal(await dialog.locator(".ai-field-high").count(), 2);
   await page.screenshot({
     path: "import-layout-ai-fields-review.png",
     fullPage: true,
