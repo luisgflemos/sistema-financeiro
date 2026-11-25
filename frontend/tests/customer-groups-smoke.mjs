@@ -148,14 +148,9 @@ try {
     .getByRole("button", { name: /Identificar movimento.*PAGADOR COMUM/ })
     .click();
   const tx = page.getByRole("dialog", {
-    name: "Identificar Movimento",
+    name: "Revisar Identificação",
     exact: true,
   });
-  console.log(
-    "Grupo diagnóstico",
-    JSON.stringify((await api(base + "/transactions?state=identified")).rows),
-  );
-  console.log("Grupo campos", await tx.innerText());
   await page.screenshot({
     path: "import-layout-customer-group-before.png",
     fullPage: true,
