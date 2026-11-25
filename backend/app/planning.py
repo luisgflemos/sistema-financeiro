@@ -235,6 +235,10 @@ def listing(
     query: str = Query(default="", max_length=200),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=100, ge=1, le=500),
+    sort_by: Literal[
+        "due_on", "description", "expected_amount", "paid", "outstanding", "state"
+    ] = "due_on",
+    sort_order: Literal["asc", "desc"] = "asc",
 ):
     with request.app.state.database.connect() as connection:
         if not connection.scalar(
@@ -260,6 +264,24 @@ def listing(
             rows = [row for row in rows if row["state"] in ("open", "partial")]
         elif state != "all":
             rows = [row for row in rows if row["state"] == state]
+        state_labels = {
+            "open": "Em aberto",
+            "partial": "Parcialmente realizado",
+            "realized": "Realizado",
+            "cancelled": "Cancelado",
+        }
+
+        def order_value(row):
+            if sort_by in {"expected_amount", "paid", "outstanding"}:
+                return Decimal(row[sort_by])
+            value = state_labels[row["state"]] if sort_by == "state" else row[sort_by]
+            return "".join(
+                c
+                for c in unicodedata.normalize("NFD", str(value).casefold())
+                if not unicodedata.combining(c)
+            )
+
+        rows.sort(key=order_value, reverse=sort_order == "desc")
         totals = {
             "expected": f"{sum((Decimal(row['expected_amount']) for row in rows), Decimal(0)):.2f}",
             "paid": f"{sum((Decimal(row['paid']) for row in rows), Decimal(0)):.2f}",

@@ -61,6 +61,8 @@ Criar uma aplicação web simples, rápida, acessível e auditável onde o **ext
 
 ## Seleções da interface
 
+Toda listagem dos menus deve permitir ordenação crescente e decrescente nos cabeçalhos de dados, com setas e aria-sort. Reutilizar SortHeader/useTableSort; listas paginadas ordenam o conjunto completo no servidor antes de paginar. Preservar filtros, hierarquias e dados. Ações de editar/excluir não são campos ordenáveis.
+
 Novas caixas de seleção devem permitir filtrar por trechos do nome ou código, com busca sem distinção de acentos e suporte a teclado. Reutilizar o componente SearchSelect.
 
 Títulos de páginas e menus usam iniciais maiúsculas nas palavras principais. Padrão aprovado: Contas Bancárias, Centro de Custos, Clientes e Fornecedores e Classificações.

@@ -8,6 +8,7 @@ import { matchesCatalog } from "./catalog-search";
 import { CatalogToolbar } from "./catalog-toolbar";
 import { catalogs } from "./catalogs";
 import type { CatalogId, RecordData } from "./catalogs";
+import { SortHeader, useTableSort } from "./table-sort";
 
 type Draft = Record<string, string | boolean>;
 
@@ -47,6 +48,7 @@ export function CatalogPage({
   const [draft, setDraft] = useState<Draft>(blank);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const sorting = useTableSort(id === "parties" ? "display_name" : "code");
   const [attempt, setAttempt] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -151,7 +153,7 @@ export function CatalogPage({
     }
   }
 
-  const visible = records.filter(
+  const filtered = records.filter(
     (record) =>
       (filter === "all" || record.active === (filter === "active")) &&
       matchesCatalog(query, [
@@ -166,9 +168,16 @@ export function CatalogPage({
         ]),
       ]),
   );
-  const sortField = id === "parties" ? "display_name" : "code";
-  visible.sort((a, b) =>
-    String(a[sortField]).localeCompare(String(b[sortField]), "pt-BR"),
+  const visible = sorting.sorted(filtered, (record, field) =>
+    field === "status"
+      ? record.active
+        ? "Ativo"
+        : pending(record)
+          ? "A completar"
+          : "Inativo"
+      : field === catalog.titleField
+        ? title(record)
+        : format(record, field),
   );
 
   function title(record: RecordData) {
@@ -451,15 +460,29 @@ export function CatalogPage({
                   <table aria-labelledby={`${uid}-records`}>
                     <thead>
                       <tr>
-                        <th scope="col">
-                          {id === "bank-accounts" ? "Nome da conta" : "Nome"}
-                        </th>
+                        <SortHeader
+                          field={catalog.titleField}
+                          label={
+                            id === "bank-accounts" ? "Nome da conta" : "Nome"
+                          }
+                          order={sorting.order}
+                          onChange={sorting.change}
+                        />
                         {columns.map((column) => (
-                          <th key={column.name} scope="col">
-                            {column.label}
-                          </th>
+                          <SortHeader
+                            key={column.name}
+                            field={column.name}
+                            label={column.label}
+                            order={sorting.order}
+                            onChange={sorting.change}
+                          />
                         ))}
-                        <th scope="col">Situação</th>
+                        <SortHeader
+                          field="status"
+                          label="Situação"
+                          order={sorting.order}
+                          onChange={sorting.change}
+                        />
                         <th scope="col">
                           <span className="sr-only">Ações</span>
                         </th>

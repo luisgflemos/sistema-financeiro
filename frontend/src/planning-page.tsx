@@ -6,6 +6,7 @@ import { CatalogSearch } from "./catalog-search";
 import { brl, brazilDate } from "./statement-import";
 import type { RecordData } from "./catalogs";
 import { categoryNature } from "./movement-nature";
+import { SortHeader, useTableSort } from "./table-sort";
 import "./planning.css";
 
 export type PlannedEntry = {
@@ -65,6 +66,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
   const [state, setState] = useState("all");
   const [direction, setDirection] = useState("");
   const [page, setPage] = useState(1);
+  const sorting = useTableSort("due_on");
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -120,6 +122,8 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
       query: search,
       state,
       page: String(page),
+      sort_by: sorting.order.field,
+      sort_order: sorting.order.direction,
     });
     if (direction) params.set("direction", direction);
     api<{ rows: PlannedEntry[]; total: number; totals: typeof totals }>(
@@ -138,7 +142,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [base, search, state, direction, page, refresh]);
+  }, [base, search, state, direction, page, refresh, sorting.order]);
   useEffect(() => {
     const controller = new AbortController();
     Promise.all(
@@ -406,12 +410,25 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
             <table>
               <thead>
                 <tr>
-                  <th>Vencimento</th>
-                  <th>Descrição</th>
-                  <th>Previsto</th>
-                  <th>Realizado</th>
-                  <th>Em aberto</th>
-                  <th>Situação</th>
+                  {[
+                    ["due_on", "Vencimento"],
+                    ["description", "Descrição"],
+                    ["expected_amount", "Previsto"],
+                    ["paid", "Realizado"],
+                    ["outstanding", "Em aberto"],
+                    ["state", "Situação"],
+                  ].map(([field, label]) => (
+                    <SortHeader
+                      key={field}
+                      field={field}
+                      label={label}
+                      order={sorting.order}
+                      onChange={(key) => {
+                        sorting.change(key);
+                        setPage(1);
+                      }}
+                    />
+                  ))}
                   <th>Ações</th>
                 </tr>
               </thead>

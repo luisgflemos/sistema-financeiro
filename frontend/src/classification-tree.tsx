@@ -8,6 +8,7 @@ import { Modal } from "./modal";
 import { TableImport } from "./table-import";
 import { CatalogPage } from "./catalog-page";
 import type { RecordData } from "./catalogs";
+import { SortHeader, useTableSort } from "./table-sort";
 
 type Editor = { category?: RecordData; record?: RecordData; key: number };
 
@@ -26,6 +27,7 @@ export function ClassificationTree({
   const [editor, setEditor] = useState<Editor>({ key: 0 });
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const sorting = useTableSort("name");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
@@ -106,9 +108,27 @@ export function ClassificationTree({
     );
   }
 
-  const ordered = [...categories].sort((a, b) =>
-    String(a.name).localeCompare(String(b.name), "pt-BR"),
-  );
+  function sortValue(record: RecordData, field: string) {
+    if (field === "kind") {
+      const kind = record.category_id
+        ? categories.find((parent) => parent.id === record.category_id)?.kind
+        : record.kind;
+      return (
+        { REVENUE: "Receita", EXPENSE: "Despesa", NEUTRAL: "Neutra" } as Record<
+          string,
+          string
+        >
+      )[String(kind)];
+    }
+    if (field === "status")
+      return record.active
+        ? "Ativo"
+        : record.kind === null
+          ? "A completar"
+          : "Inativo";
+    return record[field];
+  }
+  const ordered = sorting.sorted(categories, sortValue);
   const visible = ordered.filter(
     (parent) =>
       (matches(parent) && textMatches(parent)) ||
@@ -226,10 +246,20 @@ export function ClassificationTree({
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Nome</th>
-                    <th scope="col">Código</th>
-                    <th scope="col">Natureza</th>
-                    <th scope="col">Situação</th>
+                    {[
+                      ["name", "Nome"],
+                      ["code", "Código"],
+                      ["kind", "Natureza"],
+                      ["status", "Situação"],
+                    ].map(([field, label]) => (
+                      <SortHeader
+                        key={field}
+                        field={field}
+                        label={label}
+                        order={sorting.order}
+                        onChange={sorting.change}
+                      />
+                    ))}
                     <th scope="col">
                       <span className="sr-only">Ações</span>
                     </th>
@@ -237,8 +267,9 @@ export function ClassificationTree({
                 </thead>
                 <tbody>
                   {visible.map((parent) => {
-                    const subs = visibleChildren(parent).sort((a, b) =>
-                      String(a.name).localeCompare(String(b.name), "pt-BR"),
+                    const subs = sorting.sorted(
+                      visibleChildren(parent),
+                      sortValue,
                     );
                     const isOpen = expanded.has(parent.id);
                     return (

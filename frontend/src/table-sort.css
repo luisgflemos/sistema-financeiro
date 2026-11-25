@@ -1,0 +1,19 @@
+table .sortable-header-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+}
+table .sortable-header-button:hover,
+table .sortable-header-button[data-active="true"] {
+  color: #08783e;
+}
