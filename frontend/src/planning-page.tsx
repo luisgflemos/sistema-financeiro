@@ -894,6 +894,15 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
               {formError}
             </p>
           )}
+          {formError && !exclusionPreview && (
+            <button
+              type="button"
+              disabled={busy || previewLoading}
+              onClick={() => setExcluding({ ...excluding })}
+            >
+              Atualizar prévia
+            </button>
+          )}
           <div className="actions transaction-save">
             <button
               type="button"
