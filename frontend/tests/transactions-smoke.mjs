@@ -414,9 +414,15 @@ try {
   }
   await page.getByLabel("Quantidade de ocorrências", { exact: true }).fill("2");
   await page
-    .getByRole("button", { name: "Salvar Lançamento", exact: true })
+    .getByRole("button", { name: "Criar 2 Lançamentos", exact: true })
     .click();
   await page.getByRole("row").filter({ hasText: "31/01/2027" }).waitFor();
+  const recurrence = await api(base + "/planned-entries");
+  assert.equal(recurrence.total, 2);
+  assert.deepEqual(
+    recurrence.rows.map((row) => row.due_on),
+    ["2027-01-31", "2027-02-28"],
+  );
   assert.equal(
     (await api(base + "/transactions?state=all")).total,
     2,

@@ -7,6 +7,7 @@ import { brl, brazilDate } from "./statement-import";
 import type { RecordData } from "./catalogs";
 import { categoryNature } from "./movement-nature";
 import { SortHeader, useTableSort } from "./table-sort";
+import { MoneyInput, moneyDecimal } from "./money-input";
 import "./planning.css";
 
 export type PlannedEntry = {
@@ -187,6 +188,9 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
       [key]: value,
       ...(key === "category_id" ? { subcategory_id: "" } : {}),
       ...(key === "frequency" && value === "ONCE" ? { occurrences: "1" } : {}),
+      ...(key === "frequency" && value !== "ONCE" && old.occurrences === "1"
+        ? { occurrences: "2" }
+        : {}),
     }));
   }
   function start(direction: string, record: PlannedEntry | null = null) {
@@ -209,6 +213,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
     setForm(true);
   }
   async function save() {
+    if (busy) return;
     setBusy(true);
     setFormError("");
     try {
@@ -232,10 +237,9 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
             )
             .map(([key, value]) => [key, value || null]),
         ),
-        expected_amount: draft.expected_amount.includes(",")
-          ? draft.expected_amount.replaceAll(".", "").replace(",", ".")
-          : draft.expected_amount,
+        expected_amount: moneyDecimal(draft.expected_amount),
       };
+      let created = 0;
       if (editing)
         await api(base + "/planned-entries/" + editing.id, {
           method: "PUT",
@@ -244,20 +248,25 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
             expected_version: editing.version,
           }),
         });
-      else
-        await api(base + "/planned-entries", {
-          method: "POST",
-          body: JSON.stringify({
-            ...payload,
-            frequency,
-            occurrences: Number(occurrences),
-            request_key: requestKey,
-          }),
-        });
+      else {
+        const result = await api<{ created: number; repeated: boolean }>(
+          base + "/planned-entries",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              ...payload,
+              frequency,
+              occurrences: Number(occurrences),
+              request_key: requestKey,
+            }),
+          },
+        );
+        created = result.created;
+      }
       setNotice(
         editing
           ? "Lançamento atualizado."
-          : `${occurrences} lançamento(s) previsto(s) criado(s).`,
+          : `${created} lançamento(s) previsto(s) criado(s).`,
       );
       setForm(false);
       setRefresh((v) => v + 1);
@@ -528,6 +537,13 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
         >
           <form
             className="planning-form"
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter" &&
+                event.target instanceof HTMLInputElement
+              )
+                event.preventDefault();
+            }}
             onSubmit={(event) => {
               event.preventDefault();
               void save();
@@ -535,7 +551,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
           >
             <fieldset disabled={busy}>
               <div className="fields">
-                <label>
+                <label className="planning-description">
                   Descrição
                   <input
                     required
@@ -555,12 +571,9 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                 </label>
                 <label>
                   Valor previsto (R$)
-                  <input
-                    required
-                    inputMode="decimal"
-                    placeholder="0,00"
+                  <MoneyInput
                     value={draft.expected_amount}
-                    onChange={(e) => update("expected_amount", e.target.value)}
+                    onChange={(value) => update("expected_amount", value)}
                   />
                 </label>
                 {[
@@ -570,7 +583,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                   ["party_id", "Cliente / Fornecedor (opcional)", "parties"],
                   ["account_id", "Conta prevista (opcional)", "bank-accounts"],
                 ].map(([key, label, table]) => (
-                  <div className="field" key={key}>
+                  <div className={"field planning-field-" + key} key={key}>
                     <label htmlFor={"planned-" + key}>{label}</label>
                     <SearchSelect
                       id={"planned-" + key}
@@ -615,24 +628,21 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                         ]}
                       />
                     </div>
-                    {draft.frequency !== "ONCE" && (
-                      <label>
-                        Quantidade de ocorrências
-                        <input
-                          type="number"
-                          required
-                          min={1}
-                          max={120}
-                          value={draft.occurrences}
-                          onChange={(e) =>
-                            update("occurrences", e.target.value)
-                          }
-                        />
-                      </label>
-                    )}
+                    <label>
+                      Quantidade de ocorrências
+                      <input
+                        type="number"
+                        disabled={draft.frequency === "ONCE"}
+                        required
+                        min={1}
+                        max={120}
+                        value={draft.occurrences}
+                        onChange={(e) => update("occurrences", e.target.value)}
+                      />
+                    </label>
                   </>
                 )}
-                <label>
+                <label className="planning-notes">
                   Descrição Complementar (opcional)
                   <textarea
                     rows={2}
@@ -642,6 +652,20 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                   />
                 </label>
               </div>
+              {!editing && (
+                <p className="planning-recurrence-summary" role="status">
+                  <strong>
+                    {draft.frequency === "ONCE"
+                      ? "1 lançamento"
+                      : `${draft.occurrences || "—"} lançamentos ${draft.frequency === "MONTHLY" ? "mensais" : draft.frequency === "WEEKLY" ? "semanais" : "anuais"}`}
+                  </strong>
+                  {" · "}
+                  {draft.expected_amount
+                    ? brl(moneyDecimal(draft.expected_amount))
+                    : "Informe o valor"}{" "}
+                  por ocorrência. A quantidade inclui o primeiro vencimento.
+                </p>
+              )}
               {editing && (
                 <p className="page-subtitle">
                   A alteração vale somente para esta ocorrência.
@@ -649,7 +673,11 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
               )}
               <div className="actions transaction-save">
                 <button className="primary">
-                  {busy ? "Salvando…" : "Salvar Lançamento"}
+                  {busy
+                    ? "Salvando…"
+                    : !editing && draft.frequency !== "ONCE"
+                      ? `Criar ${draft.occurrences || "—"} Lançamentos`
+                      : "Salvar Lançamento"}
                 </button>
                 <button type="button" onClick={() => setForm(false)}>
                   Cancelar
