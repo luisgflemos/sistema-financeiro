@@ -106,7 +106,6 @@ def test_select_all_respects_filters_and_has_no_page_limit(statements):
     """),
         {"id": rows[0]["id"]},
     )
-    connection.commit()
     url = base + "/transactions?state=all&query=SELECAO&direction=CREDIT"
     page = client.get(url).json()
     assert page["total"] == 105 and len(page["rows"]) == 100

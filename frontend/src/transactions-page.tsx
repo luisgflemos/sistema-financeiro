@@ -728,7 +728,7 @@ export function TransactionsPage({
                       {brazilDate(row.posted_on)}
                       <small>{row.account_label}</small>
                     </td>
-                    <td>
+                    <td className="transaction-description">
                       {row.raw_description}
                       {row.movement_kind !== "AUTOMATIC_PROCESS" &&
                         (row.party_name ||

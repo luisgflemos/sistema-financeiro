@@ -82,7 +82,7 @@ def exclude(organization_id: UUID, payload: Exclusion, request: Request):
         if summary["blocked"]:
             raise HTTPException(
                 409,
-                "Existem baixas ou movimentos compartilhados com outro extrato. Nenhum registro foi excluído. Desvincule as baixas antes; registros com histórico de baixa permanecem protegidos.",
+                "Existem registros com histórico de baixa ou compartilhados com outro extrato. Nenhum registro foi excluído. Revise a seleção; o histórico de baixa permanece protegido mesmo após um estorno.",
             )
         batch, user = uuid4(), actor(connection)
         connection.execute(

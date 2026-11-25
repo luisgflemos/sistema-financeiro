@@ -9,6 +9,9 @@ depends_on = None
 
 
 def upgrade():
+    op.execute(
+        "CREATE INDEX ix_statement_rows_transaction ON statement_rows(transaction_id, import_file_id)"
+    )
     op.execute("""
         CREATE TABLE transaction_exclusions (
             transaction_id uuid PRIMARY KEY REFERENCES bank_transactions(id),
@@ -31,3 +34,4 @@ def upgrade():
 def downgrade():
     op.execute("DROP VIEW active_bank_transactions")
     op.drop_table("transaction_exclusions")
+    op.drop_index("ix_statement_rows_transaction", table_name="statement_rows")
