@@ -99,7 +99,15 @@ def test_baixas_block_entire_selection_and_changed_preview_is_rejected(statement
     assert preview["blocked"] == 1
     assert remove(client, base, rows[0], body).status_code == 409
     assert client.get(base + "/planned-entries").json()["total"] == 4
-    assert connection.scalar(text("SELECT count(*) FROM audit_events WHERE action='exclude'")) == 0
+    assert (
+        connection.scalar(
+            text(
+                "SELECT count(*) FROM audit_events WHERE action='exclude' AND organization_id=:org"
+            ),
+            {"org": base.split("/")[2]},
+        )
+        == 0
+    )
     assert (
         client.post(base + f"/planned-entries/links/{movement['id']}/reverse", json={}).status_code
         == 200
