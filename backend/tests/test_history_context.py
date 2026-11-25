@@ -119,7 +119,7 @@ def test_targeted_recheck_appends_suggestions_without_confirming_bank_data(state
         assert context["historical_analysis"]["records_scanned"] == 4
         return [
             {
-                **{key: values[key] for key in recognition.IDENT_FIELDS},
+                **{key: values.get(key) for key in recognition.IDENT_FIELDS},
                 "transaction_id": current["id"],
                 "reason": "Exemplo sintético",
                 "confidence": "HIGH",
