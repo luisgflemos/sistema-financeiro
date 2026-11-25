@@ -90,6 +90,7 @@ def test_recurring_exclusion_preserves_previous_occurrences_and_idempotent_serie
 def test_baixas_block_entire_selection_and_changed_preview_is_rejected(statements):
     client, connection, base, _ = statements
     movement = next(row for row in imported(client, base) if row["direction"] == "CREDIT")
+    original = client.get(base + "/transactions?state=all").json()
     rows, _ = new_plan(client, base, frequency="MONTHLY", occurrences=4)
     before, _ = selection(client, base, rows[0], "following")
     assert link(client, base, rows[2], movement).status_code == 200
@@ -116,4 +117,12 @@ def test_baixas_block_entire_selection_and_changed_preview_is_rejected(statement
         ).status_code
         == 404
     )
-    assert client.get(base + "/transactions?state=all").json()["total"] == 2
+    after = client.get(base + "/transactions?state=all").json()
+    assert after["total"] == original["total"]
+    assert {
+        (row["id"], row["amount"], row["raw_description"], row["posted_on"])
+        for row in after["rows"]
+    } == {
+        (row["id"], row["amount"], row["raw_description"], row["posted_on"])
+        for row in original["rows"]
+    }
