@@ -185,6 +185,77 @@ try {
   assert.ok(
     changed.rows.slice(1).every((row) => row.expected_amount === "500.00"),
   );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const firstRow = page.getByRole("row").filter({ hasText: "27/11/2026" });
+  await firstRow.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Cancelar Lançamento", exact: true })
+    .getByRole("button", { name: "Confirmar cancelamento", exact: true })
+    .click();
+  await firstRow.waitFor({ state: "hidden" });
+  assert.equal((await api(base + "/planned-entries?state=active")).total, 3);
+  await page
+    .getByLabel("Situação dos lançamentos", { exact: true })
+    .fill("Todas");
+  await page
+    .getByRole("option", { name: "Todas as situações", exact: true })
+    .click();
+  await firstRow.getByText("Cancelado", { exact: true }).waitFor();
+  assert.equal(await firstRow.locator(".planning-state-cancelled").count(), 1);
+  assert.equal(await page.locator(".planning-state-open").count(), 3);
+  const colours = await page
+    .locator(".planning-state-cancelled, .planning-state-open")
+    .evaluateAll((items) =>
+      items.map((item) => getComputedStyle(item).backgroundColor),
+    );
+  assert.equal(new Set(colours).size, 2);
+  await page.screenshot({
+    path: "import-layout-planning-states.png",
+    fullPage: true,
+  });
+  await firstRow.getByRole("button", { name: "Excluir", exact: true }).click();
+  const exclusion = page.getByRole("dialog", {
+    name: "Excluir Lançamento",
+    exact: true,
+  });
+  await exclusion
+    .getByRole("status")
+    .filter({ hasText: "1 lançamento(s) selecionado(s)" })
+    .waitFor();
+  await exclusion
+    .getByRole("button", { name: "Confirmar exclusão", exact: true })
+    .click();
+  await exclusion.waitFor({ state: "hidden" });
+  await firstRow.waitFor({ state: "hidden" });
+  assert.equal((await api(base + "/planned-entries?state=all")).total, 3);
+  const third = page.getByRole("row").filter({ hasText: "27/01/2027" });
+  await third.getByRole("button", { name: "Excluir", exact: true }).click();
+  await exclusion
+    .getByLabel("Quais ocorrências excluir?", { exact: true })
+    .fill("próximas");
+  await page
+    .getByRole("option", {
+      name: "Esta e as próximas ocorrências",
+      exact: true,
+    })
+    .click();
+  await exclusion
+    .getByRole("status")
+    .filter({ hasText: "2 lançamento(s) selecionado(s)" })
+    .waitFor();
+  await page.screenshot({
+    path: "import-layout-planning-exclusion.png",
+    fullPage: true,
+  });
+  await exclusion
+    .getByRole("button", { name: "Confirmar exclusão", exact: true })
+    .click();
+  await exclusion.waitFor({ state: "hidden" });
+  await third.waitFor({ state: "hidden" });
+  const remaining = await api(base + "/planned-entries?state=all");
+  assert.equal(remaining.total, 1);
+  assert.equal(remaining.rows[0].due_on, "2026-12-27");
+  assert.equal(remaining.totals.payable, "500.00");
 } catch (error) {
   await page.screenshot({
     path: "import-layout-recurring-error.png",

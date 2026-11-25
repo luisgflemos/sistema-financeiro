@@ -30,6 +30,7 @@ export type PlannedEntry = {
   party_id: string | null;
   account_id: string | null;
   notes: string | null;
+  can_delete: boolean;
 };
 const labels: Record<string, string> = {
   open: "Em aberto",
@@ -86,7 +87,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
   });
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
-  const [state, setState] = useState("all");
+  const [state, setState] = useState("active");
   const [direction, setDirection] = useState("");
   const [page, setPage] = useState(1);
   const sorting = useTableSort("due_on");
@@ -102,6 +103,17 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
   const [cancelling, setCancelling] = useState<PlannedEntry | null>(null);
+  const [excluding, setExcluding] = useState<PlannedEntry | null>(null);
+  const [exclusionScope, setExclusionScope] = useState("current");
+  const [exclusionPreview, setExclusionPreview] = useState<{
+    count: number;
+    blocked: number;
+    revision: string;
+    version: number;
+    first_due_on: string;
+    last_due_on: string;
+  } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [detail, setDetail] = useState<PlannedEntry | null>(null);
   const [settlements, setSettlements] = useState<
     {
@@ -114,6 +126,29 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
       account_label: string;
     }[]
   >([]);
+  useEffect(() => {
+    if (!excluding) return;
+    const controller = new AbortController();
+    setExclusionPreview(null);
+    setPreviewLoading(true);
+    setFormError("");
+    api<NonNullable<typeof exclusionPreview>>(
+      base +
+        "/planned-entries/" +
+        excluding.id +
+        "/exclusion-preview?scope=" +
+        exclusionScope,
+      { signal: controller.signal },
+    )
+      .then(setExclusionPreview)
+      .catch((error) => {
+        if (!controller.signal.aborted) setFormError(error.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setPreviewLoading(false);
+      });
+    return () => controller.abort();
+  }, [base, excluding, exclusionScope]);
   useEffect(() => {
     if (!form || !catalogs.categories) return;
     setDraft((previous) => {
@@ -316,6 +351,35 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
       setBusy(false);
     }
   }
+  async function exclude() {
+    if (!excluding || !exclusionPreview || previewLoading || busy) return;
+    setBusy(true);
+    setFormError("");
+    try {
+      const result = await api<{ excluded: number }>(
+        base + "/planned-entries/" + excluding.id + "/exclude",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            scope: exclusionScope,
+            expected_version: exclusionPreview.version,
+            expected_revision: exclusionPreview.revision,
+          }),
+        },
+      );
+      setExcluding(null);
+      setPage(1);
+      setRefresh((value) => value + 1);
+      setNotice(
+        `${result.excluded} lançamento(s) excluído(s). Auditoria preservada.`,
+      );
+    } catch (error) {
+      setFormError((error as Error).message);
+      setExclusionPreview(null);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function showDetail(row: PlannedEntry) {
     setError("");
     setFormError("");
@@ -403,6 +467,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
               setPage(1);
             }}
             options={[
+              { value: "active", label: "Sem cancelados" },
               { value: "all", label: "Todas as situações" },
               ...Object.entries(labels).map(([value, label]) => ({
                 value,
@@ -465,7 +530,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.id}>
+                  <tr key={row.id} className={"planning-row-" + row.state}>
                     <td>{brazilDate(row.due_on)}</td>
                     <td>
                       <strong>{row.description}</strong>
@@ -483,8 +548,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                     <td>
                       <span
                         className={
-                          "transaction-state transaction-state-" +
-                          (row.state === "realized" ? "identified" : "pending")
+                          "transaction-state planning-state-" + row.state
                         }
                       >
                         {labels[row.state]}
@@ -522,6 +586,24 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                             Cancelar
                           </button>
                         )}
+                        <button
+                          type="button"
+                          className="text-button planning-delete"
+                          disabled={!row.can_delete}
+                          title={
+                            row.can_delete
+                              ? "Excluir lançamento criado por engano"
+                              : "Lançamentos com histórico de baixas não podem ser excluídos"
+                          }
+                          onClick={() => {
+                            setExclusionScope("current");
+                            setExclusionPreview(null);
+                            setFormError("");
+                            setExcluding(row);
+                          }}
+                        >
+                          Excluir
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -727,7 +809,11 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
             Cancelar o saldo em aberto de{" "}
             <strong>{cancelling.description}</strong>?
           </p>
-          <p>As baixas já realizadas e o histórico serão preservados.</p>
+          <p>
+            Use quando a obrigação ou o recebimento previsto deixou de existir.
+            O saldo sai da projeção; as baixas já realizadas e o histórico serão
+            preservados.
+          </p>
           <div className="actions">
             <button
               className="primary"
@@ -745,6 +831,91 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
               {formError}
             </p>
           )}
+        </Modal>
+      )}
+      {excluding && (
+        <Modal
+          title="Excluir Lançamento"
+          busy={busy}
+          onClose={() => setExcluding(null)}
+        >
+          <p>
+            Excluir <strong>{excluding.description}</strong> da listagem e das
+            projeções?
+          </p>
+          <p>
+            Use para registros feitos por engano ou em duplicidade. A auditoria
+            será preservada.
+          </p>
+          {excluding.occurrences > 1 && (
+            <div className="field">
+              <label htmlFor="exclusion-scope">
+                Quais ocorrências excluir?
+              </label>
+              <SearchSelect
+                id="exclusion-scope"
+                value={exclusionScope}
+                disabled={busy}
+                onChange={(value) => {
+                  setExclusionPreview(null);
+                  setExclusionScope(value);
+                }}
+                options={[
+                  { value: "current", label: "Somente esta ocorrência" },
+                  {
+                    value: "following",
+                    label: "Esta e as próximas ocorrências",
+                  },
+                ]}
+              />
+            </div>
+          )}
+          {previewLoading && <p role="status">Conferindo lançamentos…</p>}
+          {exclusionPreview && (
+            <div className="planning-exclusion-preview" role="status">
+              <strong>
+                {exclusionPreview.count} lançamento(s) selecionado(s)
+              </strong>
+              <p>
+                {brazilDate(exclusionPreview.first_due_on)} a{" "}
+                {brazilDate(exclusionPreview.last_due_on)}
+              </p>
+              {!!exclusionPreview.blocked && (
+                <p className="error">
+                  {exclusionPreview.blocked} lançamento(s) com histórico de
+                  baixas. A seleção inteira está bloqueada; nenhuma ocorrência
+                  será excluída.
+                </p>
+              )}
+            </div>
+          )}
+          {formError && (
+            <p role="alert" className="error">
+              {formError}
+            </p>
+          )}
+          <div className="actions transaction-save">
+            <button
+              type="button"
+              className="planning-danger"
+              disabled={
+                busy ||
+                previewLoading ||
+                !exclusionPreview ||
+                !!exclusionPreview.blocked
+              }
+              onClick={() => void exclude()}
+            >
+              {busy ? "Excluindo…" : "Confirmar exclusão"}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setExcluding(null)}
+            >
+              Voltar
+            </button>
+          </div>
         </Modal>
       )}
       {detail && (

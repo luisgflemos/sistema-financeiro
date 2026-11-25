@@ -26,6 +26,7 @@ router = APIRouter(prefix="/organizations/{organization_id}/planned-entries", ta
 
 SUMMARY = """
     SELECT e.*, COALESCE(s.paid, 0) AS paid, COALESCE(s.finished, false) AS finished,
+        NOT EXISTS(SELECT 1 FROM entry_settlements h WHERE h.entry_id=e.id) AS can_delete,
         p.display_name AS party_name, a.label AS account_label,
         c.name AS category_name, sub.name AS subcategory_name, cc.name AS cost_center_name
     FROM planned_entries e
@@ -76,6 +77,11 @@ class Version(BaseModel):
     expected_version: int = Field(ge=1)
 
 
+class Exclusion(Version):
+    scope: Literal["current", "following"] = "current"
+    expected_revision: str = Field(min_length=64, max_length=64)
+
+
 class Settlement(BaseModel):
     model_config = ConfigDict(extra="forbid")
     transaction_id: UUID
@@ -119,7 +125,7 @@ def present(row):
 def entry(connection, org, identifier):
     row = (
         connection.execute(
-            text(SUMMARY + " WHERE e.id=:id AND e.organization_id=:org"),
+            text(SUMMARY + " WHERE e.id=:id AND e.organization_id=:org AND e.deleted_at IS NULL"),
             {"id": identifier, "org": org},
         )
         .mappings()
@@ -230,7 +236,7 @@ def create(organization_id: UUID, payload: NewEntry, request: Request):
 def listing(
     organization_id: UUID,
     request: Request,
-    state: Literal["all", "open", "partial", "realized", "cancelled"] = "all",
+    state: Literal["all", "active", "open", "partial", "realized", "cancelled"] = "all",
     direction: Literal["CREDIT", "DEBIT"] | None = None,
     query: str = Query(default="", max_length=200),
     page: int = Query(default=1, ge=1),
@@ -248,7 +254,7 @@ def listing(
         params = {"org": organization_id, "direction": direction}
         sql = (
             SUMMARY
-            + " WHERE e.organization_id=:org AND (CAST(:direction AS text) IS NULL OR e.direction=:direction)"
+            + " WHERE e.organization_id=:org AND e.deleted_at IS NULL AND (CAST(:direction AS text) IS NULL OR e.direction=:direction)"
         )
         words = "".join(
             c for c in unicodedata.normalize("NFD", query.lower()) if not unicodedata.combining(c)
@@ -260,7 +266,9 @@ def listing(
             present(row)
             for row in connection.execute(text(sql + " ORDER BY e.due_on,e.id"), params).mappings()
         ]
-        if state == "open":
+        if state == "active":
+            rows = [row for row in rows if row["state"] != "cancelled"]
+        elif state == "open":
             rows = [row for row in rows if row["state"] in ("open", "partial")]
         elif state != "all":
             rows = [row for row in rows if row["state"] == state]
@@ -338,6 +346,85 @@ def cancel(organization_id: UUID, entry_id: UUID, payload: Version, request: Req
         )
         audit(connection, organization_id, "planned_entries", entry_id, "cancel", old)
         return entry(connection, organization_id, entry_id)
+
+
+def exclusion_selection(connection, org, old, scope):
+    condition = (
+        "e.id=:id" if scope == "current" else "e.series_id=:series AND e.occurrence>=:occurrence"
+    )
+    rows = [
+        present(row)
+        for row in connection.execute(
+            text(
+                SUMMARY
+                + " WHERE e.organization_id=:org AND e.deleted_at IS NULL AND "
+                + condition
+                + " ORDER BY e.occurrence"
+            ),
+            {
+                "org": org,
+                "id": old["id"],
+                "series": old["series_id"],
+                "occurrence": old["occurrence"],
+            },
+        ).mappings()
+    ]
+    # Revisão otimista de toda a seleção: não excluir parcelas alteradas após a prévia.
+    revision = hashlib.sha256(
+        json.dumps([[str(row["id"]), row["version"], row["can_delete"]] for row in rows]).encode()
+    ).hexdigest()
+    return rows, revision
+
+
+@router.get("/{entry_id}/exclusion-preview")
+def exclusion_preview(
+    organization_id: UUID,
+    entry_id: UUID,
+    request: Request,
+    scope: Literal["current", "following"] = "current",
+):
+    with request.app.state.database.begin() as connection:
+        lock_organization(connection, organization_id)
+        old = entry(connection, organization_id, entry_id)
+        rows, revision = exclusion_selection(connection, organization_id, old, scope)
+        return {
+            "count": len(rows),
+            "blocked": sum(not row["can_delete"] for row in rows),
+            "revision": revision,
+            "version": old["version"],
+            "first_due_on": rows[0]["due_on"],
+            "last_due_on": rows[-1]["due_on"],
+        }
+
+
+@router.post("/{entry_id}/exclude")
+def exclude(organization_id: UUID, entry_id: UUID, payload: Exclusion, request: Request):
+    with request.app.state.database.begin() as connection:
+        lock_organization(connection, organization_id)
+        old = entry(connection, organization_id, entry_id)
+        rows, revision = exclusion_selection(connection, organization_id, old, payload.scope)
+        if old["version"] != payload.expected_version or revision != payload.expected_revision:
+            raise HTTPException(409, "A seleção mudou. Atualize a prévia antes de excluir.")
+        if any(not row["can_delete"] for row in rows):
+            raise HTTPException(
+                409,
+                "A seleção possui histórico de baixas e não pode ser excluída. Nenhum lançamento foi excluído.",
+            )
+        for row in rows:
+            connection.execute(
+                text("UPDATE planned_entries SET deleted_at=now(),version=version+1 WHERE id=:id"),
+                {"id": row["id"]},
+            )
+            audit(
+                connection,
+                organization_id,
+                "planned_entries",
+                row["id"],
+                "exclude",
+                row,
+                {"scope": payload.scope, "source_entry_id": str(entry_id)},
+            )
+        return {"excluded": len(rows)}
 
 
 @router.get("/links/{transaction_id}")

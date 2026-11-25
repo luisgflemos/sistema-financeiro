@@ -60,6 +60,47 @@
   margin-top: 4px;
   font-weight: 400;
 }
+.planning-state-open {
+  background: #fef3c7;
+  color: #854d0e;
+}
+.planning-state-partial {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.planning-state-realized {
+  background: #dcfce7;
+  color: #166534;
+}
+.planning-state-cancelled {
+  background: #e5e7eb;
+  color: #475569;
+}
+.planning-row-cancelled {
+  background: #f8fafc;
+  color: #64748b;
+}
+.planning-row-cancelled strong {
+  font-weight: 500;
+}
+.planning-delete:not(:disabled) {
+  color: #991b1b;
+}
+.planning-exclusion-preview {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+button.planning-danger {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: white;
+}
+button.planning-danger:hover:not(:disabled) {
+  background: #991b1b;
+}
 .planning-link {
   display: grid;
   gap: 8px;
