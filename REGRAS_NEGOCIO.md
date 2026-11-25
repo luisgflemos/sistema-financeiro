@@ -21,7 +21,7 @@
 | RN-015 | APROVADA | Rendimentos reais de aplicações e tributos/tarifas associados são fatos financeiros distintos dos Processos Automáticos e devem ser classificados normalmente. |
 | RN-016 | APROVADA | Projeções de caixa usam tendências dos grupos de contas; DRE gerencial deve ser gerada a partir da classificação. |
 | RN-017 | APROVADA | Conta bancária e centro de custos são dimensões independentes; permitir visão por unidade e consolidada. |
-| RN-018 | PROPOSTA | Padrões de alta confiança, sem conflito, podem ser reconhecidos automaticamente; demais padrões geram sugestões com confirmação. A política exata de confiança ainda precisa ser aprovada. |
+| RN-018 | APROVADA | Durante o período de validação, nenhum movimento é aprovado automaticamente, mesmo com alta confiança ou padrão histórico unânime. Todo reconhecimento gera somente sugestão em Importar Extrato; apenas a confirmação explícita do operador envia ao Histórico. Sem reativação automática por prazo. |
 | RN-019 | PROPOSTA | Regras automáticas recebem versão, vigência, prioridade e trilha de confirmação/edição. |
 | RN-020 | PROPOSTA | Em rateio por faturamento, usar último mês fechado se o atual estiver aberto, sinalizando a origem dos valores. |
 | RN-021 | PROPOSTA | Ajustes de rateio exigem soma exata de 100% ou valor total do lançamento, com ajuste de arredondamento na última parcela. |
@@ -73,7 +73,7 @@ A diferença de R$ 5.000 corresponde à movimentação líquida entre conta corr
 
 - Movimentos normais de crédito aceitam classificações de Receita; débitos, de Despesa. A mesma validação vale para lançamentos previstos e sugestões de reconhecimento.
 - Transferências entre contas próprias aceitam somente classificações Neutras quando informadas, sem obrigatoriedade de centro de custos ou outros vínculos gerenciais.
-- Processos Automáticos são neutros pelo próprio tratamento e dispensam classificação, subclassificação, centro de custos e cliente/fornecedor. Dimensões residuais são limpas ao salvar; informações originais do banco são preservadas. Sugestão generativa continua exigindo confirmação; padrões confiáveis já confirmados podem reconhecer automaticamente.
+- Processos Automáticos são neutros pelo próprio tratamento e dispensam classificação, subclassificação, centro de custos e cliente/fornecedor. Dimensões residuais são limpas ao salvar; informações originais do banco são preservadas. No período de validação, sugestões generativas e padrões históricos exigem confirmação explícita do operador, inclusive para transferências e Processos Automáticos.
 
 - Sugerir não é confirmar; indicar o estado visual com clareza.
 - Exibir motivo da associação e da classificação quando automática.

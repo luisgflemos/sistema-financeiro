@@ -27,7 +27,6 @@ from app.transactions import (
     IDENT_FIELDS,
     LATEST,
     Identification,
-    save_identification,
     transaction,
     validate_identification,
 )
@@ -73,7 +72,8 @@ def generative_suggestions(context):
         },
     }
     instructions = (
-        "Você identifica movimentos bancários da Finare, em pt-BR. Priorize sempre o cliente específico. "
+        "Você sugere identificações bancárias da Finare, em pt-BR. Durante a validação, "
+        "nenhuma sugestão, mesmo HIGH, é aprovada automaticamente. Priorize sempre o cliente específico. "
         "customer_group_id é alternativa apenas quando não é possível identificar o cliente/loja: "
         "nunca retorne party_id e customer_group_id juntos. Clientes do mesmo grupo podem ter pagadores distintos; "
         "pertencer ao grupo não apaga um padrão específico. Nunca escolha uma filial arbitrariamente. "
@@ -282,37 +282,24 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
     patterns = defaultdict(list)
     for row in history:
         patterns[pattern_key(row)].append(row)
-    automated, remaining = [], []
+    # Padrões também são sugestões: nenhuma análise confirma movimentos.
+    remaining = pending
+    pattern_items = []
     for row in pending:
         examples = patterns[pattern_key(row)]
-        if (
-            not targeted
-            and len(examples) >= 3
-            and len({suggested_tuple(item) for item in examples}) == 1
-        ):
+        if len(examples) >= 3 and len({suggested_tuple(item) for item in examples}) == 1:
             candidate = {key: examples[0][key] for key in IDENT_FIELDS}
-            candidate["expected_version"] = 0
-            with request.app.state.database.begin() as connection:
-                lock_organization(connection, organization_id)
-                current = transaction(connection, organization_id, row["id"])
-                if current.get("version"):
-                    continue
-                try:
-                    save_identification(
-                        connection,
-                        organization_id,
-                        current,
-                        Identification(**candidate),
-                        "PATTERN",
-                    )
-                    automated.append(str(row["id"]))
-                except HTTPException:
-                    remaining.append(row)
-        else:
-            remaining.append(row)
-    if not remaining or not api_key():
+            pattern_items.append(
+                {
+                    **candidate,
+                    "transaction_id": str(row["id"]),
+                    "confidence": "HIGH",
+                    "reason": f"Padrão encontrado em {len(examples)} movimentos confirmados. Confira os vínculos antes de confirmar.",
+                }
+            )
+    if not remaining or (not api_key() and not pattern_items):
         return {
-            "automatic": len(automated),
+            "automatic": 0,
             "suggestions": 0,
             "ai_enabled": bool(api_key()),
             "processed": len(pending),
@@ -346,17 +333,21 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
             for row in prioritized + relevant_history(history, remaining)
         }.values()
     )[:150]
-    items, model = generative_suggestions(
-        {
-            "movements": [compact(row) for row in remaining],
-            "confirmed_examples": [compact(row) for row in chosen],
-            "historical_analysis": full_overview(base_history),
-            "evidence_by_movement": evidence,
-            "catalogs": catalogs,
-        }
-    )
+    context = {
+        "movements": [compact(row) for row in remaining],
+        "confirmed_examples": [compact(row) for row in chosen],
+        "historical_analysis": full_overview(base_history),
+        "evidence_by_movement": evidence,
+        "catalogs": catalogs,
+    }
+    if api_key():
+        items, model = generative_suggestions(context)
+    else:
+        items, model = [], "historical-pattern-review"
     if not isinstance(items, list) or len(items) > 20:
         raise HTTPException(502, "A IA retornou um resultado inválido.")
+    returned = {item.get("transaction_id") for item in items if isinstance(item, dict)}
+    items = items + [item for item in pattern_items if item["transaction_id"] not in returned]
     allowed = {str(row["id"]) for row in remaining}
     accepted = set()
     updated = []
@@ -402,6 +393,18 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
             confidence = reviewed_confidence(confidence, values, facts)
             reason = evidence_reason(facts, catalogs) or reason
             if (
+                current["direction"] == "CREDIT"
+                and payload.movement_kind == "NORMAL"
+                and re.search(r"\bPIX\b", current["raw_description"], re.IGNORECASE)
+                and not payload.party_id
+                and not payload.customer_group_id
+            ):
+                if confidence == "HIGH":
+                    confidence = "MEDIUM"
+                reason = (
+                    reason or ""
+                ) + " Cliente ou grupo não identificado. Complete esse vínculo antes de confirmar."
+            if (
                 confidence not in {"HIGH", "MEDIUM", "LOW"}
                 or not isinstance(reason, str)
                 or not reason.strip()
@@ -435,7 +438,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 }
             )
     return {
-        "automatic": len(automated),
+        "automatic": 0,
         "suggestions": len(accepted),
         "ai_enabled": True,
         "processed": len(pending),

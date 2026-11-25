@@ -448,8 +448,7 @@ export function TransactionsPage({
       "A IA está analisando os movimentos. Você pode continuar trabalhando.",
     );
     setError("");
-    let automatic = 0,
-      suggestions = 0;
+    let suggestions = 0;
     const attempted: string[] = [];
     try {
       for (let iteration = 0; iteration < 500; iteration++) {
@@ -468,16 +467,13 @@ export function TransactionsPage({
           return;
         }
         attempted.push(...data.analyzed);
-        automatic += data.automatic;
         suggestions += data.suggestions;
         setRefresh((value) => value + 1);
         if (data.processed < 20) break;
       }
       setNotice(
-        automatic +
-          " identificações por padrões confirmados e " +
-          suggestions +
-          " sugestões da IA para revisar.",
+        suggestions +
+          " sugestões para revisar. Nenhum movimento foi aprovado automaticamente.",
       );
     } catch (problem) {
       setError((problem as Error).message);
@@ -502,6 +498,10 @@ export function TransactionsPage({
         label: String(row.display_name ?? row.label ?? row.name ?? row.code),
       }));
   }
+  const showCustomerGroup =
+    selected?.direction === "CREDIT" &&
+    draft.movement_kind === "NORMAL" &&
+    !draft.party_id;
   const fieldLabels = [
     ["party_id", "Cliente / Fornecedor (opcional)", "parties"],
     ["category_id", "Classificação", "categories"],
@@ -550,7 +550,7 @@ export function TransactionsPage({
           <p className="page-subtitle">
             {mode === "history"
               ? "Movimentos bancários importados, com identificação e rastreabilidade."
-              : "Importe os extratos e identifique os movimentos pendentes."}
+              : "Período de validação: todas as sugestões aguardam sua confirmação."}
           </p>
         </div>
         {mode === "history" && (
@@ -1198,62 +1198,59 @@ export function TransactionsPage({
                         />
                       </div>
                     ))}
-                    <div className="field complementary-field">
+                    {showCustomerGroup && (
+                      <div className={"field" + aiClass("customer_group_id")}>
+                        <label htmlFor="identify-customer-group">
+                          Grupo de Clientes (opcional)
+                          {aiBadge("customer_group_id")}
+                        </label>
+                        <SearchSelect
+                          id="identify-customer-group"
+                          ariaLabel="Grupo de Clientes (opcional)"
+                          value={draft.customer_group_id}
+                          options={[
+                            { value: "", label: "Sem grupo" },
+                            ...(catalogs["customer-groups"] ?? [])
+                              .filter((g) => g.active)
+                              .map((g) => ({
+                                value: g.id,
+                                label: String(g.name),
+                              })),
+                          ]}
+                          onChange={(value) => {
+                            manualFields("customer_group_id");
+                            setDraft({ ...draft, customer_group_id: value });
+                          }}
+                        />
+                        {draft.customer_group_id && (
+                          <small>
+                            Cliente/loja não identificado. Vinculado somente ao
+                            grupo.
+                          </small>
+                        )}
+                      </div>
+                    )}
+                    <div
+                      className="field complementary-field"
+                      style={
+                        showCustomerGroup ? { gridColumn: "1 / -1" } : undefined
+                      }
+                    >
                       <label htmlFor="identification-complementary">
-                        Descrição Complementar
+                        Descrição Complementar (opcional)
                       </label>
                       <textarea
                         id="identification-complementary"
-                        aria-describedby="identification-complementary-hint"
+                        aria-label="Descrição Complementar"
                         value={draft.notes}
                         onChange={(event) => {
                           manualFields("notes");
                           setDraft({ ...draft, notes: event.target.value });
                         }}
                         maxLength={4000}
-                        rows={2}
+                        rows={1}
                       />
-                      <small id="identification-complementary-hint">
-                        Opcional. Complementa o lançamento sem alterar o
-                        histórico do banco.
-                      </small>
                     </div>
-                    {selected.direction === "CREDIT" &&
-                      draft.movement_kind === "NORMAL" &&
-                      !draft.party_id && (
-                        <div
-                          style={{ gridColumn: "1 / -1" }}
-                          className={"field" + aiClass("customer_group_id")}
-                        >
-                          <label htmlFor="identify-customer-group">
-                            Grupo de Clientes (opcional)
-                            {aiBadge("customer_group_id")}
-                          </label>
-                          <SearchSelect
-                            id="identify-customer-group"
-                            ariaLabel="Grupo de Clientes (opcional)"
-                            value={draft.customer_group_id}
-                            options={[
-                              { value: "", label: "Sem grupo" },
-                              ...(catalogs["customer-groups"] ?? [])
-                                .filter((g) => g.active)
-                                .map((g) => ({
-                                  value: g.id,
-                                  label: String(g.name),
-                                })),
-                            ]}
-                            onChange={(value) => {
-                              manualFields("customer_group_id");
-                              setDraft({ ...draft, customer_group_id: value });
-                            }}
-                          />
-                          <small>
-                            {draft.customer_group_id
-                              ? "Cliente/loja não identificado. Este recebimento será associado somente ao grupo."
-                              : "Use somente quando não for possível identificar o cliente ou a loja."}
-                          </small>
-                        </div>
-                      )}
                   </div>
                   <div className="actions transaction-save">
                     <button className="primary" type="submit">

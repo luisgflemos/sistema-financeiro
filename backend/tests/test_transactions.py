@@ -145,10 +145,17 @@ def test_generative_suggestions_need_confirmation_and_reject_unknown_ids(stateme
     )
 
 
-def test_pattern_uses_only_consistent_operator_confirmations(statements, monkeypatch):
+@pytest.mark.parametrize("movement_kind", ["NORMAL", "INTERNAL_TRANSFER", "AUTOMATIC_PROCESS"])
+@pytest.mark.parametrize("generative", [False, True])
+def test_patterns_are_only_suggestions_even_with_consistent_confirmations(
+    statements, monkeypatch, movement_kind, generative
+):
     client, connection, base, _ = statements
     rows = imported(client, base)
-    values = dimensions(client, base)
+    values = dimensions(
+        client, base, "NEUTRAL" if movement_kind == "INTERNAL_TRANSFER" else "REVENUE"
+    )
+    values["movement_kind"] = movement_kind
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     credits = [row for row in rows if row["direction"] == "CREDIT"]
     for row in credits:
@@ -167,8 +174,19 @@ def test_pattern_uses_only_consistent_operator_confirmations(statements, monkeyp
         json={"files": [next_source], "token": preview["token"]},
     )
     assert response.status_code == 200, response.text
+    if generative:
+        monkeypatch.setenv("OPENAI_API_KEY", "synthetic-test-placeholder")
+        monkeypatch.setattr(
+            recognition, "generative_suggestions", lambda _context: ([], "synthetic")
+        )
+    before = client.get(base + "/transactions?state=identified").json()["total"]
     result = client.post(base + "/recognition/run", json={}).json()
-    assert result["automatic"] == 1
+    assert result["automatic"] == 0
+    assert result["suggestions"] == 1
+    assert client.get(base + "/transactions?state=identified").json()["total"] == before
+    assert client.get(base + "/transactions?state=suggested").json()["total"] == 1
+    repeated = client.post(base + "/recognition/run", json={}).json()
+    assert repeated["automatic"] == repeated["suggestions"] == 0
     assert (
         connection.scalar(
             text(
@@ -176,7 +194,7 @@ def test_pattern_uses_only_consistent_operator_confirmations(statements, monkeyp
             ),
             {"org": base.split("/")[2]},
         )
-        == 1
+        == 0
     )
 
 
@@ -211,6 +229,39 @@ def test_partial_ai_suggestion_does_not_bypass_required_identification(statement
         ).status_code
         == 422
     )
+
+
+def test_pix_without_customer_or_group_is_partial_suggestion_only(statements, monkeypatch):
+    client, _, base, _ = statements
+    row = next(r for r in imported(client, base) if r["direction"] == "CREDIT")
+    values = dimensions(client, base)
+    values["party_id"] = None
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic-test-placeholder")
+    monkeypatch.setattr(
+        recognition,
+        "generative_suggestions",
+        lambda _context: (
+            [
+                {
+                    **values,
+                    "transaction_id": row["id"],
+                    "confidence": "HIGH",
+                    "reason": "Padrão sintético parcial",
+                }
+            ],
+            "synthetic",
+        ),
+    )
+    result = client.post(base + "/recognition/run", json={}).json()
+    assert result["automatic"] == 0 and result["suggestions"] == 1
+    suggestion = client.get(base + "/transactions?state=suggested").json()["rows"][0]
+    assert suggestion["confidence"] == "MEDIUM"
+    assert suggestion["suggestion"]["category_id"] == values["category_id"]
+    assert suggestion["suggestion"]["subcategory_id"] == values["subcategory_id"]
+    assert suggestion["suggestion"]["cost_center_id"] == values["cost_center_id"]
+    assert suggestion["suggestion"]["party_id"] is None
+    assert suggestion["suggestion"].get("customer_group_id") is None
+    assert client.get(base + "/transactions?state=identified").json()["total"] == 0
 
 
 def test_party_is_optional_and_complementary_description_is_preserved(statements):
