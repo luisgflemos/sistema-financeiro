@@ -1198,10 +1198,33 @@ export function TransactionsPage({
                         />
                       </div>
                     ))}
+                    <div className="field complementary-field">
+                      <label htmlFor="identification-complementary">
+                        Descrição Complementar
+                      </label>
+                      <textarea
+                        id="identification-complementary"
+                        aria-describedby="identification-complementary-hint"
+                        value={draft.notes}
+                        onChange={(event) => {
+                          manualFields("notes");
+                          setDraft({ ...draft, notes: event.target.value });
+                        }}
+                        maxLength={4000}
+                        rows={2}
+                      />
+                      <small id="identification-complementary-hint">
+                        Opcional. Complementa o lançamento sem alterar o
+                        histórico do banco.
+                      </small>
+                    </div>
                     {selected.direction === "CREDIT" &&
                       draft.movement_kind === "NORMAL" &&
                       !draft.party_id && (
-                        <div className={"field" + aiClass("customer_group_id")}>
+                        <div
+                          style={{ gridColumn: "1 / -1" }}
+                          className={"field" + aiClass("customer_group_id")}
+                        >
                           <label htmlFor="identify-customer-group">
                             Grupo de Clientes (opcional)
                             {aiBadge("customer_group_id")}
@@ -1231,26 +1254,6 @@ export function TransactionsPage({
                           </small>
                         </div>
                       )}
-                    <div className="field complementary-field">
-                      <label htmlFor="identification-complementary">
-                        Descrição Complementar
-                      </label>
-                      <textarea
-                        id="identification-complementary"
-                        aria-describedby="identification-complementary-hint"
-                        value={draft.notes}
-                        onChange={(event) => {
-                          manualFields("notes");
-                          setDraft({ ...draft, notes: event.target.value });
-                        }}
-                        maxLength={4000}
-                        rows={2}
-                      />
-                      <small id="identification-complementary-hint">
-                        Opcional. Complementa o lançamento sem alterar o
-                        histórico do banco.
-                      </small>
-                    </div>
                   </div>
                   <div className="actions transaction-save">
                     <button className="primary" type="submit">
