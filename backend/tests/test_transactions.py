@@ -235,6 +235,13 @@ def test_pix_without_customer_or_group_is_partial_suggestion_only(statements, mo
     client, _, base, _ = statements
     row = next(r for r in imported(client, base) if r["direction"] == "CREDIT")
     values = dimensions(client, base)
+    assert (
+        client.put(
+            base + "/parties/" + values["party_id"],
+            json={"display_name": "Outra contraparte sem correspondência", "type": "CUSTOMER"},
+        ).status_code
+        == 200
+    )
     values["party_id"] = None
     monkeypatch.setenv("OPENAI_API_KEY", "synthetic-test-placeholder")
     monkeypatch.setattr(
