@@ -11,7 +11,7 @@ import { api } from "./api";
 import { SearchSelect } from "./search-select";
 import type { CatalogId } from "./catalogs";
 
-type Kind = Exclude<CatalogId, "subcategories">;
+type Kind = Exclude<CatalogId, "subcategories" | "customer-groups">;
 type Source = {
   file_name: string;
   content: string;

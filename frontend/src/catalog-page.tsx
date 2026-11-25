@@ -387,7 +387,7 @@ export function CatalogPage({
           {notice}
         </p>
       )}
-      {importOpen && id !== "subcategories" && (
+      {importOpen && id !== "subcategories" && id !== "customer-groups" && (
         <Modal
           title={`Importar ${catalog.label}`}
           busy={importBusy}
@@ -413,7 +413,7 @@ export function CatalogPage({
         <div className="page-heading">
           {category ? <h3>{catalog.label}</h3> : <h1>{catalog.label}</h1>}
           <div className="actions">
-            {id !== "subcategories" && (
+            {id !== "subcategories" && id !== "customer-groups" && (
               <button
                 type="button"
                 className="primary"
