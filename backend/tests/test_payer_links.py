@@ -1,10 +1,11 @@
 import base64
 from datetime import date
 from decimal import Decimal
+from uuid import uuid4
 
 import pytest
 from sqlalchemy import text
-from test_planning import link, new_plan
+from test_planning import link
 from test_statements import statements as statement_fixture  # noqa: F401
 from test_transactions import dimensions, imported
 
@@ -157,7 +158,19 @@ def test_cutoff_subcategory_and_pending_are_not_silently_included(statements):
 def test_settlement_history_blocks_new_party_and_exclusions_stay_excluded(statements):
     client, _, base, rows, values = setup(statements)
     fields = {k: v for k, v in values.items() if k not in ("movement_kind", "notes")}
-    plans, _ = new_plan(client, base, **fields)
+    created = client.post(
+        base + "/planned-entries",
+        json={
+            **fields,
+            "request_key": str(uuid4()),
+            "description": "Previsto sintético",
+            "due_on": "2026-01-02",
+            "direction": "CREDIT",
+            "expected_amount": "100.00",
+        },
+    )
+    assert created.status_code == 201, created.text
+    plans = client.get(base + "/planned-entries").json()["rows"]
     credit = next(
         r
         for r in client.get(base + "/transactions?state=identified").json()["rows"]
