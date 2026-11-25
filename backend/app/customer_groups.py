@@ -54,16 +54,11 @@ def save(connection, organization_id, payload, group_id=None):
     available = {
         r["id"]: dict(r)
         for r in connection.execute(
-            text(
-                "SELECT id, customer_group_id, type FROM parties WHERE organization_id=:org"
-            ),
+            text("SELECT id, customer_group_id, type FROM parties WHERE organization_id=:org"),
             {"org": organization_id},
         ).mappings()
     }
-    if any(
-        i not in available or available[i]["type"] not in ("CUSTOMER", "BOTH")
-        for i in members
-    ):
+    if any(i not in available or available[i]["type"] not in ("CUSTOMER", "BOTH") for i in members):
         raise HTTPException(422, "Selecione clientes cadastrados nesta organização.")
     if any(available[i]["customer_group_id"] not in (None, group_id) for i in members):
         raise HTTPException(
@@ -82,16 +77,12 @@ def save(connection, organization_id, payload, group_id=None):
             ),
             {
                 "org": organization_id,
-                "code": next_catalog_code(
-                    connection, "customer_groups", organization_id
-                ),
+                "code": next_catalog_code(connection, "customer_groups", organization_id),
                 "name": name,
                 "active": payload.active,
             },
         )
-    old_members = {
-        i for i, r in available.items() if r["customer_group_id"] == group_id
-    }
+    old_members = {i for i, r in available.items() if r["customer_group_id"] == group_id}
     for member_id in old_members ^ members:
         old_group = available[member_id]["customer_group_id"]
         new_group = group_id if member_id in members else None
@@ -109,12 +100,8 @@ def save(connection, organization_id, payload, group_id=None):
                 "org": organization_id,
                 "actor": actor(connection),
                 "id": member_id,
-                "old": json.dumps(
-                    {"customer_group_id": str(old_group) if old_group else None}
-                ),
-                "new": json.dumps(
-                    {"customer_group_id": str(new_group) if new_group else None}
-                ),
+                "old": json.dumps({"customer_group_id": str(old_group) if old_group else None}),
+                "new": json.dumps({"customer_group_id": str(new_group) if new_group else None}),
             },
         )
     result = next(r for r in groups(connection, organization_id) if r["id"] == group_id)
@@ -147,8 +134,6 @@ def create_group(organization_id: UUID, payload: GroupInput, request: Request):
 
 
 @router.put("/{group_id}")
-def update_group(
-    organization_id: UUID, group_id: UUID, payload: GroupInput, request: Request
-):
+def update_group(organization_id: UUID, group_id: UUID, payload: GroupInput, request: Request):
     with request.app.state.database.begin() as connection:
         return save(connection, organization_id, payload, group_id)

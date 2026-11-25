@@ -22,9 +22,7 @@ from app.historical_parser import normalize
 from app.statements import actor
 from app.transactions import IDENT_FIELDS, LATEST, Identification, save_identification
 
-router = APIRouter(
-    prefix="/organizations/{organization_id}/payer-links", tags=["Histórico"]
-)
+router = APIRouter(prefix="/organizations/{organization_id}/payer-links", tags=["Histórico"])
 
 
 def payer_key(value):
@@ -32,10 +30,7 @@ def payer_key(value):
         re.sub(
             r"[^A-Z0-9 ]",
             "",
-            unicodedata.normalize("NFKD", str(value))
-            .encode("ascii", "ignore")
-            .decode()
-            .upper(),
+            unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore").decode().upper(),
         ).split()
     )
 
@@ -67,11 +62,7 @@ class PayerUpload(BaseModel):
 def parse_links(payload):
     try:
         raw = base64.b64decode(payload.content, validate=True)
-        if (
-            not payload.file_name.lower().endswith(".csv")
-            or not raw
-            or len(raw) > 1024 * 1024
-        ):
+        if not payload.file_name.lower().endswith(".csv") or not raw or len(raw) > 1024 * 1024:
             raise ValueError()
         reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")), delimiter=";")
         if reader.fieldnames not in (
@@ -82,11 +73,7 @@ def parse_links(payload):
         target_kind = "group" if "Grupo" in reader.fieldnames else "client"
         links, seen = [], set()
         for row in reader:
-            if (
-                len(links) >= 2000
-                or None in row
-                or any(v is None for v in row.values())
-            ):
+            if len(links) >= 2000 or None in row or any(v is None for v in row.values()):
                 raise ValueError()
             key = payer_key(row["Pagador"])
             row["Cliente"] = row.get("Cliente", row.get("Grupo"))
@@ -207,9 +194,7 @@ def prepare(connection, organization_id, payload):
         existing = 0
         for record in matches:
             specific_in_group = (
-                is_group
-                and record["party_id"]
-                and record["party_current_group"] == party["id"]
+                is_group and record["party_id"] and record["party_current_group"] == party["id"]
             )
             already = specific_in_group or (
                 record["customer_group_id"] == party["id"]
@@ -218,10 +203,7 @@ def prepare(connection, organization_id, payload):
             )
             conflict = (
                 (record["party_id"] and not specific_in_group)
-                or (
-                    record["customer_group_id"]
-                    and record["customer_group_id"] != party["id"]
-                )
+                or (record["customer_group_id"] and record["customer_group_id"] != party["id"])
                 if is_group
                 else (record["party_id"] and record["party_id"] != party["id"])
                 or (
@@ -239,9 +221,7 @@ def prepare(connection, organization_id, payload):
                     409,
                     f"{link['Pagador']} possui histórico de baixa. Revise individualmente.",
                 )
-            snapshot.append(
-                {**record, "target": party, "target_kind": link["target_kind"]}
-            )
+            snapshot.append({**record, "target": party, "target_kind": link["target_kind"]})
             if already:
                 existing += 1
             else:
@@ -291,9 +271,7 @@ def commit(organization_id: UUID, payload: PayerUpload, request: Request):
         lock_organization(connection, organization_id)
         checked, changes = prepare(connection, organization_id, payload)
         if payload.token != checked["token"]:
-            raise HTTPException(
-                409, "A base mudou. Confira uma nova prévia antes de gravar."
-            )
+            raise HTTPException(409, "A base mudou. Confira uma nova prévia antes de gravar.")
         for record, party_id, is_group in changes:
             values = {key: record[key] for key in (*IDENT_FIELDS, "notes")}
             values.update(
@@ -301,9 +279,7 @@ def commit(organization_id: UUID, payload: PayerUpload, request: Request):
                 customer_group_id=party_id if is_group else None,
                 expected_version=record["version"],
             )
-            save_identification(
-                connection, organization_id, record, Identification(**values)
-            )
+            save_identification(connection, organization_id, record, Identification(**values))
         batch_id = uuid4()
         connection.execute(
             text(
@@ -327,9 +303,7 @@ def commit(organization_id: UUID, payload: PayerUpload, request: Request):
         # Conferência dentro da mesma transação: cada cliente deve estar na última versão.
         verified, remaining = prepare(connection, organization_id, payload)
         if remaining:
-            raise HTTPException(
-                409, "A conferência não coincidiu. O lote não foi gravado."
-            )
+            raise HTTPException(409, "A conferência não coincidiu. O lote não foi gravado.")
         return {
             "linked": len(changes),
             "verified": verified["count"],

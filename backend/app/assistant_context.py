@@ -4,9 +4,7 @@ import re
 import unicodedata
 from uuid import UUID
 
-UUID_PATTERN = re.compile(
-    r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.I
-)
+UUID_PATTERN = re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.I)
 FIELD_NAMES = {
     "category_id": "classificação",
     "subcategory_id": "subclassificação",
@@ -37,25 +35,19 @@ def readable_context(context):
 
     def visit(value):
         if isinstance(value, dict):
-            if value and all(
-                UUID_PATTERN.fullmatch(str(k)) or k == "MISSING" for k in value
-            ):
+            if value and all(UUID_PATTERN.fullmatch(str(k)) or k == "MISSING" for k in value):
                 return [
                     {
                         "nome": names.get(
                             str(k),
-                            "Não informado"
-                            if k == "MISSING"
-                            else "Cadastro não disponível",
+                            "Não informado" if k == "MISSING" else "Cadastro não disponível",
                         ),
                         "quantidade": visit(v),
                     }
                     for k, v in value.items()
                 ]
             return {
-                FIELD_NAMES.get(key, key): visit(item)
-                for key, item in value.items()
-                if key != "id"
+                FIELD_NAMES.get(key, key): visit(item) for key, item in value.items() if key != "id"
             }
         if isinstance(value, (list, tuple)):
             return [visit(item) for item in value]
@@ -104,8 +96,7 @@ def suggestion_diagnostic(context):
         suggestion.get("confidence") == "HIGH"
         and suggestion.get("movement_kind") == "NORMAL"
         and any(
-            not suggestion.get(key)
-            for key in ("category_id", "subcategory_id", "cost_center_id")
+            not suggestion.get(key) for key in ("category_id", "subcategory_id", "cost_center_id")
         )
     ):
         result["confidence_assessment"] = (
@@ -117,9 +108,7 @@ def suggestion_diagnostic(context):
 def historical_pattern_answer(question, context):
     """Fatos quantitativos saem da consulta, sem delegar nomes ou contagens à redação livre."""
     question = "".join(
-        c
-        for c in unicodedata.normalize("NFD", question.lower())
-        if not unicodedata.combining(c)
+        c for c in unicodedata.normalize("NFD", question.lower()) if not unicodedata.combining(c)
     )
     if not any(
         word in question
@@ -208,9 +197,7 @@ def historical_pattern_answer(question, context):
             evidence = fields.get(field)
             if evidence is None:
                 continue
-            ranked = sorted(
-                evidence.get("values", {}).items(), key=lambda pair: -pair[1]
-            )
+            ranked = sorted(evidence.get("values", {}).items(), key=lambda pair: -pair[1])
             values = "; ".join(
                 f"{names.get(identifier, 'Cadastro não disponível')} ({number}/{count})"
                 for identifier, number in ranked[:3]
@@ -228,9 +215,7 @@ def historical_pattern_answer(question, context):
                     continue
                 if evidence.get("unanimous"):
                     parts.append("Padrão unânime neste conjunto.")
-                elif ranked[0][1] >= 2 and (
-                    len(ranked) == 1 or ranked[0][1] > ranked[1][1]
-                ):
+                elif ranked[0][1] >= 2 and (len(ranked) == 1 or ranked[0][1] > ranked[1][1]):
                     parts.append(
                         f"Predomina {names.get(ranked[0][0], 'cadastro não disponível')}; pode ser sugerido em amarelo para revisão."
                     )

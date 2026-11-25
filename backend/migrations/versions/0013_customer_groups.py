@@ -26,9 +26,7 @@ def upgrade():
         "ALTER TABLE parties ADD CONSTRAINT fk_party_group_org FOREIGN KEY(customer_group_id,organization_id) REFERENCES customer_groups(id,organization_id)"
     )
     op.execute("CREATE INDEX ix_party_customer_group ON parties(customer_group_id)")
-    op.execute(
-        "ALTER TABLE transaction_identifications ADD COLUMN customer_group_id uuid"
-    )
+    op.execute("ALTER TABLE transaction_identifications ADD COLUMN customer_group_id uuid")
     op.execute(
         "ALTER TABLE transaction_identifications ADD CONSTRAINT fk_identification_group_org FOREIGN KEY(customer_group_id,organization_id) REFERENCES customer_groups(id,organization_id)"
     )

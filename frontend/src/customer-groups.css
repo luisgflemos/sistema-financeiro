@@ -1,3 +1,24 @@
+.group-selection-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0 12px;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+.group-selection-actions > span {
+  font-size: 12px;
+  color: #52627a;
+  margin-right: auto;
+}
+.group-selection-actions > button {
+  font-size: 12px;
+  padding: 6px 8px;
+  min-height: 32px;
+}
 .group-members {
   margin: 20px 0;
   border: 1px solid #e5e7eb;

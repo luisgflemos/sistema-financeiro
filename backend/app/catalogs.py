@@ -82,9 +82,7 @@ class Party(PartyInput):
     organization_id: UUID
 
 
-def validate_category(
-    connection: Connection, organization_id: UUID, values: dict, _record_id
-):
+def validate_category(connection: Connection, organization_id: UUID, values: dict, _record_id):
     exists = connection.scalar(
         text("SELECT 1 FROM categories WHERE id = :id AND organization_id = :org"),
         {"id": values["category_id"], "org": organization_id},
@@ -93,9 +91,7 @@ def validate_category(
         raise HTTPException(422, "Selecione uma classificação da mesma organização.")
 
 
-def validate_parent(
-    connection: Connection, organization_id: UUID, values: dict, record_id
-):
+def validate_parent(connection: Connection, organization_id: UUID, values: dict, record_id):
     parent_id = values["parent_id"]
     if parent_id is None:
         return
@@ -128,9 +124,7 @@ def validate_party_group(connection, organization_id, values, record_id):
         record_id
         and values["type"] == "SUPPLIER"
         and connection.scalar(
-            text(
-                "SELECT customer_group_id FROM parties WHERE id=:id AND organization_id=:org"
-            ),
+            text("SELECT customer_group_id FROM parties WHERE id=:id AND organization_id=:org"),
             {"id": record_id, "org": organization_id},
         )
     ):
@@ -142,9 +136,7 @@ def validate_party_group(connection, organization_id, values, record_id):
 
 router = APIRouter()
 router.include_router(
-    catalog_router(
-        Catalog("categories", "categories", "Classificações", CategoryInput, Category)
-    )
+    catalog_router(Catalog("categories", "categories", "Classificações", CategoryInput, Category))
 )
 router.include_router(
     catalog_router(

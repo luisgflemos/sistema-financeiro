@@ -16,9 +16,7 @@ def statements(statement_fixture):  # noqa: F811
 
 
 def customer(client, base, name):
-    return client.post(
-        base + "/parties", json={"display_name": name, "type": "CUSTOMER"}
-    ).json()
+    return client.post(base + "/parties", json={"display_name": name, "type": "CUSTOMER"}).json()
 
 
 def test_group_membership_is_simple_scoped_audited_and_preserves_clients(statements):
@@ -41,10 +39,7 @@ def test_group_membership_is_simple_scoped_audited_and_preserves_clients(stateme
         original = next(v for v in (a, b) if v["id"] == p["id"])
         assert all(p[k] == v for k, v in original.items() if k != "customer_group_id")
     assert (
-        client.post(
-            base + "/customer-groups", json={"name": "grupo sintético"}
-        ).status_code
-        == 422
+        client.post(base + "/customer-groups", json={"name": "grupo sintético"}).status_code == 422
     )
     assert (
         client.post(
@@ -105,9 +100,7 @@ def test_group_only_identification_preserves_bank_and_client_has_priority(statem
     ).json()
     credit = next(r for r in rows if r["direction"] == "CREDIT")
     before = (
-        conn.execute(
-            text("SELECT * FROM bank_transactions WHERE id=:id"), {"id": credit["id"]}
-        )
+        conn.execute(text("SELECT * FROM bank_transactions WHERE id=:id"), {"id": credit["id"]})
         .mappings()
         .one()
     )
@@ -119,9 +112,7 @@ def test_group_only_identification_preserves_bank_and_client_has_priority(statem
         for r in client.get(base + "/transactions?state=identified").json()["rows"]
         if r["id"] == credit["id"]
     )
-    assert (
-        visible["party_id"] is None and visible["customer_group_name"] == group["name"]
-    )
+    assert visible["party_id"] is None and visible["customer_group_name"] == group["name"]
     assert (
         client.put(
             url,
@@ -131,18 +122,14 @@ def test_group_only_identification_preserves_bank_and_client_has_priority(statem
     )
     assert client.put(url, json={**fields, "expected_version": 1}).status_code == 200
     assert (
-        conn.execute(
-            text("SELECT * FROM bank_transactions WHERE id=:id"), {"id": credit["id"]}
-        )
+        conn.execute(text("SELECT * FROM bank_transactions WHERE id=:id"), {"id": credit["id"]})
         .mappings()
         .one()
         == before
     )
     debit = next(r for r in rows if r["direction"] == "DEBIT")
     assert (
-        client.put(
-            base + f"/transactions/{debit['id']}/identification", json=body
-        ).status_code
+        client.put(base + f"/transactions/{debit['id']}/identification", json=body).status_code
         == 422
     )
     assert (
@@ -186,10 +173,7 @@ def test_shared_payer_falls_back_to_group_but_specific_client_wins():
     premium = {"raw_description": "PIX RECEBIDO PAGADOR PREMIUM", "direction": "CREDIT"}
     identity = resolve_customer(history, premium, catalogs, {})
     assert identity["party_id"] == "premium" and identity["customer_group_id"] is None
-    assert (
-        prioritize_customer({"party_id": "loja1"}, identity, catalogs)["party_id"]
-        == "premium"
-    )
+    assert prioritize_customer({"party_id": "loja1"}, identity, catalogs)["party_id"] == "premium"
     target = {
         "raw_description": "PIX RECEBIDO PAGADOR COMPARTILHADO",
         "direction": "CREDIT",
@@ -202,25 +186,18 @@ def test_shared_payer_falls_back_to_group_but_specific_client_wins():
         {"movement_kind": "NORMAL", "party_id": "loja1"}, evidence, catalogs
     )
     assert proposal["party_id"] is None and proposal["customer_group_id"] == "group"
-    documentary = resolve_customer(
-        history, target, catalogs, {"12345678901": ["premium"]}
-    )
+    documentary = resolve_customer(history, target, catalogs, {"12345678901": ["premium"]})
     assert documentary["customer_group_id"] == "group"
     direct = {**target, "raw_description": "PIX RECEBIDO 12345678901"}
     assert (
-        resolve_customer(history, direct, catalogs, {"12345678901": ["premium"]})[
-            "party_id"
-        ]
+        resolve_customer(history, direct, catalogs, {"12345678901": ["premium"]})["party_id"]
         == "premium"
     )
     ambiguous = [
         row("PIX RECEBIDO PAGADOR COMPARTILHADO", party="loja1"),
         row("PIX RECEBIDO PAGADOR COMPARTILHADO", party="loja2"),
     ]
-    assert (
-        resolve_customer(ambiguous, target, catalogs, {})["customer_group_id"]
-        == "group"
-    )
+    assert resolve_customer(ambiguous, target, catalogs, {})["customer_group_id"] == "group"
     unknown = prioritize_customer({"party_id": "loja1"}, {}, catalogs)
     assert unknown["party_id"] is None
 

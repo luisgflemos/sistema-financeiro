@@ -32,9 +32,7 @@ from app.transactions import (
     validate_identification,
 )
 
-router = APIRouter(
-    prefix="/organizations/{organization_id}/recognition", tags=["Reconhecimento"]
-)
+router = APIRouter(prefix="/organizations/{organization_id}/recognition", tags=["Reconhecimento"])
 
 
 class RecognitionBatch(BaseModel):
@@ -46,16 +44,11 @@ class RecognitionBatch(BaseModel):
 def generative_suggestions(context):
     key = api_key()
     if not key:
-        raise HTTPException(
-            503, "Configure OPENAI_API_KEY no serviço da Finare no Railway."
-        )
+        raise HTTPException(503, "Configure OPENAI_API_KEY no serviço da Finare no Railway.")
     model = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
     properties = {
         "transaction_id": {"type": "string"},
-        **{
-            key: {"type": ["string", "null"]}
-            for key in (*IDENT_FIELDS[:4], "customer_group_id")
-        },
+        **{key: {"type": ["string", "null"]} for key in (*IDENT_FIELDS[:4], "customer_group_id")},
         "movement_kind": {
             "type": "string",
             "enum": ["NORMAL", "AUTOMATIC_PROCESS", "INTERNAL_TRANSFER"],
@@ -215,9 +208,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
         ):
             raise HTTPException(404, "Organização não encontrada.")
         if payload.test:
-            generative_suggestions(
-                {"movements": [], "confirmed_examples": [], "catalogs": {}}
-            )
+            generative_suggestions({"movements": [], "confirmed_examples": [], "catalogs": {}})
             return {
                 "automatic": 0,
                 "suggestions": 0,
@@ -281,9 +272,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 sql = f"SELECT {columns} FROM {table} WHERE organization_id = :org AND active LIMIT 2000"
             catalogs[table] = [
                 dict(row)
-                for row in connection.execute(
-                    text(sql), {"org": organization_id}
-                ).mappings()
+                for row in connection.execute(text(sql), {"org": organization_id}).mappings()
             ]
             if table == "parties":
                 for item in catalogs[table]:
@@ -336,9 +325,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
             "id": str(row["id"]),
             "account_id": str(row["account_id"]),
             "direction": row["direction"],
-            "description": re.sub(r"\d{11,14}", "[documento]", row["raw_description"])[
-                :1000
-            ],
+            "description": re.sub(r"\d{11,14}", "[documento]", row["raw_description"])[:1000],
             "party_candidates": sorted(
                 {party for document in documents for party in party_documents[document]}
             ),
@@ -395,8 +382,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 )
                 payload = Identification(**values)
                 if payload.movement_kind == "NORMAL" and not any(
-                    getattr(payload, key)
-                    for key in (*IDENT_FIELDS[:4], "customer_group_id")
+                    getattr(payload, key) for key in (*IDENT_FIELDS[:4], "customer_group_id")
                 ):
                     continue
             except (HTTPException, ValueError):
@@ -421,12 +407,8 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 or not reason.strip()
             ):
                 continue
-            suggestion_data = {
-                key: payload.model_dump(mode="json")[key] for key in IDENT_FIELDS
-            }
-            suggestion_data["field_confidence"] = field_confidences(
-                values, facts, confidence
-            )
+            suggestion_data = {key: payload.model_dump(mode="json")[key] for key in IDENT_FIELDS}
+            suggestion_data["field_confidence"] = field_confidences(values, facts, confidence)
             suggestion_id = connection.scalar(
                 text("""
                 INSERT INTO transaction_suggestions(

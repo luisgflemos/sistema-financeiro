@@ -7,8 +7,8 @@ from decimal import Decimal
 
 from sqlalchemy import text
 
+from app.customer_identity import prioritize_customer, resolve_customer
 from app.transactions import LATEST
-from app.customer_identity import resolve_customer, prioritize_customer
 
 FIELDS = (
     "category_id",
@@ -52,9 +52,7 @@ def confirmed(rows):
 
 def document_candidates(row, documents):
     found = re.findall(r"(?<!\d)\d{11,14}(?!\d)", str(row.get("raw_description", "")))
-    return sorted(
-        {str(party) for document in found for party in documents.get(document, [])}
-    )
+    return sorted({str(party) for document in found for party in documents.get(document, [])})
 
 
 def full_overview(rows):
@@ -111,9 +109,7 @@ def full_overview(rows):
 
 def related_evidence(history, target, catalogs, documents):
     identity = resolve_customer(history, target, catalogs, documents)
-    parties = [
-        (str(p["id"]), normalized(p["name"])) for p in catalogs.get("parties", [])
-    ]
+    parties = [(str(p["id"]), normalized(p["name"])) for p in catalogs.get("parties", [])]
     # Nome isolado/genérico não sustenta associação inferida. Nunca gravar essa inferência.
     names = [
         (identifier, " " + name + " ")
@@ -149,19 +145,14 @@ def related_evidence(history, target, catalogs, documents):
         return result, []
     party = next(iter(candidates)) if candidates else None
     party_groups = {
-        str(p["id"]): str(p.get("customer_group_id") or "")
-        for p in catalogs.get("parties", [])
+        str(p["id"]): str(p.get("customer_group_id") or "") for p in catalogs.get("parties", [])
     }
     pix = "pix" in normalized(target.get("raw_description")).split()
     related, bases = [], Counter()
     for row in history:
-        if target.get("id") and str(row.get("source_transaction_id")) == str(
-            target["id"]
-        ):
+        if target.get("id") and str(row.get("source_transaction_id")) == str(target["id"]):
             continue
-        if target.get("account_id") and str(row["account_id"]) != str(
-            target["account_id"]
-        ):
+        if target.get("account_id") and str(row["account_id"]) != str(target["account_id"]):
             continue
         if target.get("direction") and row["direction"] != target["direction"]:
             continue
@@ -251,27 +242,18 @@ def complete_suggestion(item, evidence, catalogs):
                 if identifier in available
                 and (
                     field != "subcategory_id"
-                    or str(available[identifier]["category_id"])
-                    == str(result.get("category_id"))
+                    or str(available[identifier]["category_id"]) == str(result.get("category_id"))
                 )
                 and (
                     field != "category_id"
                     or available[identifier].get("kind")
-                    == (
-                        "REVENUE"
-                        if evidence.get("direction") == "CREDIT"
-                        else "EXPENSE"
-                    )
+                    == ("REVENUE" if evidence.get("direction") == "CREDIT" else "EXPENSE")
                 )
             ),
             key=lambda pair: -pair[1],
         )
         # Predominância é sugestão, nunca confirmação. Empate não escolhe arbitrariamente.
-        if (
-            ranked
-            and ranked[0][1] >= 2
-            and (len(ranked) == 1 or ranked[0][1] > ranked[1][1])
-        ):
+        if ranked and ranked[0][1] >= 2 and (len(ranked) == 1 or ranked[0][1] > ranked[1][1]):
             result[field] = ranked[0][0]
     return result
 
@@ -286,9 +268,7 @@ def field_confidences(values, evidence, fallback):
         counts = evidence.get("fields", {}).get(field, {}).get("values", {})
         if total >= 3 and field in FIELDS[:3]:
             count = counts.get(str(values[field]), 0)
-            confidence = (
-                "HIGH" if count == total else "MEDIUM" if count > total / 2 else "LOW"
-            )
+            confidence = "HIGH" if count == total else "MEDIUM" if count > total / 2 else "LOW"
         elif field == "party_id" and evidence.get("match_basis", {}).get(
             "unique_name_in_bank_text"
         ):
@@ -306,11 +286,7 @@ def evidence_reason(evidence, catalogs):
     if evidence.get("customer_identity", {}).get("customer_group_id"):
         group_id = evidence["customer_identity"]["customer_group_id"]
         group_name = next(
-            (
-                g["name"]
-                for g in catalogs.get("customer_groups", [])
-                if str(g["id"]) == group_id
-            ),
+            (g["name"] for g in catalogs.get("customer_groups", []) if str(g["id"]) == group_id),
             "grupo cadastrado",
         )
         parts.append(
@@ -325,9 +301,7 @@ def evidence_reason(evidence, catalogs):
         values = evidence["fields"][field]["values"]
         description = "; ".join(
             f"{names.get(identifier, 'cadastro indisponível')} ({count}/{evidence['matching_records']})"
-            for identifier, count in sorted(values.items(), key=lambda pair: -pair[1])[
-                :3
-            ]
+            for identifier, count in sorted(values.items(), key=lambda pair: -pair[1])[:3]
         )
         if description:
             parts.append(f"{label}: {description}.")
@@ -345,8 +319,7 @@ def reviewed_confidence(confidence, values, evidence):
     if any(not values.get(field) for field in required):
         return "MEDIUM"
     if evidence.get("matching_records", 0) >= 3 and any(
-        not evidence.get("fields", {}).get(field, {}).get("unanimous")
-        for field in required
+        not evidence.get("fields", {}).get(field, {}).get("unanimous") for field in required
     ):
         return "MEDIUM"
     return confidence

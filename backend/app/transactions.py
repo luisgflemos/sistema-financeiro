@@ -11,9 +11,7 @@ from sqlalchemy import text
 from app.catalog import lock_organization
 from app.statements import actor
 
-router = APIRouter(
-    prefix="/organizations/{organization_id}/transactions", tags=["Transações"]
-)
+router = APIRouter(prefix="/organizations/{organization_id}/transactions", tags=["Transações"])
 IDENT_FIELDS = (
     "party_id",
     "category_id",
@@ -37,9 +35,7 @@ class Identification(BaseModel):
     category_id: UUID | None = None
     subcategory_id: UUID | None = None
     cost_center_id: UUID | None = None
-    movement_kind: Literal["NORMAL", "AUTOMATIC_PROCESS", "INTERNAL_TRANSFER"] = (
-        "NORMAL"
-    )
+    movement_kind: Literal["NORMAL", "AUTOMATIC_PROCESS", "INTERNAL_TRANSFER"] = "NORMAL"
     notes: str | None = Field(default=None, max_length=4000)
     expected_version: int = Field(default=0, ge=0)
     suggestion_id: UUID | None = None
@@ -89,23 +85,16 @@ def validate_identification(
                 "Identifique o cliente específico ou apenas o grupo, sem escolher uma loja arbitrária.",
             )
         if direction != "CREDIT" or payload.movement_kind != "NORMAL":
-            raise HTTPException(
-                422, "Grupo de clientes é usado apenas em receitas normais."
-            )
+            raise HTTPException(422, "Grupo de clientes é usado apenas em receitas normais.")
         if not connection.scalar(
-            text(
-                "SELECT 1 FROM customer_groups WHERE id=:id AND organization_id=:org AND active"
-            ),
+            text("SELECT 1 FROM customer_groups WHERE id=:id AND organization_id=:org AND active"),
             {"id": payload.customer_group_id, "org": organization_id},
         ):
             raise HTTPException(422, "Selecione um grupo ativo desta organização.")
     if (
         require_complete
         and payload.movement_kind == "NORMAL"
-        and any(
-            not values[key]
-            for key in ("category_id", "subcategory_id", "cost_center_id")
-        )
+        and any(not values[key] for key in ("category_id", "subcategory_id", "cost_center_id"))
     ):
         raise HTTPException(
             422,
@@ -118,9 +107,7 @@ def validate_identification(
     )
     for field, table in checks:
         if values[field] and not connection.scalar(
-            text(
-                f"SELECT 1 FROM {table} WHERE id = :id AND organization_id = :org AND active"
-            ),
+            text(f"SELECT 1 FROM {table} WHERE id = :id AND organization_id = :org AND active"),
             {"id": values[field], "org": organization_id},
         ):
             raise HTTPException(422, "Selecione cadastros ativos desta organização.")
@@ -162,15 +149,11 @@ def validate_identification(
             "org": organization_id,
         },
     ):
-        raise HTTPException(
-            422, "A subclassificação não pertence à classificação escolhida."
-        )
+        raise HTTPException(422, "A subclassificação não pertence à classificação escolhida.")
     return values
 
 
-def save_identification(
-    connection, organization_id, record, payload, method="OPERATOR"
-):
+def save_identification(connection, organization_id, record, payload, method="OPERATOR"):
     payload = normalize_identification(payload)
     values = validate_identification(
         connection, organization_id, payload, direction=record["direction"]
@@ -191,8 +174,7 @@ def save_identification(
         if not suggestion:
             raise HTTPException(422, "Sugestão inválida.")
         if all(
-            str(suggestion.get(key) or "") == str(values.get(key) or "")
-            for key in IDENT_FIELDS
+            str(suggestion.get(key) or "") == str(values.get(key) or "") for key in IDENT_FIELDS
         ):
             method = "AI_CONFIRMED"
     actor_id = actor(connection)
@@ -268,9 +250,7 @@ def list_transactions(
     end: str | None = None,
     direction: Literal["CREDIT", "DEBIT"] | None = None,
     page: int = Query(default=1, ge=1),
-    sort_by: Literal[
-        "date", "account", "description", "amount", "identification"
-    ] = "date",
+    sort_by: Literal["date", "account", "description", "amount", "identification"] = "date",
     sort_order: Literal["asc", "desc"] = "desc",
     selection_only: bool = False,
 ):
@@ -282,9 +262,7 @@ def list_transactions(
     except ValueError as error:
         raise HTTPException(422, "Data inválida.") from error
     if start_date and end_date and end_date < start_date:
-        raise HTTPException(
-            422, "O fim do período deve ser igual ou posterior ao início."
-        )
+        raise HTTPException(422, "O fim do período deve ser igual ou posterior ao início.")
     params = {
         "org": organization_id,
         "account": account_id,
@@ -378,9 +356,7 @@ def list_transactions(
         if selection_only:
             ids = (
                 connection.execute(
-                    text(
-                        "SELECT DISTINCT t.id " + joins + conditions + " AND t.editable"
-                    ),
+                    text("SELECT DISTINCT t.id " + joins + conditions + " AND t.editable"),
                     params,
                 )
                 .scalars()

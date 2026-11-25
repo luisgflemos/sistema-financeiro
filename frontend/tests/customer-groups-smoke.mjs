@@ -92,11 +92,18 @@ try {
     .getByLabel("Pesquisar clientes para o grupo", { exact: true })
     .fill("");
   await modal
-    .getByRole("checkbox", { name: "Cliente Loja Um", exact: true })
-    .check();
+    .getByLabel("Pesquisar clientes para o grupo", { exact: true })
+    .fill("Loja");
   await modal
-    .getByRole("checkbox", { name: "Cliente Loja Dois", exact: true })
-    .check();
+    .getByRole("button", {
+      name: "Selecionar todos os resultados",
+      exact: true,
+    })
+    .click();
+  await modal
+    .getByLabel("Pesquisar clientes para o grupo", { exact: true })
+    .fill("");
+  assert.equal(await modal.getByRole("checkbox", { checked: true }).count(), 3);
   await page.screenshot({
     path: "import-layout-customer-group-new.png",
     fullPage: true,

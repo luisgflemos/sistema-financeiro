@@ -122,6 +122,9 @@ export function CustomerGroups({ organizationId }: { organizationId: string }) {
     (c) =>
       c.type !== "SUPPLIER" && matchesCatalog(memberSearch, [c.display_name]),
   );
+  const selectable = options.filter(
+    (c) => !c.customer_group_id || c.customer_group_id === draft?.id,
+  );
   return (
     <>
       <div className="page-heading">
@@ -269,6 +272,44 @@ export function CustomerGroups({ organizationId }: { organizationId: string }) {
                   onChange={(e) => setMemberSearch(e.target.value)}
                 />
                 <div className="group-member-list">
+                  <div className="group-selection-actions">
+                    <span>{options.length} resultados</span>
+                    <button
+                      type="button"
+                      disabled={!selectable.length || saving}
+                      onClick={() =>
+                        setDraft({
+                          ...draft,
+                          member_ids: [
+                            ...new Set([
+                              ...draft.member_ids,
+                              ...selectable.map((c) => c.id),
+                            ]),
+                          ],
+                        })
+                      }
+                    >
+                      Selecionar todos os resultados
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        !selectable.some((c) =>
+                          draft.member_ids.includes(c.id),
+                        ) || saving
+                      }
+                      onClick={() =>
+                        setDraft({
+                          ...draft,
+                          member_ids: draft.member_ids.filter(
+                            (id) => !selectable.some((c) => c.id === id),
+                          ),
+                        })
+                      }
+                    >
+                      Desmarcar resultados
+                    </button>
+                  </div>
                   {options.map((c) => {
                     const other =
                       c.customer_group_id && c.customer_group_id !== draft.id;

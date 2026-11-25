@@ -9,8 +9,8 @@ from app.assistant import router as assistant_router
 from app.bank_accounts import router as bank_accounts_router
 from app.catalog_import import router as catalog_import_router
 from app.catalogs import router as catalogs_router
-from app.db import create_database_engine
 from app.customer_groups import router as customer_groups_router
+from app.db import create_database_engine
 from app.historical_import import router as historical_import_router
 from app.organizations import router as organizations_router
 from app.payer_links import router as payer_links_router

@@ -28,9 +28,7 @@ from app.history_context import (
 )
 from app.transactions import transaction
 
-router = APIRouter(
-    prefix="/organizations/{organization_id}/assistant", tags=["Assistente"]
-)
+router = APIRouter(prefix="/organizations/{organization_id}/assistant", tags=["Assistente"])
 
 
 class Message(BaseModel):
@@ -48,9 +46,7 @@ class Conversation(BaseModel):
 
 def redact(value):
     # Documentos no texto não são necessários para uma explicação ao usuário.
-    return re.sub(
-        r"(?<!\d)(?:\d[. /-]?){10,13}\d(?!\d)", "[documento]", str(value or "")
-    )[:3000]
+    return re.sub(r"(?<!\d)(?:\d[. /-]?){10,13}\d(?!\d)", "[documento]", str(value or ""))[:3000]
 
 
 INSTRUCTIONS = """
@@ -282,18 +278,14 @@ def chat(organization_id: UUID, payload: Conversation, request: Request):
                 query = f"SELECT {columns} FROM {table} WHERE organization_id=:org ORDER BY name"
             context["catalogs"][table] = [
                 dict(item)
-                for item in connection.execute(
-                    text(query), {"org": organization_id}
-                ).mappings()
+                for item in connection.execute(text(query), {"org": organization_id}).mappings()
             ]
         documents = document_index(context["catalogs"]["parties"])
         for party in context["catalogs"]["parties"]:
             party.pop("tax_id", None)
         base_history = load_history(connection, organization_id)
         history = confirmed(base_history)
-        facts, related = related_evidence(
-            history, target, context["catalogs"], documents
-        )
+        facts, related = related_evidence(history, target, context["catalogs"], documents)
         all_accounts, _ = related_evidence(
             history, {**target, "account_id": None}, context["catalogs"], documents
         )
