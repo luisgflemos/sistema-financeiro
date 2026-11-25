@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy import Connection, text
 
 PREFIXES = {
+    "customer_groups": "GRP",
     "bank_accounts": "CTA",
     "categories": "CLA",
     "cost_centers": "CC",

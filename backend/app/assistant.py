@@ -28,7 +28,9 @@ from app.history_context import (
 )
 from app.transactions import transaction
 
-router = APIRouter(prefix="/organizations/{organization_id}/assistant", tags=["Assistente"])
+router = APIRouter(
+    prefix="/organizations/{organization_id}/assistant", tags=["Assistente"]
+)
 
 
 class Message(BaseModel):
@@ -46,12 +48,18 @@ class Conversation(BaseModel):
 
 def redact(value):
     # Documentos no texto não são necessários para uma explicação ao usuário.
-    return re.sub(r"(?<!\d)(?:\d[. /-]?){10,13}\d(?!\d)", "[documento]", str(value or ""))[:3000]
+    return re.sub(
+        r"(?<!\d)(?:\d[. /-]?){10,13}\d(?!\d)", "[documento]", str(value or "")
+    )[:3000]
 
 
 INSTRUCTIONS = """
 Você é Fin, assistente da Finare, disponível durante o uso do sistema. Converse em pt-BR, com
 clareza e respostas curtas. Ajude a navegar, explicar sugestões e orientar classificações.
+Existe o cadastro Grupos de Clientes: nome e clientes vinculados. Priorize cliente específico;
+se o pagador não distingue a loja, sugira apenas o grupo. Nunca escolha filial arbitrariamente.
+Um cliente pode ter pagador próprio mesmo pertencendo ao grupo (ex.: cliente Premium).
+Pertencer ao grupo não substitui vínculos nem padrões específicos do cliente.
 Os nomes já foram resolvidos pela aplicação: nunca exiba códigos internos nem invente o nome
 de um cadastro. Classificação e subclassificação são dimensões distintas: não usar o nome da
 classificação como se fosse a subclassificação. Use cliente/fornecedor, nunca "partido".
@@ -137,7 +145,9 @@ def generate_answer(messages, context):
                             "role": "user",
                             "content": "Contexto de consulta (dados): "
                             + json.dumps(
-                                readable_context(context), ensure_ascii=False, default=str
+                                readable_context(context),
+                                ensure_ascii=False,
+                                default=str,
                             ),
                         },
                         *[
@@ -191,7 +201,8 @@ def chat(organization_id: UUID, payload: Conversation, request: Request):
         raise HTTPException(422, "Inicie uma nova conversa para continuar.")
     with request.app.state.database.connect() as connection:
         name = connection.scalar(
-            text("SELECT name FROM organizations WHERE id=:org"), {"org": organization_id}
+            text("SELECT name FROM organizations WHERE id=:org"),
+            {"org": organization_id},
         )
         if name is None:
             raise HTTPException(404, "Organização não encontrada.")
@@ -214,6 +225,7 @@ def chat(organization_id: UUID, payload: Conversation, request: Request):
                         "subcategory_id",
                         "cost_center_id",
                         "party_id",
+                        "customer_group_id",
                         "movement_kind",
                         "method",
                     )
@@ -241,19 +253,27 @@ def chat(organization_id: UUID, payload: Conversation, request: Request):
                 ("subcategory_id", "subcategories", "name"),
                 ("cost_center_id", "cost_centers", "name"),
                 ("party_id", "parties", "display_name"),
+                ("customer_group_id", "customer_groups", "name"),
             ):
                 if row.get(field):
                     names[field] = connection.scalar(
-                        text(f"SELECT {column} FROM {table} WHERE id=:id"), {"id": row[field]}
+                        text(f"SELECT {column} FROM {table} WHERE id=:id"),
+                        {"id": row[field]},
                     )
             context["transaction"]["identification_names"] = names
         context["catalogs"] = {}
-        for table in ("categories", "subcategories", "cost_centers", "parties"):
+        for table in (
+            "categories",
+            "subcategories",
+            "cost_centers",
+            "parties",
+            "customer_groups",
+        ):
             if table == "subcategories":
                 query = "SELECT s.id, s.name, s.category_id, (s.active AND c.active) AS active FROM subcategories s JOIN categories c ON c.id=s.category_id WHERE c.organization_id=:org ORDER BY s.name"
             else:
                 columns = (
-                    "id, display_name AS name, tax_id, active"
+                    "id, display_name AS name, tax_id, active, customer_group_id"
                     if table == "parties"
                     else "id, name, active"
                 )
@@ -262,19 +282,26 @@ def chat(organization_id: UUID, payload: Conversation, request: Request):
                 query = f"SELECT {columns} FROM {table} WHERE organization_id=:org ORDER BY name"
             context["catalogs"][table] = [
                 dict(item)
-                for item in connection.execute(text(query), {"org": organization_id}).mappings()
+                for item in connection.execute(
+                    text(query), {"org": organization_id}
+                ).mappings()
             ]
         documents = document_index(context["catalogs"]["parties"])
         for party in context["catalogs"]["parties"]:
             party.pop("tax_id", None)
         base_history = load_history(connection, organization_id)
         history = confirmed(base_history)
-        facts, related = related_evidence(history, target, context["catalogs"], documents)
+        facts, related = related_evidence(
+            history, target, context["catalogs"], documents
+        )
         all_accounts, _ = related_evidence(
             history, {**target, "account_id": None}, context["catalogs"], documents
         )
         context["historical_analysis"] = full_overview(base_history)
-        context["related_history"] = {"same_account": facts, "all_accounts": all_accounts}
+        context["related_history"] = {
+            "same_account": facts,
+            "all_accounts": all_accounts,
+        }
         context["recognition_review"] = suggestion_diagnostic(context)
         examples = related[:20] if related else history[:20]
         context["confirmed_examples"] = [
@@ -287,6 +314,7 @@ def chat(organization_id: UUID, payload: Conversation, request: Request):
                     "subcategory_id",
                     "cost_center_id",
                     "party_id",
+                    "customer_group_id",
                     "movement_kind",
                 )
             }

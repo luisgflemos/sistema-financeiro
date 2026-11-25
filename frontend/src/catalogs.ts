@@ -6,7 +6,8 @@ export type CatalogId =
   | "categories"
   | "subcategories"
   | "cost-centers"
-  | "parties";
+  | "parties"
+  | "customer-groups";
 
 export type RecordData = { id: string; active: boolean } & Record<
   string,
@@ -48,6 +49,13 @@ const name: Field = { name: "name", label: "Nome", required: true };
 const description: Field = { name: "description", label: "Descrição" };
 
 export const catalogs: Record<CatalogId, Catalog> = {
+  "customer-groups": {
+    label: "Grupos de Clientes",
+    singular: "grupo de clientes",
+    titleField: "name",
+    fields: [name],
+    columns: [],
+  },
   "bank-accounts": {
     label: "Contas Bancárias",
     singular: "conta bancária",
@@ -172,8 +180,18 @@ export const catalogs: Record<CatalogId, Catalog> = {
       { name: "contact_name", label: "Contato" },
       { name: "contact_email", label: "E-mail", type: "email" },
       { name: "contact_phone", label: "Telefone", type: "tel" },
+      {
+        name: "customer_group_id",
+        label: "Grupo de Clientes",
+        reference: "customer-groups",
+        readOnly: true,
+        placeholder: "Sem grupo. Vincule em Grupos de Clientes.",
+      },
     ],
-    columns: [{ name: "type", label: "Tipo" }],
+    columns: [
+      { name: "type", label: "Tipo" },
+      { name: "customer_group_id", label: "Grupo" },
+    ],
   },
 };
 
@@ -182,4 +200,5 @@ export const catalogIds = [
   "categories",
   "cost-centers",
   "parties",
+  "customer-groups",
 ] as const satisfies readonly CatalogId[];

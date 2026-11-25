@@ -11,13 +11,16 @@ from sqlalchemy import text
 from app.catalog import lock_organization
 from app.statements import actor
 
-router = APIRouter(prefix="/organizations/{organization_id}/transactions", tags=["Transações"])
+router = APIRouter(
+    prefix="/organizations/{organization_id}/transactions", tags=["Transações"]
+)
 IDENT_FIELDS = (
     "party_id",
     "category_id",
     "subcategory_id",
     "cost_center_id",
     "movement_kind",
+    "customer_group_id",
 )
 LATEST = """
     LEFT JOIN LATERAL (
@@ -30,10 +33,13 @@ LATEST = """
 class Identification(BaseModel):
     model_config = ConfigDict(extra="forbid")
     party_id: UUID | None = None
+    customer_group_id: UUID | None = None
     category_id: UUID | None = None
     subcategory_id: UUID | None = None
     cost_center_id: UUID | None = None
-    movement_kind: Literal["NORMAL", "AUTOMATIC_PROCESS", "INTERNAL_TRANSFER"] = "NORMAL"
+    movement_kind: Literal["NORMAL", "AUTOMATIC_PROCESS", "INTERNAL_TRANSFER"] = (
+        "NORMAL"
+    )
     notes: str | None = Field(default=None, max_length=4000)
     expected_version: int = Field(default=0, ge=0)
     suggestion_id: UUID | None = None
@@ -45,7 +51,7 @@ def transaction(connection, organization_id, transaction_id):
             text(
                 """
         SELECT t.*, i.version, i.party_id, i.category_id, i.subcategory_id,
-            i.cost_center_id, i.movement_kind, i.notes, i.method
+            i.cost_center_id, i.movement_kind, i.notes, i.method, i.customer_group_id
         FROM active_bank_transactions t JOIN bank_accounts a ON a.id = t.account_id
     """
                 + LATEST
@@ -65,7 +71,9 @@ def transaction(connection, organization_id, transaction_id):
 
 def normalize_identification(payload):
     if payload.movement_kind == "AUTOMATIC_PROCESS":
-        return payload.model_copy(update={key: None for key in IDENT_FIELDS[:4]})
+        return payload.model_copy(
+            update={key: None for key in (*IDENT_FIELDS[:4], "customer_group_id")}
+        )
     return payload
 
 
@@ -74,10 +82,30 @@ def validate_identification(
 ):
     payload = normalize_identification(payload)
     values = payload.model_dump()
+    if payload.customer_group_id:
+        if payload.party_id:
+            raise HTTPException(
+                422,
+                "Identifique o cliente específico ou apenas o grupo, sem escolher uma loja arbitrária.",
+            )
+        if direction != "CREDIT" or payload.movement_kind != "NORMAL":
+            raise HTTPException(
+                422, "Grupo de clientes é usado apenas em receitas normais."
+            )
+        if not connection.scalar(
+            text(
+                "SELECT 1 FROM customer_groups WHERE id=:id AND organization_id=:org AND active"
+            ),
+            {"id": payload.customer_group_id, "org": organization_id},
+        ):
+            raise HTTPException(422, "Selecione um grupo ativo desta organização.")
     if (
         require_complete
         and payload.movement_kind == "NORMAL"
-        and any(not values[key] for key in ("category_id", "subcategory_id", "cost_center_id"))
+        and any(
+            not values[key]
+            for key in ("category_id", "subcategory_id", "cost_center_id")
+        )
     ):
         raise HTTPException(
             422,
@@ -90,7 +118,9 @@ def validate_identification(
     )
     for field, table in checks:
         if values[field] and not connection.scalar(
-            text(f"SELECT 1 FROM {table} WHERE id = :id AND organization_id = :org AND active"),
+            text(
+                f"SELECT 1 FROM {table} WHERE id = :id AND organization_id = :org AND active"
+            ),
             {"id": values[field], "org": organization_id},
         ):
             raise HTTPException(422, "Selecione cadastros ativos desta organização.")
@@ -107,13 +137,16 @@ def validate_identification(
         if (
             expected_kind
             and connection.scalar(
-                text("SELECT kind FROM categories WHERE id=:id"), {"id": values["category_id"]}
+                text("SELECT kind FROM categories WHERE id=:id"),
+                {"id": values["category_id"]},
             )
             != expected_kind
         ):
-            label = {"NEUTRAL": "neutra", "REVENUE": "de receita", "EXPENSE": "de despesa"}[
-                expected_kind
-            ]
+            label = {
+                "NEUTRAL": "neutra",
+                "REVENUE": "de receita",
+                "EXPENSE": "de despesa",
+            }[expected_kind]
             raise HTTPException(
                 422, "Selecione uma classificação " + label + " para este tratamento."
             )
@@ -129,11 +162,15 @@ def validate_identification(
             "org": organization_id,
         },
     ):
-        raise HTTPException(422, "A subclassificação não pertence à classificação escolhida.")
+        raise HTTPException(
+            422, "A subclassificação não pertence à classificação escolhida."
+        )
     return values
 
 
-def save_identification(connection, organization_id, record, payload, method="OPERATOR"):
+def save_identification(
+    connection, organization_id, record, payload, method="OPERATOR"
+):
     payload = normalize_identification(payload)
     values = validate_identification(
         connection, organization_id, payload, direction=record["direction"]
@@ -154,7 +191,8 @@ def save_identification(connection, organization_id, record, payload, method="OP
         if not suggestion:
             raise HTTPException(422, "Sugestão inválida.")
         if all(
-            str(suggestion.get(key) or "") == str(values.get(key) or "") for key in IDENT_FIELDS
+            str(suggestion.get(key) or "") == str(values.get(key) or "")
+            for key in IDENT_FIELDS
         ):
             method = "AI_CONFIRMED"
     actor_id = actor(connection)
@@ -162,9 +200,9 @@ def save_identification(connection, organization_id, record, payload, method="OP
         text("""
         INSERT INTO transaction_identifications(
             transaction_id, organization_id, version, party_id, category_id, subcategory_id,
-            cost_center_id, movement_kind, notes, method, actor_id
+            cost_center_id, movement_kind, notes, method, actor_id, customer_group_id
         ) VALUES (:tx, :org, :version, :party_id, :category_id, :subcategory_id,
-            :cost_center_id, :movement_kind, :notes, :method, :actor) RETURNING id
+            :cost_center_id, :movement_kind, :notes, :method, :actor, :customer_group_id) RETURNING id
     """),
         {
             **{key: values[key] for key in (*IDENT_FIELDS, "notes")},
@@ -212,7 +250,8 @@ def identify(
             text(ACTIVE_LINK), {"org": organization_id, "tx": transaction_id}
         ).first():
             raise HTTPException(
-                409, "Desvincule o lançamento antes de alterar a identificação diretamente."
+                409,
+                "Desvincule o lançamento antes de alterar a identificação diretamente.",
             )
         return save_identification(connection, organization_id, record, payload)
 
@@ -229,7 +268,9 @@ def list_transactions(
     end: str | None = None,
     direction: Literal["CREDIT", "DEBIT"] | None = None,
     page: int = Query(default=1, ge=1),
-    sort_by: Literal["date", "account", "description", "amount", "identification"] = "date",
+    sort_by: Literal[
+        "date", "account", "description", "amount", "identification"
+    ] = "date",
     sort_order: Literal["asc", "desc"] = "desc",
     selection_only: bool = False,
 ):
@@ -241,7 +282,9 @@ def list_transactions(
     except ValueError as error:
         raise HTTPException(422, "Data inválida.") from error
     if start_date and end_date and end_date < start_date:
-        raise HTTPException(422, "O fim do período deve ser igual ou posterior ao início.")
+        raise HTTPException(
+            422, "O fim do período deve ser igual ou posterior ao início."
+        )
     params = {
         "org": organization_id,
         "account": account_id,
@@ -335,7 +378,10 @@ def list_transactions(
         if selection_only:
             ids = (
                 connection.execute(
-                    text("SELECT DISTINCT t.id " + joins + conditions + " AND t.editable"), params
+                    text(
+                        "SELECT DISTINCT t.id " + joins + conditions + " AND t.editable"
+                    ),
+                    params,
                 )
                 .scalars()
                 .all()
@@ -349,7 +395,7 @@ def list_transactions(
                 a.label AS account_label, t.posted_on, t.direction,
                 t.amount, t.currency, t.raw_description, t.raw_payload,
                 COALESCE(i.version, 0) AS version, i.party_id, i.category_id, i.subcategory_id,
-                i.cost_center_id, i.movement_kind, i.notes, i.method,
+                i.cost_center_id, i.movement_kind, i.notes, i.method, i.customer_group_id,
                 CASE WHEN NOT t.editable THEN 'duplicate' WHEN i.id IS NOT NULL THEN 'identified'
                     WHEN s.id IS NOT NULL THEN 'suggested' ELSE 'pending' END AS state,
                 s.id AS suggestion_id, s.payload AS suggestion, s.reason, s.confidence,
@@ -359,7 +405,8 @@ def list_transactions(
                     ) ORDER BY l.created_at DESC LIMIT 1) AS planning_description,
                 (SELECT c.name FROM categories c WHERE c.id = i.category_id) AS category_name,
                 (SELECT c.name FROM cost_centers c WHERE c.id = i.cost_center_id) AS cost_center_name,
-                (SELECT p.display_name FROM parties p WHERE p.id = i.party_id) AS party_name
+                (SELECT p.display_name FROM parties p WHERE p.id = i.party_id) AS party_name,
+                (SELECT g.name FROM customer_groups g WHERE g.id = i.customer_group_id) AS customer_group_name
         """
                 + joins
                 + conditions

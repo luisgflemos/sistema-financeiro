@@ -10,6 +10,7 @@ from app.bank_accounts import router as bank_accounts_router
 from app.catalog_import import router as catalog_import_router
 from app.catalogs import router as catalogs_router
 from app.db import create_database_engine
+from app.customer_groups import router as customer_groups_router
 from app.historical_import import router as historical_import_router
 from app.organizations import router as organizations_router
 from app.payer_links import router as payer_links_router
@@ -36,6 +37,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Finare", lifespan=lifespan)
 app.include_router(bank_accounts_router)
 app.include_router(catalogs_router)
+app.include_router(customer_groups_router)
 app.include_router(catalog_import_router)
 app.include_router(organizations_router)
 app.include_router(table_imports_router)

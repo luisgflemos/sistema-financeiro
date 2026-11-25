@@ -41,6 +41,8 @@ type Movement = {
   version: number;
   method: string | null;
   party_id: string | null;
+  customer_group_id: string | null;
+  customer_group_name: string | null;
   category_id: string | null;
   subcategory_id: string | null;
   cost_center_id: string | null;
@@ -57,6 +59,7 @@ type Movement = {
 };
 type Draft = {
   party_id: string;
+  customer_group_id: string;
   category_id: string;
   subcategory_id: string;
   cost_center_id: string;
@@ -120,6 +123,7 @@ export function TransactionsPage({
   const [rechecking, setRechecking] = useState(false);
   const [draft, setDraft] = useState<Draft>({
     party_id: "",
+    customer_group_id: "",
     category_id: "",
     subcategory_id: "",
     cost_center_id: "",
@@ -152,6 +156,7 @@ export function TransactionsPage({
         if (
           [
             previous.party_id,
+            previous.customer_group_id,
             previous.category_id,
             previous.subcategory_id,
             previous.cost_center_id,
@@ -160,6 +165,7 @@ export function TransactionsPage({
           return {
             ...previous,
             party_id: "",
+            customer_group_id: "",
             category_id: "",
             subcategory_id: "",
             cost_center_id: "",
@@ -213,6 +219,7 @@ export function TransactionsPage({
         "subcategories",
         "cost-centers",
         "parties",
+        "customer-groups",
       ].map(
         async (key) =>
           [
@@ -290,6 +297,7 @@ export function TransactionsPage({
           ? (
               [
                 "party_id",
+                "customer_group_id",
                 "category_id",
                 "subcategory_id",
                 "cost_center_id",
@@ -306,6 +314,7 @@ export function TransactionsPage({
     setEditedFields(new Set());
     setDraft({
       party_id: String(source.party_id ?? ""),
+      customer_group_id: String(source.customer_group_id ?? ""),
       category_id: String(source.category_id ?? ""),
       subcategory_id: String(source.subcategory_id ?? ""),
       cost_center_id: String(source.cost_center_id ?? ""),
@@ -769,11 +778,15 @@ export function TransactionsPage({
                       {row.raw_description}
                       {row.movement_kind !== "AUTOMATIC_PROCESS" &&
                         (row.party_name ||
+                          row.customer_group_name ||
                           row.category_name ||
                           row.cost_center_name) && (
                           <small>
                             {[
                               row.party_name,
+                              row.customer_group_name
+                                ? `Grupo: ${row.customer_group_name}`
+                                : null,
                               row.category_name,
                               row.cost_center_name,
                             ]
@@ -1104,6 +1117,7 @@ export function TransactionsPage({
                           setDraft((previous) => ({
                             ...previous,
                             movement_kind: value,
+                            customer_group_id: "",
                             category_id: "",
                             subcategory_id: "",
                             ...(value === "AUTOMATIC_PROCESS"
@@ -1173,6 +1187,9 @@ export function TransactionsPage({
                             setDraft((previous) => ({
                               ...previous,
                               [field]: value,
+                              ...(field === "party_id" && value
+                                ? { customer_group_id: "" }
+                                : {}),
                               ...(field === "category_id"
                                 ? { subcategory_id: "" }
                                 : {}),
@@ -1181,6 +1198,39 @@ export function TransactionsPage({
                         />
                       </div>
                     ))}
+                    {selected.direction === "CREDIT" &&
+                      draft.movement_kind === "NORMAL" &&
+                      !draft.party_id && (
+                        <div className={"field" + aiClass("customer_group_id")}>
+                          <label htmlFor="identify-customer-group">
+                            Grupo de Clientes (opcional)
+                            {aiBadge("customer_group_id")}
+                          </label>
+                          <SearchSelect
+                            id="identify-customer-group"
+                            ariaLabel="Grupo de Clientes (opcional)"
+                            value={draft.customer_group_id}
+                            options={[
+                              { value: "", label: "Sem grupo" },
+                              ...(catalogs["customer-groups"] ?? [])
+                                .filter((g) => g.active)
+                                .map((g) => ({
+                                  value: g.id,
+                                  label: String(g.name),
+                                })),
+                            ]}
+                            onChange={(value) => {
+                              manualFields("customer_group_id");
+                              setDraft({ ...draft, customer_group_id: value });
+                            }}
+                          />
+                          <small>
+                            {draft.customer_group_id
+                              ? "Cliente/loja não identificado. Este recebimento será associado somente ao grupo."
+                              : "Use somente quando não for possível identificar o cliente ou a loja."}
+                          </small>
+                        </div>
+                      )}
                     <div className="field complementary-field">
                       <label htmlFor="identification-complementary">
                         Descrição Complementar

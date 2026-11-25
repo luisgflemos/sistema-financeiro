@@ -100,6 +100,7 @@ export function PayerLinks({
       );
       setUpload(null);
       onDone(result.linked);
+      setPreview({ ...preview, groups: result.groups, new: 0 });
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Não foi possível gravar os vínculos.",
@@ -165,8 +166,9 @@ export function PayerLinks({
             </div>
             <p className="field-help">
               CSV UTF-8 separado por ponto e vírgula. Colunas: Pagador, Cliente,
-              Quantidade e Total. Use o nome do cliente cadastrado e o total sem
-              separador de milhar.
+              Quantidade e Total. Para grupos, use Grupo no lugar de Cliente no
+              cabeçalho. Use o nome cadastrado e o total sem separador de
+              milhar.
             </p>
           </fieldset>
         )}
@@ -189,7 +191,7 @@ export function PayerLinks({
                 <thead>
                   <tr>
                     <th>Pagador no extrato</th>
-                    <th>Cliente</th>
+                    <th>Cliente ou Grupo</th>
                     <th>Movimentos</th>
                     <th>Total</th>
                     <th>Já vinculados</th>

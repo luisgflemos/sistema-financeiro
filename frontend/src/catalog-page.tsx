@@ -45,6 +45,7 @@ export function CatalogPage({
   const [importBusy, setImportBusy] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [records, setRecords] = useState<RecordData[]>([]);
+  const [customerGroups, setCustomerGroups] = useState<RecordData[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editing, setEditing] = useState<RecordData | null>(null);
   const [draft, setDraft] = useState<Draft>(blank);
@@ -71,8 +72,14 @@ export function CatalogPage({
 
     async function load() {
       try {
-        const items = await api<RecordData[]>(path, options);
+        const [items, groups] = await Promise.all([
+          api<RecordData[]>(path, options),
+          id === "parties"
+            ? api<RecordData[]>(base + "/customer-groups", options)
+            : Promise.resolve([]),
+        ]);
         if (controller.signal.aborted) return;
+        setCustomerGroups(groups);
         setRecords(
           categoryId
             ? items.filter((item) => item.category_id === categoryId)
@@ -165,7 +172,10 @@ export function CatalogPage({
           field.options?.find((option) => option.value === record[field.name])
             ?.label,
           field.reference
-            ? records.find((item) => item.id === record[field.name])?.name
+            ? (field.reference === "customer-groups"
+                ? customerGroups
+                : records
+              ).find((item) => item.id === record[field.name])?.name
             : "",
         ]),
       ]),
@@ -203,7 +213,9 @@ export function CatalogPage({
     const value = record[name];
     if (!value) return "—";
     if (field?.reference) {
-      const linked = records.find((item) => item.id === value);
+      const linked = (
+        field.reference === "customer-groups" ? customerGroups : records
+      ).find((item) => item.id === value);
       return linked ? String(linked.name) : "—";
     }
     return (
@@ -259,9 +271,23 @@ export function CatalogPage({
                     <label htmlFor={`${uid}-${field.name}`}>
                       {field.label}
                     </label>
-                    {availableOptions &&
-                    (field.name === "bank_code" ||
-                      field.name === "currency") ? (
+                    {field.readOnly && field.reference === "customer-groups" ? (
+                      <input
+                        id={`${uid}-${field.name}`}
+                        readOnly
+                        value={
+                          customerGroups.find((g) => g.id === value)?.name
+                            ? String(
+                                customerGroups.find((g) => g.id === value)
+                                  ?.name,
+                              )
+                            : ""
+                        }
+                        placeholder={field.placeholder}
+                      />
+                    ) : availableOptions &&
+                      (field.name === "bank_code" ||
+                        field.name === "currency") ? (
                       <SearchSelect
                         id={`${uid}-${field.name}`}
                         value={value}

@@ -22,7 +22,9 @@ from app.transactions import (
     validate_identification,
 )
 
-router = APIRouter(prefix="/organizations/{organization_id}/planned-entries", tags=["Lançamentos"])
+router = APIRouter(
+    prefix="/organizations/{organization_id}/planned-entries", tags=["Lançamentos"]
+)
 
 SUMMARY = """
     SELECT e.*, COALESCE(s.paid, 0) AS paid, COALESCE(s.finished, false) AS finished,
@@ -113,10 +115,20 @@ def present(row):
     expected, paid = row["expected_amount"], row["paid"]
     closed = row["cancelled"] or row["finished"] or paid >= expected
     result["state"] = (
-        "cancelled" if row["cancelled"] else "realized" if closed else "partial" if paid else "open"
+        "cancelled"
+        if row["cancelled"]
+        else "realized"
+        if closed
+        else "partial"
+        if paid
+        else "open"
     )
-    result["outstanding"] = f"{Decimal(0) if closed else max(Decimal(0), expected - paid):.2f}"
-    result["difference"] = f"{paid - expected:.2f}" if closed and not row["cancelled"] else "0.00"
+    result["outstanding"] = (
+        f"{Decimal(0) if closed else max(Decimal(0), expected - paid):.2f}"
+    )
+    result["difference"] = (
+        f"{paid - expected:.2f}" if closed and not row["cancelled"] else "0.00"
+    )
     for key in ("paid", "expected_amount"):
         result[key] = f"{result[key]:.2f}"
     return result
@@ -125,7 +137,10 @@ def present(row):
 def entry(connection, org, identifier):
     row = (
         connection.execute(
-            text(SUMMARY + " WHERE e.id=:id AND e.organization_id=:org AND e.deleted_at IS NULL"),
+            text(
+                SUMMARY
+                + " WHERE e.id=:id AND e.organization_id=:org AND e.deleted_at IS NULL"
+            ),
             {"id": identifier, "org": org},
         )
         .mappings()
@@ -145,7 +160,12 @@ def validate_fields(connection, org, payload):
         Identification(
             **{
                 key: getattr(payload, key)
-                for key in ("category_id", "subcategory_id", "cost_center_id", "party_id")
+                for key in (
+                    "category_id",
+                    "subcategory_id",
+                    "cost_center_id",
+                    "party_id",
+                )
             }
         ),
         direction=payload.direction,
@@ -162,9 +182,13 @@ def validate_fields(connection, org, payload):
 def occurrence_date(first, frequency, index):
     if frequency == "WEEKLY":
         return first + timedelta(weeks=index)
-    months = index if frequency == "MONTHLY" else index * 12 if frequency == "YEARLY" else 0
+    months = (
+        index if frequency == "MONTHLY" else index * 12 if frequency == "YEARLY" else 0
+    )
     year, month0 = divmod(first.year * 12 + first.month - 1 + months, 12)
-    return date(year, month0 + 1, min(first.day, calendar.monthrange(year, month0 + 1)[1]))
+    return date(
+        year, month0 + 1, min(first.day, calendar.monthrange(year, month0 + 1)[1])
+    )
 
 
 @router.post("", status_code=201)
@@ -193,7 +217,9 @@ def create(organization_id: UUID, payload: NewEntry, request: Request):
         )
         if prior:
             if prior["payload_hash"] != digest:
-                raise HTTPException(409, "Esta solicitação já foi usada com outros dados.")
+                raise HTTPException(
+                    409, "Esta solicitação já foi usada com outros dados."
+                )
             return {"created": payload.occurrences, "repeated": True}
         validate_fields(connection, organization_id, payload)
         series = connection.scalar(
@@ -257,14 +283,18 @@ def listing(
             + " WHERE e.organization_id=:org AND e.deleted_at IS NULL AND (CAST(:direction AS text) IS NULL OR e.direction=:direction)"
         )
         words = "".join(
-            c for c in unicodedata.normalize("NFD", query.lower()) if not unicodedata.combining(c)
+            c
+            for c in unicodedata.normalize("NFD", query.lower())
+            if not unicodedata.combining(c)
         ).split()
         for i, word in enumerate(words):
             sql += f" AND translate(lower(concat_ws(' ',e.description,p.display_name,c.name,cc.name)),'áàâãäéèêëíìîïóòôõöúùûüç','aaaaaeeeeiiiiooooouuuuc') LIKE :word{i}"
             params[f"word{i}"] = "%" + word + "%"
         rows = [
             present(row)
-            for row in connection.execute(text(sql + " ORDER BY e.due_on,e.id"), params).mappings()
+            for row in connection.execute(
+                text(sql + " ORDER BY e.due_on,e.id"), params
+            ).mappings()
         ]
         if state == "active":
             rows = [row for row in rows if row["state"] != "cancelled"]
@@ -297,7 +327,11 @@ def listing(
             "payable": f"{sum((Decimal(row['outstanding']) for row in rows if row['direction'] == 'DEBIT'), Decimal(0)):.2f}",
         }
         start = (page - 1) * page_size
-        return {"rows": rows[start : start + page_size], "total": len(rows), "totals": totals}
+        return {
+            "rows": rows[start : start + page_size],
+            "total": len(rows),
+            "totals": totals,
+        }
 
 
 @router.put("/{entry_id}")
@@ -341,7 +375,9 @@ def cancel(organization_id: UUID, entry_id: UUID, payload: Version, request: Req
         if old["state"] not in ("open", "partial"):
             raise HTTPException(409, "Este lançamento não possui saldo em aberto.")
         connection.execute(
-            text("UPDATE planned_entries SET cancelled=true,version=version+1 WHERE id=:id"),
+            text(
+                "UPDATE planned_entries SET cancelled=true,version=version+1 WHERE id=:id"
+            ),
             {"id": entry_id},
         )
         audit(connection, organization_id, "planned_entries", entry_id, "cancel", old)
@@ -350,7 +386,9 @@ def cancel(organization_id: UUID, entry_id: UUID, payload: Version, request: Req
 
 def exclusion_selection(connection, org, old, scope):
     condition = (
-        "e.id=:id" if scope == "current" else "e.series_id=:series AND e.occurrence>=:occurrence"
+        "e.id=:id"
+        if scope == "current"
+        else "e.series_id=:series AND e.occurrence>=:occurrence"
     )
     rows = [
         present(row)
@@ -371,7 +409,9 @@ def exclusion_selection(connection, org, old, scope):
     ]
     # Revisão otimista de toda a seleção: não excluir parcelas alteradas após a prévia.
     revision = hashlib.sha256(
-        json.dumps([[str(row["id"]), row["version"], row["can_delete"]] for row in rows]).encode()
+        json.dumps(
+            [[str(row["id"]), row["version"], row["can_delete"]] for row in rows]
+        ).encode()
     ).hexdigest()
     return rows, revision
 
@@ -400,13 +440,22 @@ def exclusion_preview(
 
 
 @router.post("/{entry_id}/exclude")
-def exclude(organization_id: UUID, entry_id: UUID, payload: Exclusion, request: Request):
+def exclude(
+    organization_id: UUID, entry_id: UUID, payload: Exclusion, request: Request
+):
     with request.app.state.database.begin() as connection:
         lock_organization(connection, organization_id)
         old = entry(connection, organization_id, entry_id)
-        rows, revision = exclusion_selection(connection, organization_id, old, payload.scope)
-        if old["version"] != payload.expected_version or revision != payload.expected_revision:
-            raise HTTPException(409, "A seleção mudou. Atualize a prévia antes de excluir.")
+        rows, revision = exclusion_selection(
+            connection, organization_id, old, payload.scope
+        )
+        if (
+            old["version"] != payload.expected_version
+            or revision != payload.expected_revision
+        ):
+            raise HTTPException(
+                409, "A seleção mudou. Atualize a prévia antes de excluir."
+            )
         if any(not row["can_delete"] for row in rows):
             raise HTTPException(
                 409,
@@ -414,7 +463,9 @@ def exclude(organization_id: UUID, entry_id: UUID, payload: Exclusion, request: 
             )
         for row in rows:
             connection.execute(
-                text("UPDATE planned_entries SET deleted_at=now(),version=version+1 WHERE id=:id"),
+                text(
+                    "UPDATE planned_entries SET deleted_at=now(),version=version+1 WHERE id=:id"
+                ),
                 {"id": row["id"]},
             )
             audit(
@@ -434,12 +485,17 @@ def link_info(organization_id: UUID, transaction_id: UUID, request: Request):
     with request.app.state.database.connect() as connection:
         transaction(connection, organization_id, transaction_id)
         link = (
-            connection.execute(text(ACTIVE_LINK), {"tx": transaction_id, "org": organization_id})
+            connection.execute(
+                text(ACTIVE_LINK), {"tx": transaction_id, "org": organization_id}
+            )
             .mappings()
             .one_or_none()
         )
         return (
-            {"link_id": link["id"], "entry": entry(connection, organization_id, link["entry_id"])}
+            {
+                "link_id": link["id"],
+                "entry": entry(connection, organization_id, link["entry_id"]),
+            }
             if link
             else None
         )
@@ -461,14 +517,17 @@ def settlements(organization_id: UUID, entry_id: UUID, request: Request):
 
 
 @router.post("/{entry_id}/settle")
-def settle(organization_id: UUID, entry_id: UUID, payload: Settlement, request: Request):
+def settle(
+    organization_id: UUID, entry_id: UUID, payload: Settlement, request: Request
+):
     with request.app.state.database.begin() as connection:
         lock_organization(connection, organization_id)
         record = transaction(connection, organization_id, payload.transaction_id)
         old = entry(connection, organization_id, entry_id)
         prior = (
             connection.execute(
-                text(ACTIVE_LINK), {"org": organization_id, "tx": payload.transaction_id}
+                text(ACTIVE_LINK),
+                {"org": organization_id, "tx": payload.transaction_id},
             )
             .mappings()
             .one_or_none()
@@ -476,7 +535,9 @@ def settle(organization_id: UUID, entry_id: UUID, payload: Settlement, request: 
         if prior:
             if prior["entry_id"] == entry_id:
                 return {"linked": True, "repeated": True}
-            raise HTTPException(409, "Este movimento já está vinculado a outro lançamento.")
+            raise HTTPException(
+                409, "Este movimento já está vinculado a outro lançamento."
+            )
         if (
             old["version"] != payload.expected_entry_version
             or (record.get("version") or 0) != payload.expected_transaction_version
@@ -484,9 +545,13 @@ def settle(organization_id: UUID, entry_id: UUID, payload: Settlement, request: 
             raise HTTPException(409, "Os dados mudaram. Atualize antes de vincular.")
         if old["state"] not in ("open", "partial"):
             raise HTTPException(409, "Selecione um lançamento em aberto.")
-        if old["direction"] != record["direction"] or old["currency"] != record["currency"]:
+        if (
+            old["direction"] != record["direction"]
+            or old["currency"] != record["currency"]
+        ):
             raise HTTPException(
-                422, "A direção e a moeda do movimento devem corresponder ao lançamento."
+                422,
+                "A direção e a moeda do movimento devem corresponder ao lançamento.",
             )
         if old["account_id"] and old["account_id"] != record["account_id"]:
             raise HTTPException(
@@ -495,15 +560,26 @@ def settle(organization_id: UUID, entry_id: UUID, payload: Settlement, request: 
             )
         remaining = Decimal(old["outstanding"])
         if (
-            record["amount"] > remaining or (payload.finish and record["amount"] != remaining)
+            record["amount"] > remaining
+            or (payload.finish and record["amount"] != remaining)
         ) and not payload.confirm_difference:
-            raise HTTPException(422, "Confirme a diferença de valor antes de concluir a baixa.")
+            raise HTTPException(
+                422, "Confirme a diferença de valor antes de concluir a baixa."
+            )
         identification = Identification(
             **{
                 key: old[key]
-                for key in ("party_id", "category_id", "subcategory_id", "cost_center_id")
+                for key in (
+                    "party_id",
+                    "category_id",
+                    "subcategory_id",
+                    "cost_center_id",
+                )
             },
             notes=payload.notes,
+            customer_group_id=record.get("customer_group_id")
+            if not old["party_id"]
+            else None,
             expected_version=payload.expected_transaction_version,
         )
         save_identification(connection, organization_id, record, identification)
@@ -520,7 +596,8 @@ def settle(organization_id: UUID, entry_id: UUID, payload: Settlement, request: 
             },
         )
         connection.execute(
-            text("UPDATE planned_entries SET version=version+1 WHERE id=:id"), {"id": entry_id}
+            text("UPDATE planned_entries SET version=version+1 WHERE id=:id"),
+            {"id": entry_id},
         )
         audit(
             connection,
@@ -544,7 +621,9 @@ def reverse(organization_id: UUID, transaction_id: UUID, request: Request):
         lock_organization(connection, organization_id)
         transaction(connection, organization_id, transaction_id)
         link = (
-            connection.execute(text(ACTIVE_LINK), {"org": organization_id, "tx": transaction_id})
+            connection.execute(
+                text(ACTIVE_LINK), {"org": organization_id, "tx": transaction_id}
+            )
             .mappings()
             .one_or_none()
         )

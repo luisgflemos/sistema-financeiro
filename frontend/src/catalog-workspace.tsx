@@ -1,6 +1,7 @@
 import { catalogIds } from "./catalogs";
 import { CatalogPage } from "./catalog-page";
 import { ClassificationTree } from "./classification-tree";
+import { CustomerGroups } from "./customer-groups";
 
 type CatalogId = (typeof catalogIds)[number];
 
@@ -13,7 +14,9 @@ export function CatalogWorkspace({
 }) {
   return (
     <div id="catalog-section">
-      {selected === "categories" ? (
+      {selected === "customer-groups" ? (
+        <CustomerGroups key={organizationId} organizationId={organizationId} />
+      ) : selected === "categories" ? (
         <ClassificationTree
           key={organizationId}
           organizationId={organizationId}
