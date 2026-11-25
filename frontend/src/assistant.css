@@ -107,10 +107,16 @@
 .assistant-panel > header button {
   color: white;
   background: transparent;
-  padding: 6px;
-  min-width: 32px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  flex: 0 0 40px;
   border-color: #69829c;
   display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .assistant-context {
   padding: 12px 16px;
