@@ -112,6 +112,9 @@ export function TransactionsPage({
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [selected, setSelected] = useState<Movement | null>(null);
+  const [aiFields, setAiFields] = useState<Set<keyof Draft>>(new Set());
+  const [editedFields, setEditedFields] = useState<Set<keyof Draft>>(new Set());
+  const [rechecking, setRechecking] = useState(false);
   const [draft, setDraft] = useState<Draft>({
     party_id: "",
     category_id: "",
@@ -261,6 +264,26 @@ export function TransactionsPage({
   function edit(row: Movement) {
     setLinkMode(false);
     const source = row.version ? row : (row.suggestion ?? row);
+    setAiFields(
+      new Set(
+        !row.version && row.suggestion
+          ? (
+              [
+                "party_id",
+                "category_id",
+                "subcategory_id",
+                "cost_center_id",
+                "movement_kind",
+              ] as (keyof Draft)[]
+            ).filter(
+              (key) =>
+                !!row.suggestion?.[key] &&
+                (key !== "movement_kind" || row.suggestion[key] !== "NORMAL"),
+            )
+          : [],
+      ),
+    );
+    setEditedFields(new Set());
     setDraft({
       party_id: String(source.party_id ?? ""),
       category_id: String(source.category_id ?? ""),
@@ -271,6 +294,75 @@ export function TransactionsPage({
     });
     setSelected(row);
     setSaveError("");
+  }
+  function manualFields(...keys: (keyof Draft)[]) {
+    setEditedFields((previous) => new Set([...previous, ...keys]));
+    setAiFields(
+      (previous) => new Set([...previous].filter((key) => !keys.includes(key))),
+    );
+  }
+  function aiClass(field: keyof Draft) {
+    return selected &&
+      !selected.version &&
+      aiFields.has(field) &&
+      !!draft[field] &&
+      draft[field] === selected.suggestion?.[field]
+      ? selected.confidence === "HIGH"
+        ? " ai-field-high"
+        : " ai-field-review"
+      : "";
+  }
+  function aiBadge(field: keyof Draft) {
+    return aiClass(field) ? (
+      <span className="ai-field-badge" aria-hidden="true">
+        <Sparkles size={12} aria-hidden="true" />
+        {selected?.confidence === "HIGH" ? "IA · Alta" : "IA · Revisar"}
+      </span>
+    ) : null;
+  }
+  async function recheckSuggestion() {
+    if (!selected || rechecking) return;
+    setRechecking(true);
+    setSaveError("");
+    const changes = new Set(editedFields);
+    const previousDraft = draft;
+    try {
+      const result = await api<{
+        updated_suggestions?: {
+          transaction_id: string;
+          suggestion_id: string;
+          suggestion: Movement["suggestion"];
+          reason: string;
+          confidence: string;
+        }[];
+      }>(base + "/recognition/run", {
+        method: "POST",
+        body: JSON.stringify({ transaction_id: selected.id }),
+      });
+      const update = result.updated_suggestions?.find(
+        (item) => item.transaction_id === selected.id,
+      );
+      if (!update)
+        throw new Error(
+          "A IA não encontrou evidência suficiente para uma nova sugestão. Revise os campos ou converse com o Fin.",
+        );
+      edit({ ...selected, ...update });
+      setDraft((value) => ({
+        ...value,
+        ...Object.fromEntries(
+          [...changes].map((key) => [key, previousDraft[key]]),
+        ),
+      }));
+      setAiFields(
+        (value) => new Set([...value].filter((key) => !changes.has(key))),
+      );
+      setEditedFields(changes);
+      setRefresh((value) => value + 1);
+    } catch (error) {
+      setSaveError((error as Error).message);
+    } finally {
+      setRechecking(false);
+    }
   }
   async function save(next: boolean) {
     if (!selected) return;
@@ -857,7 +949,14 @@ export function TransactionsPage({
             />
           )}
           {!linkMode && !selected.version && selected.suggestion && (
-            <div className="transaction-ai">
+            <div
+              className={
+                "transaction-ai " +
+                (selected.confidence === "HIGH"
+                  ? "ai-confidence-high"
+                  : "ai-confidence-review")
+              }
+            >
               <strong>
                 <Sparkles size={17} /> Sugestão da IA · Confiança{" "}
                 {selected.confidence === "HIGH"
@@ -868,6 +967,21 @@ export function TransactionsPage({
               </strong>
               <p>{selected.reason}</p>
               <small>Confira os vínculos abaixo antes de salvar.</small>
+              <div
+                className="ai-confidence-legend"
+                aria-label="Legenda das sugestões da IA"
+              >
+                <span className="ai-legend-high">Azul · Alta confiança</span>
+                <span className="ai-legend-review">Amarelo · Revisar</span>
+              </div>
+              <button
+                type="button"
+                className="ai-recheck"
+                disabled={rechecking || saving}
+                onClick={() => void recheckSuggestion()}
+              >
+                {rechecking ? "Analisando histórico…" : "Reavaliar sugestão"}
+              </button>
             </div>
           )}
           {selected.editable ? (
@@ -878,7 +992,7 @@ export function TransactionsPage({
                   void save(true);
                 }}
               >
-                <fieldset disabled={saving}>
+                <fieldset disabled={saving || rechecking}>
                   <div
                     className={
                       draft.movement_kind === "AUTOMATIC_PROCESS"
@@ -886,12 +1000,19 @@ export function TransactionsPage({
                         : "fields"
                     }
                   >
-                    <div className="field">
+                    <div className={"field" + aiClass("movement_kind")}>
                       <label htmlFor="movement-kind">
                         Tratamento do movimento
+                        {aiBadge("movement_kind")}
                       </label>
                       <SearchSelect
                         id="movement-kind"
+                        ariaLabel="Tratamento do movimento"
+                        description={
+                          aiClass("movement_kind")
+                            ? "Sugestão da IA. Confira a confiança indicada na legenda antes de confirmar."
+                            : undefined
+                        }
                         value={draft.movement_kind}
                         options={[
                           {
@@ -910,7 +1031,18 @@ export function TransactionsPage({
                             label: "Transferência entre contas próprias",
                           },
                         ]}
-                        onChange={(value) =>
+                        onChange={(value) => {
+                          manualFields(
+                            "movement_kind",
+                            "category_id",
+                            "subcategory_id",
+                            ...(value === "AUTOMATIC_PROCESS"
+                              ? ([
+                                  "party_id",
+                                  "cost_center_id",
+                                ] as (keyof Draft)[])
+                              : []),
+                          );
                           setDraft((previous) => ({
                             ...previous,
                             movement_kind: value,
@@ -919,8 +1051,8 @@ export function TransactionsPage({
                             ...(value === "AUTOMATIC_PROCESS"
                               ? { party_id: "", cost_center_id: "" }
                               : {}),
-                          }))
-                        }
+                          }));
+                        }}
                       />
                     </div>
                     {draft.movement_kind !== "NORMAL" && (
@@ -934,15 +1066,25 @@ export function TransactionsPage({
                       ? []
                       : fieldLabels
                     ).map(([field, label, key]) => (
-                      <div className="field" key={field}>
+                      <div
+                        className={"field" + aiClass(field as keyof Draft)}
+                        key={field}
+                      >
                         <label
                           className="identification-label"
                           htmlFor={"identify-" + field}
                         >
                           {label}
+                          {aiBadge(field as keyof Draft)}
                         </label>
                         <SearchSelect
                           id={"identify-" + field}
+                          ariaLabel={label}
+                          description={
+                            aiClass(field as keyof Draft)
+                              ? "Sugestão da IA. Confira a confiança indicada na legenda antes de confirmar."
+                              : undefined
+                          }
                           value={draft[field as keyof Draft]}
                           required={
                             draft.movement_kind === "NORMAL" &&
@@ -963,15 +1105,21 @@ export function TransactionsPage({
                                   }))
                               : options(key)),
                           ]}
-                          onChange={(value) =>
+                          onChange={(value) => {
+                            manualFields(
+                              field as keyof Draft,
+                              ...(field === "category_id"
+                                ? (["subcategory_id"] as (keyof Draft)[])
+                                : []),
+                            );
                             setDraft((previous) => ({
                               ...previous,
                               [field]: value,
                               ...(field === "category_id"
                                 ? { subcategory_id: "" }
                                 : {}),
-                            }))
-                          }
+                            }));
+                          }}
                         />
                       </div>
                     ))}
@@ -983,9 +1131,10 @@ export function TransactionsPage({
                         id="identification-complementary"
                         aria-describedby="identification-complementary-hint"
                         value={draft.notes}
-                        onChange={(event) =>
-                          setDraft({ ...draft, notes: event.target.value })
-                        }
+                        onChange={(event) => {
+                          manualFields("notes");
+                          setDraft({ ...draft, notes: event.target.value });
+                        }}
                         maxLength={4000}
                         rows={2}
                       />

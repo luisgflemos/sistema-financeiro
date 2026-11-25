@@ -20,6 +20,7 @@ export function SearchSelect({
   disabled,
   className,
   onSearchChange,
+  description,
 }: {
   id?: string;
   value: string;
@@ -30,6 +31,7 @@ export function SearchSelect({
   disabled?: boolean;
   className?: string;
   onSearchChange?: (value: string) => void;
+  description?: string;
 }) {
   const generated = useId();
   const inputId = id ?? generated;
@@ -105,6 +107,7 @@ export function SearchSelect({
         ref={input}
         id={inputId}
         aria-label={ariaLabel}
+        aria-description={description}
         disabled={disabled}
         role="combobox"
         autoComplete="off"

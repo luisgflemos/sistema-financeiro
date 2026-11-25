@@ -38,6 +38,7 @@ jobs:
           node tests/historical-smoke.mjs
           node tests/menu-sorting-smoke.mjs
           node tests/planning-regression.mjs
+          node tests/ai-fields-smoke.mjs
       - name: Salvar prévias de layout
         if: always()
         uses: actions/upload-artifact@v4

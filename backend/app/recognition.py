@@ -13,6 +13,14 @@ from sqlalchemy import text
 
 from app.ai_config import api_key
 from app.catalog import lock_organization
+from app.history_context import (
+    complete_suggestion,
+    confirmed,
+    evidence_reason,
+    full_overview,
+    load_history,
+    related_evidence,
+)
 from app.transactions import (
     IDENT_FIELDS,
     LATEST,
@@ -28,6 +36,7 @@ router = APIRouter(prefix="/organizations/{organization_id}/recognition", tags=[
 class RecognitionBatch(BaseModel):
     exclude: list[UUID] = Field(default_factory=list, max_length=10000)
     test: bool = False
+    transaction_id: UUID | None = None
 
 
 def generative_suggestions(context):
@@ -78,6 +87,12 @@ def generative_suggestions(context):
         "Não replique exemplos históricos que contrariem essas regras. "
         "party_candidates informa correspondências documentais calculadas localmente; "
         "vários candidatos exigem revisão. Não invente um cliente para preencher lacunas."
+        " historical_analysis analisa toda a base disponível localmente; evidence_by_movement "
+        "contém contagens completas por campo, inclusive conflitos. Os exemplos textuais são apenas "
+        "ilustrativos. Aproveite subclassificação consistente mesmo se o centro de custos divergir, "
+        "sem confirmar automaticamente. Correspondência por nome não é vínculo confirmado de cliente. "
+        "Escreva pagador ou recebedor, nunca traduza party como partido. Justifique usando contagens, "
+        "sem alegar que PIX sozinho indica faturamento. Sugestão parcial não recebe confiança HIGH."
     )
     try:
         with httpx.Client(timeout=45) as client:
@@ -176,6 +191,7 @@ def config(organization_id: UUID):
 
 @router.post("/run")
 def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request):
+    targeted = payload.transaction_id is not None
     with request.app.state.database.connect() as connection:
         if not connection.scalar(
             text("SELECT 1 FROM organizations WHERE id = :org"),
@@ -191,24 +207,14 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 "analyzed": [],
                 "verified": True,
             }
-        history = [
-            dict(row)
-            for row in connection.execute(
-                text(
-                    """
-            SELECT t.account_id, t.direction, t.raw_description, i.*,
-                t.id AS source_transaction_id
-            FROM bank_transactions t JOIN bank_accounts a ON a.id = t.account_id
-        """
-                    + LATEST
-                    + """
-            WHERE a.organization_id = :org AND i.method IN ('OPERATOR', 'AI_CONFIRMED')
-            ORDER BY t.posted_on DESC, i.created_at DESC, t.id
-        """
-                ),
-                {"org": organization_id},
-            ).mappings()
-        ]
+        base_history = load_history(connection, organization_id)
+        history = confirmed(base_history)
+        if payload.transaction_id:
+            current = transaction(connection, organization_id, payload.transaction_id)
+            if current.get("version"):
+                raise HTTPException(
+                    409, "Este movimento já foi confirmado. A identificação não foi alterada."
+                )
         pending = [
             dict(row)
             for row in connection.execute(
@@ -220,11 +226,16 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                     + """
             WHERE a.organization_id = :org AND i.id IS NULL
                   AND t.id <> ALL(CAST(:exclude AS uuid[]))
-                AND NOT EXISTS (SELECT 1 FROM transaction_suggestions s WHERE s.transaction_id = t.id)
+                AND (CAST(:target AS uuid) IS NOT NULL OR NOT EXISTS (SELECT 1 FROM transaction_suggestions s WHERE s.transaction_id = t.id))
+                AND (CAST(:target AS uuid) IS NULL OR t.id=:target)
             ORDER BY t.posted_on DESC, t.source_row LIMIT 20
         """
                 ),
-                {"org": organization_id, "exclude": payload.exclude},
+                {
+                    "org": organization_id,
+                    "exclude": payload.exclude,
+                    "target": payload.transaction_id,
+                },
             ).mappings()
         ]
         catalogs = {}
@@ -254,7 +265,11 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
     automated, remaining = [], []
     for row in pending:
         examples = patterns[pattern_key(row)]
-        if len(examples) >= 3 and len({suggested_tuple(item) for item in examples}) == 1:
+        if (
+            not targeted
+            and len(examples) >= 3
+            and len({suggested_tuple(item) for item in examples}) == 1
+        ):
             candidate = {key: examples[0][key] for key in IDENT_FIELDS}
             candidate["expected_version"] = 0
             with request.app.state.database.begin() as connection:
@@ -297,10 +312,26 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
             **{key: str(row.get(key) or "") for key in IDENT_FIELDS},
         }
 
+    evidence, prioritized = {}, []
+    for row in remaining:
+        facts, related = related_evidence(history, row, catalogs, party_documents)
+        facts["across_accounts"], _ = related_evidence(
+            history, {**row, "account_id": None}, catalogs, party_documents
+        )
+        evidence[str(row["id"])] = facts
+        prioritized.extend(related[: max(1, 150 // len(remaining))])
+    chosen = list(
+        {
+            str(row["source_transaction_id"]): row
+            for row in prioritized + relevant_history(history, remaining)
+        }.values()
+    )[:150]
     items, model = generative_suggestions(
         {
             "movements": [compact(row) for row in remaining],
-            "confirmed_examples": [compact(row) for row in relevant_history(history, remaining)],
+            "confirmed_examples": [compact(row) for row in chosen],
+            "historical_analysis": full_overview(base_history),
+            "evidence_by_movement": evidence,
             "catalogs": catalogs,
         }
     )
@@ -308,12 +339,15 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
         raise HTTPException(502, "A IA retornou um resultado inválido.")
     allowed = {str(row["id"]) for row in remaining}
     accepted = set()
+    updated = []
     with request.app.state.database.begin() as connection:
         lock_organization(connection, organization_id)
         for item in items:
             if not isinstance(item, dict) or item.get("transaction_id") not in allowed:
                 continue
             tx_id = item["transaction_id"]
+            facts = evidence[tx_id]
+            item = complete_suggestion(item, facts, catalogs)
             if tx_id in accepted:
                 continue
             current = transaction(connection, organization_id, UUID(tx_id))
@@ -333,24 +367,39 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                     continue
             except (HTTPException, ValueError):
                 continue
-            if current.get("version") or connection.scalar(
-                text("SELECT 1 FROM transaction_suggestions WHERE transaction_id = :id LIMIT 1"),
-                {"id": tx_id},
+            if current.get("version") or (
+                not targeted
+                and connection.scalar(
+                    text(
+                        "SELECT 1 FROM transaction_suggestions WHERE transaction_id = :id LIMIT 1"
+                    ),
+                    {"id": tx_id},
+                )
             ):
                 continue
             confidence = item.get("confidence")
             reason = item.get("reason")
+            if (
+                confidence == "HIGH"
+                and payload.movement_kind == "NORMAL"
+                and any(
+                    not getattr(payload, field)
+                    for field in ("category_id", "subcategory_id", "cost_center_id")
+                )
+            ):
+                confidence = "MEDIUM"
+            reason = evidence_reason(facts, catalogs) or reason
             if (
                 confidence not in {"HIGH", "MEDIUM", "LOW"}
                 or not isinstance(reason, str)
                 or not reason.strip()
             ):
                 continue
-            connection.execute(
+            suggestion_id = connection.scalar(
                 text("""
                 INSERT INTO transaction_suggestions(
                     transaction_id, organization_id, payload, reason, confidence, model
-                ) VALUES (:tx, :org, CAST(:payload AS jsonb), :reason, :confidence, :model)
+                ) VALUES (:tx, :org, CAST(:payload AS jsonb), :reason, :confidence, :model) RETURNING id
             """),
                 {
                     "tx": tx_id,
@@ -364,10 +413,22 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                 },
             )
             accepted.add(tx_id)
+            updated.append(
+                {
+                    "transaction_id": tx_id,
+                    "suggestion_id": str(suggestion_id),
+                    "suggestion": {
+                        key: payload.model_dump(mode="json")[key] for key in IDENT_FIELDS
+                    },
+                    "reason": reason[:2000],
+                    "confidence": confidence,
+                }
+            )
     return {
         "automatic": len(automated),
         "suggestions": len(accepted),
         "ai_enabled": True,
         "processed": len(pending),
         "analyzed": [str(row["id"]) for row in pending],
+        "updated_suggestions": updated,
     }
