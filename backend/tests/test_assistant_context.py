@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 import httpx
 
 from app import assistant
-from app.assistant_context import readable_context, suggestion_diagnostic
+from app.assistant_context import historical_pattern_answer, readable_context, suggestion_diagnostic
 
 
 def context_fixture():
@@ -31,6 +31,7 @@ def context_fixture():
         "related_history": {
             "same_account": {
                 "matching_records": 16,
+                "same_bank_account": True,
                 "match_basis": {"unique_name_in_bank_text": 16},
                 "fields": {
                     "subcategory_id": {
@@ -38,7 +39,9 @@ def context_fixture():
                         "observations": 16,
                         "missing": 0,
                         "values": {sub: 16},
-                    }
+                    },
+                    "party_id": {"missing": 16, "values": {}, "unanimous": False},
+                    "cost_center_id": {"missing": 0, "values": {center: 14}, "unanimous": False},
                 },
             }
         },
@@ -131,3 +134,36 @@ def test_provider_gets_names_and_never_returns_internal_codes(monkeypatch):
     assert "PIX Faturado" in response and sub not in response
     assert "partido" not in response and "cliente/fornecedor" in response
     assert "[cadastro não disponível]" in response
+
+
+def test_pattern_counts_are_rendered_from_data_without_model_reinterpretation(monkeypatch):
+    context = context_fixture()
+    center = context["catalogs"]["cost_centers"][0]["id"]
+    other = str(uuid4())
+    context["catalogs"]["cost_centers"].append(
+        {"id": other, "name": "Outro Centro", "active": True}
+    )
+    context["related_history"]["same_account"]["fields"]["cost_center_id"]["values"][other] = 2
+    context["recognition_review"] = suggestion_diagnostic(context)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Contagens e nomes não devem ser inventados por um modelo")
+
+    monkeypatch.setattr(assistant.httpx, "Client", forbidden)
+    response = assistant.generate_answer(
+        [
+            assistant.Message(
+                role="user",
+                content="Analise o padrão de subclassificação e centro de custos e os vínculos cadastrados",
+            )
+        ],
+        context,
+    )
+    assert "PIX Faturado (16/16)" in response
+    assert "Centro Modelo (14/16)" in response
+    assert "Outro Centro (2/16)" in response
+    assert "vinculado no cadastro: 0/16; sem vínculo cadastral: 16/16" in response
+    assert "amarelo" in response and "pelo nome no texto bancário" in response
+    assert center not in response
+    assert historical_pattern_answer("Como cadastrar uma subclassificação?", context) is None
+    assert historical_pattern_answer("Explique projeções", context) is None

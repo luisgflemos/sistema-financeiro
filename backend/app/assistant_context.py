@@ -1,6 +1,7 @@
 """Contexto legível: nomes e relações explícitos, sem exigir tradução de UUID pelo modelo."""
 
 import re
+import unicodedata
 from uuid import UUID
 
 UUID_PATTERN = re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.I)
@@ -99,3 +100,105 @@ def suggestion_diagnostic(context):
             "A confiança alta armazenada não justifica a ausência de campos obrigatórios; a sugestão precisa de revisão."
         )
     return result
+
+
+def historical_pattern_answer(question, context):
+    """Fatos quantitativos saem da consulta, sem delegar nomes ou contagens à redação livre."""
+    question = "".join(
+        c for c in unicodedata.normalize("NFD", question.lower()) if not unicodedata.combining(c)
+    )
+    if not any(
+        word in question
+        for word in ("padrao", "preval", "subclassifica", "centro de custo", "vinculo", "vinculado")
+    ):
+        return None
+    if any(
+        word in question
+        for word in (
+            "como cadastrar",
+            "o que e um padrao",
+            "como funciona",
+            "como aprende",
+            "como alterar",
+            "quero alterar",
+            "quero mudar",
+            "exclua",
+            "cadastre",
+            "salve",
+        )
+    ):
+        return None
+    history = context.get("related_history", {})
+    scoped = history.get("same_account", {})
+    all_accounts = history.get("all_accounts", {})
+    if not scoped.get("matching_records") and not all_accounts.get("matching_records"):
+        return "Não encontrei histórico confirmado que possa ser relacionado com segurança a este cliente ou movimento. Isso não prova ausência de padrão na empresa; falta uma associação segura para esta consulta. Confira o cliente e os dados do movimento."
+    names = catalog_names(context)
+    parts = []
+    candidates = scoped.get("party_candidates", [])
+    identifier = (
+        candidates[0]
+        if len(candidates) == 1
+        else (context.get("transaction") or {}).get("suggestion", {}).get("party_id")
+    )
+    if identifier and str(identifier) in names:
+        parts.append(f"Histórico relacionado a {names[str(identifier)]}.")
+    scopes = [("Nesta conta" if scoped.get("same_bank_account") else "Em todas as contas", scoped)]
+    if scoped.get("same_bank_account") and all_accounts.get("matching_records"):
+        scopes.append(("Em todas as contas", all_accounts))
+    for title, facts in scopes:
+        count = facts.get("matching_records", 0)
+        if not count:
+            continue
+        parts.append(f"{title}: {count} movimentos confirmados relacionados.")
+        fields = facts.get("fields", {})
+        party = fields.get("party_id")
+        if party is not None:
+            missing = party.get("missing", 0)
+            linked = count - missing
+            parts.append(
+                f"Cliente/fornecedor vinculado no cadastro: {linked}/{count}; sem vínculo cadastral: {missing}/{count}."
+            )
+        if facts.get("match_basis", {}).get("unique_name_in_bank_text"):
+            parts.append(
+                "Parte do histórico foi relacionada pelo nome no texto bancário; isso não cria um vínculo cadastral."
+            )
+        for field, label in (
+            ("category_id", "Classificação"),
+            ("subcategory_id", "Subclassificação"),
+            ("cost_center_id", "Centro de Custos"),
+        ):
+            evidence = fields.get(field)
+            if evidence is None:
+                continue
+            ranked = sorted(evidence.get("values", {}).items(), key=lambda pair: -pair[1])
+            values = "; ".join(
+                f"{names.get(identifier, 'Cadastro não disponível')} ({number}/{count})"
+                for identifier, number in ranked[:3]
+            )
+            if len(ranked) > 3:
+                values += f"; outros {len(ranked) - 3} cadastros"
+            if evidence.get("missing"):
+                values += f"; não informado ({evidence['missing']}/{count})"
+            parts.append(f"{label}: {values.lstrip('; ') or 'não informado'}.")
+            if ranked and count >= 3:
+                if evidence.get("unanimous"):
+                    parts.append("Padrão unânime neste conjunto.")
+                elif ranked[0][1] >= 2 and (len(ranked) == 1 or ranked[0][1] > ranked[1][1]):
+                    parts.append(
+                        f"Predomina {names.get(ranked[0][0], 'cadastro não disponível')}; pode ser sugerido em amarelo para revisão."
+                    )
+                else:
+                    parts.append("Sem predominância única suficiente; requer revisão.")
+        parts.append("")
+    diagnostic = context.get("recognition_review", {})
+    if diagnostic.get("stored_suggestion_missing_subclassification") and diagnostic.get(
+        "observed_subclassification"
+    ):
+        parts.append(
+            "A sugestão armazenada omitiu a subclassificação apesar do padrão histórico. Use Reavaliar sugestão, confira os campos e salve quando estiver de acordo."
+        )
+    parts.append(
+        "A conta bancária não determina o centro de custos. Esta consulta não alterou a identificação."
+    )
+    return "\n".join(parts).strip()[:3000]

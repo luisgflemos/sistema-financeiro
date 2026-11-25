@@ -14,6 +14,7 @@ from sqlalchemy import text
 from app.ai_config import api_key
 from app.assistant_context import (
     catalog_names,
+    historical_pattern_answer,
     readable_context,
     readable_text,
     suggestion_diagnostic,
@@ -113,6 +114,9 @@ Não peça senhas, tokens, chaves de API ou credenciais bancárias.
 
 
 def generate_answer(messages, context):
+    factual_answer = historical_pattern_answer(messages[-1].content, context)
+    if factual_answer:
+        return factual_answer
     key = api_key()
     if not key:
         raise HTTPException(
