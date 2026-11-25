@@ -15,6 +15,7 @@ from app.history_context import (
     related_evidence,
     reviewed_confidence,
 )
+from app.statements import actor
 
 
 @pytest.fixture
@@ -173,3 +174,74 @@ def test_chat_refreshes_entire_history_after_a_new_confirmation(statements, monk
     assert client.post(base + "/assistant/chat", json=question).status_code == 200
     assert snapshots[0]["confirmed_learning_records"] == 0
     assert snapshots[1]["confirmed_learning_records"] == 1
+
+
+def test_recheck_completes_subclassification_from_sixteen_legacy_confirmations(
+    statements, monkeypatch
+):
+    client, connection, base, _ = statements
+    target = next(row for row in imported(client, base) if row["direction"] == "CREDIT")
+    values = dimensions(client, base)
+    sub = client.post(
+        base + "/subcategories", json={"name": "PIX Faturado", "category_id": values["category_id"]}
+    ).json()["id"]
+    other = client.post(base + "/cost-centers", json={"name": "Outro centro sintético"}).json()[
+        "id"
+    ]
+    user = actor(connection)
+    for index in range(16):
+        movement = connection.scalar(
+            text("""
+            INSERT INTO bank_transactions(account_id,import_file_id,source_row,posted_on,direction,
+                amount,currency,raw_description,raw_payload,fingerprint)
+            VALUES (:account,:file,:row,'2025-01-02','CREDIT',1,'BRL',
+                'PIX RECEBIDO CLIENTE SINTETICO','{}'::jsonb,:fingerprint) RETURNING id
+        """),
+            {
+                "account": target["account_id"],
+                "file": target["import_file_id"],
+                "row": 1000 + index,
+                "fingerprint": "legacy-synthetic-" + str(index),
+            },
+        )
+        connection.execute(
+            text("""
+            INSERT INTO transaction_identifications(transaction_id,organization_id,version,
+                category_id,subcategory_id,cost_center_id,movement_kind,method,actor_id)
+            VALUES (:tx,:org,1,:category,:sub,:center,'NORMAL','OPERATOR',:actor)
+        """),
+            {
+                "tx": movement,
+                "org": base.split("/")[2],
+                "category": values["category_id"],
+                "sub": sub,
+                "center": values["cost_center_id"] if index < 14 else other,
+                "actor": user,
+            },
+        )
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic")
+
+    def fake(context):
+        facts = context["evidence_by_movement"][target["id"]]
+        assert facts["matching_records"] == 16
+        assert facts["fields"]["subcategory_id"]["values"] == {sub: 16}
+        assert not facts["fields"]["cost_center_id"]["unanimous"]
+        return [
+            {
+                "transaction_id": target["id"],
+                "movement_kind": "NORMAL",
+                "category_id": values["category_id"],
+                "party_id": values["party_id"],
+                "confidence": "HIGH",
+                "reason": "Proposta incompleta sintética",
+            }
+        ], "synthetic"
+
+    monkeypatch.setattr(recognition, "generative_suggestions", fake)
+    response = client.post(base + "/recognition/run", json={"transaction_id": target["id"]})
+    assert response.status_code == 200, response.text
+    result = response.json()["updated_suggestions"][0]
+    assert result["suggestion"]["subcategory_id"] == sub
+    assert result["suggestion"]["cost_center_id"] is None
+    assert result["confidence"] == "MEDIUM"
+    assert "PIX Faturado (16/16)" in result["reason"]
