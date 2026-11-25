@@ -32,6 +32,8 @@ type FilePreview = {
   credits: string;
   debits: string;
   repeated: boolean;
+  reimported: boolean;
+  restored: number;
   pending: number;
   duplicates: number;
   new: number;
@@ -264,13 +266,16 @@ export function StatementImport({
                     <span>
                       {item.repeated
                         ? "Arquivo já importado. Não será repetido."
-                        : item.new + " novos movimentos"}
+                        : item.reimported
+                          ? item.restored +
+                            " movimentos excluídos serão reimportados para identificação."
+                          : item.new + " novos movimentos"}
                     </span>
                   </div>
                   {item.duplicates > 0 && !item.repeated && (
                     <p className="statement-match">
-                      {item.duplicates} já existentes — identificados
-                      automaticamente.
+                      {item.duplicates} movimentos já existentes serão mantidos,
+                      sem duplicação.
                     </p>
                   )}
                   {item.pending > 0 && (

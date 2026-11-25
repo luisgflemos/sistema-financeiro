@@ -61,9 +61,14 @@ def test_exclusion_preserves_originals_masters_and_hides_all_views(statements):
     )
     assert client.get(base + "/parties").json()[0]["id"] == values["party_id"]
     assert client.post(base + "/transaction-exclusions", json=body).status_code == 409
-    # Reimportar os mesmos bytes não ressuscita movimentos excluídos.
+    # Reimportar cria somente o movimento excluído, sem recuperar sua identificação.
     imported(client, base)
-    assert client.get(base + "/transactions?state=all").json()["total"] == 3
+    assert client.get(base + "/transactions?state=all").json()["total"] == 4
+    assert client.get(base + "/transactions?state=identified").json()["total"] == 0
+    assert client.get(base + f"/transactions/{current['id']}/identification").status_code in (
+        404,
+        405,
+    )
 
 
 def test_scope_preview_revision_and_settlements_block_atomic_exclusion(statements):

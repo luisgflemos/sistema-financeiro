@@ -34,7 +34,10 @@ def snapshot(connection, org, ids):
             (SELECT max(i.version) FROM transaction_identifications i WHERE i.transaction_id=t.id) AS version,
             (SELECT count(*) FROM entry_settlements s WHERE s.transaction_id=t.id) AS settlements,
             (SELECT count(*) FROM statement_rows r WHERE r.transaction_id=t.id
-                AND r.import_file_id<>t.import_file_id) AS other_statements
+                AND r.import_file_id<>t.import_file_id AND EXISTS(
+                    SELECT 1 FROM import_files linked JOIN import_files original ON original.id=t.import_file_id
+                    WHERE linked.id=r.import_file_id AND linked.sha256<>original.sha256
+                )) AS other_statements
         FROM active_bank_transactions t JOIN bank_accounts a ON a.id=t.account_id
         WHERE a.organization_id=:org AND t.id=ANY(CAST(:ids AS uuid[])) ORDER BY t.id
     """),

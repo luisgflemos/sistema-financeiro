@@ -127,6 +127,34 @@ try {
       .count(),
     0,
   );
+  await nav
+    .getByRole("button", { name: "Importar Extrato", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Importar Extratos", exact: true })
+    .click();
+  await page.getByLabel("Arquivos de extrato", { exact: true }).setInputFiles({
+    name: files[0].file_name,
+    mimeType: "text/csv",
+    buffer: Buffer.from(content),
+  });
+  await page
+    .getByText(
+      "105 movimentos excluídos serão reimportados para identificação.",
+      { exact: true },
+    )
+    .waitFor();
+  await page.screenshot({
+    path: "import-layout-statement-reimport.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Importar e identificar", exact: true })
+    .click();
+  await page.getByRole("dialog").waitFor({ state: "hidden" });
+  await page.getByText("105 resultados", { exact: true }).waitFor();
+  assert.equal((await api(base + "/transactions?state=pending")).total, 105);
+  assert.equal((await api(base + "/transactions?state=identified")).total, 0);
 } catch (error) {
   await page.screenshot({
     path: "import-layout-transaction-exclusion-error.png",

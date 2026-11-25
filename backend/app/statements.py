@@ -67,7 +67,7 @@ def build_preview(connection, organization_id, payload):
     seen = defaultdict(list)
     for row in connection.execute(
         text("""
-        SELECT t.account_id, t.fingerprint, t.id, t.raw_payload FROM bank_transactions t
+        SELECT t.account_id, t.fingerprint, t.id, t.raw_payload FROM active_bank_transactions t
         JOIN bank_accounts a ON a.id = t.account_id WHERE a.organization_id = :org
     """),
         {"org": organization_id},
@@ -81,15 +81,33 @@ def build_preview(connection, organization_id, payload):
                 "next_signature": raw.get("next_signature"),
             }
         )
-    stored = set(
-        (str(row["bank_account_id"]), row["sha256"])
+    stored = {
+        (str(row["bank_account_id"]), row["sha256"]): dict(row)
         for row in connection.execute(
             text("""
-            SELECT f.bank_account_id, f.sha256 FROM import_files f WHERE f.organization_id = :org
+            SELECT DISTINCT ON (f.bank_account_id, f.sha256) f.id, f.bank_account_id,
+                f.sha256, f.generation,
+                EXISTS(SELECT 1 FROM statement_rows r JOIN transaction_exclusions x
+                    ON x.transaction_id=r.transaction_id WHERE r.import_file_id=f.id) AS excluded
+            FROM import_files f WHERE f.organization_id=:org
+            ORDER BY f.bank_account_id, f.sha256, f.generation DESC
         """),
             {"org": organization_id},
         ).mappings()
-    )
+    }
+    provenance = {
+        (str(row["import_file_id"]), row["source_row"]): dict(row)
+        for row in connection.execute(
+            text("""
+            SELECT r.import_file_id,r.source_row,r.transaction_id,
+                x.transaction_id IS NOT NULL AS excluded
+            FROM statement_rows r LEFT JOIN transaction_exclusions x ON x.transaction_id=r.transaction_id
+            WHERE r.import_file_id=ANY(CAST(:ids AS uuid[]))
+        """),
+            {"ids": [value["id"] for value in stored.values()]},
+        ).mappings()
+    }
+    restored_refs = {}
     output, internal, total_bytes, total_rows = [], [], 0, 0
     for index, upload in enumerate(payload.files):
         try:
@@ -113,7 +131,9 @@ def build_preview(connection, organization_id, payload):
             selected = matches[0]
         account_id = str(selected["id"]) if selected else None
         file_key = (account_id, statement.digest)
-        repeated = file_key in stored or file_key in seen_files
+        prior_file = stored.get(file_key)
+        reimported = bool(prior_file and prior_file["excluded"] and file_key not in seen_files)
+        repeated = file_key in seen_files or bool(prior_file and not prior_file["excluded"])
         rows = [movement.public() for movement in statement.movements]
         for position, row in enumerate(rows):
             row["previous_signature"] = rows[position - 1]["signature"] if position else None
@@ -122,6 +142,29 @@ def build_preview(connection, organization_id, payload):
             )
         previous = {row["fingerprint"]: seen[(account_id, row["fingerprint"])] for row in rows}
         rows = classify_rows(rows, previous, upload.decisions, repeated)
+        if reimported:
+            for row in rows:
+                prior = provenance.get((str(prior_file["id"]), row["row"]))
+                if prior is None:
+                    raise HTTPException(
+                        409,
+                        "O arquivo anterior não possui rastreabilidade completa. Revise a importação.",
+                    )
+                ref = str(prior["transaction_id"]) if prior["transaction_id"] else None
+                if prior["excluded"] and ref not in restored_refs:
+                    row.update(
+                        status="new",
+                        matched_ref=None,
+                        replaces_excluded_id=ref,
+                        reason="Movimento excluído: será reimportado sem identificação anterior.",
+                    )
+                    restored_refs[ref] = f"batch:{index}:{row['row']}"
+                else:
+                    row.update(
+                        status="duplicate",
+                        matched_ref=restored_refs.get(ref, ref),
+                        reason="Movimento já ativo ou anteriormente desconsiderado neste arquivo.",
+                    )
         pending = sum(row["status"] == "review" for row in rows)
         for row in rows:
             if row["status"] == "new":
@@ -143,6 +186,10 @@ def build_preview(connection, organization_id, payload):
                 {"value": str(a["id"]), "label": a["label"] or a["code"]} for a in matches
             ],
             "repeated": repeated,
+            "reimported": reimported,
+            "restored": sum(bool(row.get("replaces_excluded_id")) for row in rows),
+            "generation": prior_file["generation"] + 1 if reimported else 1,
+            "previous_import_file_id": str(prior_file["id"]) if reimported else None,
             "rows": rows,
             "pending": pending,
             "new": sum(row["status"] == "new" for row in rows),
@@ -190,7 +237,7 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
             if repeated:
                 existing_id = connection.scalar(
                     text(
-                        "SELECT id FROM import_files WHERE bank_account_id=:account AND sha256=:hash"
+                        "SELECT id FROM import_files WHERE bank_account_id=:account AND sha256=:hash ORDER BY generation DESC LIMIT 1"
                     ),
                     {"account": account["id"], "hash": statement.digest},
                 )
@@ -201,9 +248,9 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
                 text("""
                 INSERT INTO import_files(
                     organization_id, batch_id, bank_account_id, file_name, sha256, format,
-                    storage_key, period_start, period_end, parser_version
+                    storage_key, period_start, period_end, parser_version, generation
                 ) VALUES (:org, :batch, :account, :name, :hash, :format,
-                    :storage, :start, :end, 'santander-tabular-v1') RETURNING id
+                    :storage, :start, :end, 'santander-tabular-v1', :generation) RETURNING id
             """),
                 {
                     "org": organization_id,
@@ -215,6 +262,7 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
                     "storage": "database:" + statement.digest,
                     "start": statement.summary()["period_start"],
                     "end": statement.summary()["period_end"],
+                    "generation": result["files"][file_index]["generation"],
                 },
             )
             connection.execute(
@@ -256,6 +304,9 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
                                     "signature": row["signature"],
                                     "previous_signature": row["previous_signature"],
                                     "next_signature": row["next_signature"],
+                                    "reimported_from_transaction_id": row.get(
+                                        "replaces_excluded_id"
+                                    ),
                                 }
                             ),
                         },
@@ -305,6 +356,15 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
                     {
                         "files": len(files),
                         "new_movements": result["new"],
+                        "reimports": [
+                            {
+                                "previous_file_id": f["previous_import_file_id"],
+                                "generation": f["generation"],
+                                "movements": f["restored"],
+                            }
+                            for f in result["files"]
+                            if f["reimported"]
+                        ],
                         "submitted_decisions": [
                             {"sha256": statement.digest, "rows": upload.decisions}
                             for upload, statement, _, _, _ in files

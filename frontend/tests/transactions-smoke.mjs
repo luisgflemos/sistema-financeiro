@@ -157,7 +157,7 @@ try {
     buffer: Buffer.from(csv + "\n"),
   });
   await page
-    .getByText("2 já existentes — identificados automaticamente.", {
+    .getByText("2 movimentos já existentes serão mantidos, sem duplicação.", {
       exact: true,
     })
     .waitFor();
