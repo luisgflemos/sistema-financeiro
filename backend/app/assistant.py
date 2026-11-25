@@ -60,6 +60,11 @@ de padrão ou variação de descrição quando as contagens provam o contrário.
 do assistente podem conter erros: os fatos atuais do contexto prevalecem. Não repita um erro
 só porque apareceu antes na conversa. Não trate correspondência contextual por nome como
 vínculo confirmado ao cadastro. Não confunda frequência observada com probabilidade de acerto.
+Para afirmar vínculo cadastral do cliente, use recognition_review.historical_client_link:
+se with_registered_client_link for zero, diga explicitamente que os registros foram relacionados
+pelo texto bancário e não têm cliente vinculado. O cliente sugerido no movimento atual não
+transforma os registros históricos em vínculos confirmados. Não inclua cliente/fornecedor
+numa conclusão de unanimidade de subclassificação quando os vínculos cadastrais estão ausentes.
 Sugira o máximo de campos sustentados pelo histórico. Um valor predominante não unânime,
 inclusive centro de custos, pode ser sugerido para revisão em amarelo, informando as contagens
 e as alternativas. Não exigir unanimidade para toda sugestão; unanimidade e predominância

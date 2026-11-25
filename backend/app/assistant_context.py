@@ -63,6 +63,19 @@ def suggestion_diagnostic(context):
     names = catalog_names(context)
     missing = bool(suggestion) and not suggestion.get("subcategory_id")
     result = {"stored_suggestion_missing_subclassification": missing}
+    party_field = evidence.get("fields", {}).get("party_id", {})
+    missing_party = party_field.get("missing", count)
+    if count:
+        result["historical_client_link"] = {
+            "records": count,
+            "without_registered_client_link": missing_party,
+            "with_registered_client_link": count - missing_party,
+            "interpretation": (
+                f"Dos {count} registros relacionados, {missing_party} não têm cliente/fornecedor vinculado no cadastro. "
+                "O nome no texto bancário permite relacionar histórico, mas não cria vínculo cadastral. "
+                "Não afirmar que o vínculo de cliente é unânime se houver registros sem vínculo."
+            ),
+        }
     if count >= 3 and field.get("unanimous"):
         identifier, occurrences = next(iter(field["values"].items()))
         result.update(

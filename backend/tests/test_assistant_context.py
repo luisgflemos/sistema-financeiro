@@ -54,6 +54,8 @@ def test_names_resolved_before_model_without_confusing_parent_and_child():
     assert diagnostic["stored_suggestion_missing_subclassification"]
     assert "omissão" in diagnostic["stored_suggestion_assessment"]
     assert "revisão" in diagnostic["confidence_assessment"]
+    assert diagnostic["historical_client_link"]["without_registered_client_link"] == 16
+    assert diagnostic["historical_client_link"]["with_registered_client_link"] == 0
     context["recognition_review"] = diagnostic
     result = readable_context(context)
     assert result["confirmed_examples"][0] == {
