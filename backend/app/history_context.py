@@ -29,7 +29,7 @@ def load_history(connection, org):
                 """
         SELECT t.account_id,t.direction,t.raw_description,t.posted_on,t.amount,i.*,
             t.id AS source_transaction_id
-        FROM bank_transactions t JOIN bank_accounts a ON a.id=t.account_id
+        FROM active_bank_transactions t JOIN bank_accounts a ON a.id=t.account_id
     """
                 + LATEST
                 + " WHERE a.organization_id=:org ORDER BY t.posted_on DESC,t.id"

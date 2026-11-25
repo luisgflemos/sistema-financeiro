@@ -21,6 +21,7 @@ import { EntryLinker } from "./entry-linker";
 import { categoryNature } from "./movement-nature";
 import { HistoricalImport } from "./historical-import";
 import { ActionButton } from "./action-button";
+import { useTransactionSelection } from "./transaction-selection";
 
 type Movement = {
   editable: boolean;
@@ -125,6 +126,23 @@ export function TransactionsPage({
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const selectionParams = new URLSearchParams({ state, query: search });
+  if (account) selectionParams.set("account_id", account);
+  if (statementId) selectionParams.set("statement_id", statementId);
+  if (start) selectionParams.set("start", start);
+  if (end) selectionParams.set("end", end);
+  if (direction) selectionParams.set("direction", direction);
+  const selection = useTransactionSelection(
+    base,
+    selectionParams.toString(),
+    rows,
+    total,
+    (count) => {
+      setNotice(`${count.toLocaleString("pt-BR")} movimentos excluídos.`);
+      setPage(1);
+      setRefresh((value) => value + 1);
+    },
+  );
   useEffect(() => {
     if (!selected || !catalogs.categories) return;
     setDraft((previous) => {
@@ -661,6 +679,7 @@ export function TransactionsPage({
             />
           </div>
         </div>
+        {mode === "import" && selection.toolbar}
         {loading ? (
           <p className="empty" role="status">
             Carregando movimentos…
@@ -675,6 +694,7 @@ export function TransactionsPage({
             <table className="transactions-table">
               <thead>
                 <tr>
+                  {mode === "import" && selection.header}
                   <th scope="col" aria-sort={ariaSort("date", "account")}>
                     <span className="transaction-sort-pair">
                       {sortButton("date", "Data")}
@@ -703,6 +723,7 @@ export function TransactionsPage({
                       row.import_file_id + "/" + row.source_row + "/" + row.id
                     }
                   >
+                    {mode === "import" && selection.cell(row)}
                     <td>
                       {brazilDate(row.posted_on)}
                       <small>{row.account_label}</small>

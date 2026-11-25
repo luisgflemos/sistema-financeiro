@@ -47,6 +47,17 @@ def snapshot(connection, organization_id, file_id):
     )
     if info is None:
         raise HTTPException(404, "Extrato não encontrado nesta organização.")
+    if connection.scalar(
+        text("""
+        SELECT 1 FROM transaction_exclusions x JOIN bank_transactions t ON t.id=x.transaction_id
+        WHERE t.import_file_id=:file LIMIT 1
+    """),
+        params,
+    ):
+        raise HTTPException(
+            409,
+            "Este extrato contém exclusões auditadas e não pode ser retirado por esta rotina antiga.",
+        )
     linked = connection.scalar(
         text("""
         SELECT count(*) FROM entry_settlements s JOIN bank_transactions t ON t.id=s.transaction_id

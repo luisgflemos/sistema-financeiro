@@ -46,7 +46,7 @@ def transaction(connection, organization_id, transaction_id):
                 """
         SELECT t.*, i.version, i.party_id, i.category_id, i.subcategory_id,
             i.cost_center_id, i.movement_kind, i.notes, i.method
-        FROM bank_transactions t JOIN bank_accounts a ON a.id = t.account_id
+        FROM active_bank_transactions t JOIN bank_accounts a ON a.id = t.account_id
     """
                 + LATEST
                 + """
@@ -231,6 +231,7 @@ def list_transactions(
     page: int = Query(default=1, ge=1),
     sort_by: Literal["date", "account", "description", "amount", "identification"] = "date",
     sort_order: Literal["asc", "desc"] = "desc",
+    selection_only: bool = False,
 ):
     from datetime import date
 
@@ -266,7 +267,7 @@ def list_transactions(
         conditions += " AND i.id IS NOT NULL"
     elif state == "suggested":
         conditions += " AND i.id IS NULL AND s.id IS NOT NULL"
-    source_table = "(SELECT b.*, TRUE AS editable FROM bank_transactions b)"
+    source_table = "(SELECT b.*, TRUE AS editable FROM active_bank_transactions b)"
     if statement_id:
         # Visão do arquivo: uma representação por linha, ligada ao movimento canônico quando conhecido.
         source_table = """
@@ -285,8 +286,10 @@ def list_transactions(
                 ) AS raw_payload,
                 r.transaction_id IS NOT NULL AS editable
             FROM statement_rows r JOIN import_files f ON f.id=r.import_file_id
-            LEFT JOIN bank_transactions b ON b.id=r.transaction_id
-            WHERE r.import_file_id=:statement)
+            LEFT JOIN active_bank_transactions b ON b.id=r.transaction_id
+            WHERE r.import_file_id=:statement AND NOT EXISTS (
+                SELECT 1 FROM transaction_exclusions x WHERE x.transaction_id=r.transaction_id
+            ))
         """
     joins = (
         f"""
@@ -329,6 +332,15 @@ def list_transactions(
         ):
             raise HTTPException(404, "Organização não encontrada.")
         count = connection.scalar(text("SELECT count(*) " + joins + conditions), params)
+        if selection_only:
+            ids = (
+                connection.execute(
+                    text("SELECT DISTINCT t.id " + joins + conditions + " AND t.editable"), params
+                )
+                .scalars()
+                .all()
+            )
+            return {"ids": ids, "total": len(ids)}
         rows = connection.execute(
             text(
                 """

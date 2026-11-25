@@ -221,7 +221,7 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
             for row in connection.execute(
                 text(
                     """
-            SELECT t.* FROM bank_transactions t JOIN bank_accounts a ON a.id = t.account_id
+            SELECT t.* FROM active_bank_transactions t JOIN bank_accounts a ON a.id = t.account_id
         """
                     + LATEST
                     + """

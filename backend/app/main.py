@@ -17,6 +17,7 @@ from app.recognition import router as recognition_router
 from app.statement_cleanup import router as statement_cleanup_router
 from app.statements import router as statements_router
 from app.table_imports import router as table_imports_router
+from app.transaction_exclusion import router as transaction_exclusion_router
 from app.transactions import router as transactions_router
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ app.include_router(statements_router)
 app.include_router(statement_cleanup_router)
 app.include_router(historical_import_router)
 app.include_router(transactions_router)
+app.include_router(transaction_exclusion_router)
 app.include_router(recognition_router)
 app.include_router(assistant_router)
 app.include_router(planning_router)
