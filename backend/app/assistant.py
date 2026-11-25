@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import text
 
+from app.ai_config import api_key
 from app.transactions import LATEST, transaction
 
 router = APIRouter(prefix="/organizations/{organization_id}/assistant", tags=["Assistente"])
@@ -72,7 +73,7 @@ Não peça senhas, tokens, chaves de API ou credenciais bancárias.
 
 
 def generate_answer(messages, context):
-    key = os.environ.get("OPENAI_API_KEY")
+    key = api_key()
     if not key:
         raise HTTPException(
             503, "A IA ainda não está configurada. Confira OPENAI_API_KEY no Railway."

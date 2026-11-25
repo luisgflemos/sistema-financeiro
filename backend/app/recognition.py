@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
+from app.ai_config import api_key
 from app.catalog import lock_organization
 from app.transactions import (
     IDENT_FIELDS,
@@ -30,7 +31,7 @@ class RecognitionBatch(BaseModel):
 
 
 def generative_suggestions(context):
-    key = os.environ.get("OPENAI_API_KEY")
+    key = api_key()
     if not key:
         raise HTTPException(503, "Configure OPENAI_API_KEY no serviço da Finare no Railway.")
     model = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
@@ -170,7 +171,7 @@ def relevant_history(history, movements, limit=150):
 
 @router.get("/config")
 def config(organization_id: UUID):
-    return {"enabled": bool(os.environ.get("OPENAI_API_KEY"))}
+    return {"enabled": bool(api_key())}
 
 
 @router.post("/run")
@@ -274,11 +275,11 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
                     remaining.append(row)
         else:
             remaining.append(row)
-    if not remaining or not os.environ.get("OPENAI_API_KEY"):
+    if not remaining or not api_key():
         return {
             "automatic": len(automated),
             "suggestions": 0,
-            "ai_enabled": bool(os.environ.get("OPENAI_API_KEY")),
+            "ai_enabled": bool(api_key()),
             "processed": len(pending),
             "analyzed": [str(row["id"]) for row in pending],
         }
