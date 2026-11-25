@@ -155,7 +155,9 @@ def related_evidence(history, target, catalogs, documents):
     pix = "pix" in normalized(target.get("raw_description")).split()
     related, bases = [], Counter()
     for row in history:
-        if target.get("id") and str(row.get("source_transaction_id")) == str(target["id"]):
+        if target.get("id") and str(row.get("source_transaction_id")) == str(
+            target["id"]
+        ):
             continue
         if target.get("account_id") and str(row["account_id"]) != str(
             target["account_id"]
