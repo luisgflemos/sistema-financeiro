@@ -81,6 +81,84 @@
 .statement-summary strong {
   margin-left: 0.35rem;
 }
+.statement-dates {
+  margin: 1rem 0;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: #f8fafc;
+  min-width: 0;
+}
+.statement-dates legend {
+  padding: 0 0.4rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.statement-dates-heading,
+.statement-dates-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.statement-dates-heading {
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+.statement-dates-actions button {
+  min-height: 2rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+}
+.statement-dates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 0.55rem;
+  max-height: 15rem;
+  overflow-y: auto;
+  margin: 0.75rem 0;
+  padding: 0.2rem;
+}
+.statement-date-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: white;
+  cursor: pointer;
+}
+.statement-date-choice:has(input:checked) {
+  border-color: #15803d;
+  background: #f0fdf4;
+}
+.statement-date-choice input {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #15803d;
+}
+.statement-date-choice strong,
+.statement-date-choice small {
+  display: block;
+}
+.statement-date-choice small {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.statement-date-count {
+  display: block;
+  font-weight: 600;
+}
+.statement-date-next {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: #1e40af;
+}
 .statement-review-note {
   padding: 0.75rem;
   background: #fffbeb;

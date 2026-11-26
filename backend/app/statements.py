@@ -3,6 +3,8 @@
 import json
 import os
 from collections import defaultdict
+from datetime import date
+from decimal import Decimal
 from hashlib import sha256
 from typing import Literal
 from uuid import UUID
@@ -24,6 +26,7 @@ class StatementUpload(BaseModel):
     content: str = Field(max_length=7 * 1024 * 1024)
     account_id: UUID | None = None
     decisions: dict[str, Literal["new", "skip"]] = Field(default_factory=dict, max_length=10000)
+    selected_dates: list[date] | None = Field(default=None, max_length=10000)
 
 
 class StatementBatch(BaseModel):
@@ -53,7 +56,7 @@ def same_account(account, statement):
     )
 
 
-def build_preview(connection, organization_id, payload):
+def build_preview(connection, organization_id, payload, check_duplicates=True):
     accounts = [
         dict(row)
         for row in connection.execute(
@@ -64,14 +67,20 @@ def build_preview(connection, organization_id, payload):
         ).mappings()
     ]
     seen_files = set()
+    batch_rows = {}
+    generations = {}
     seen = defaultdict(list)
-    for row in connection.execute(
-        text("""
+    for row in (
+        connection.execute(
+            text("""
         SELECT t.account_id, t.fingerprint, t.id, t.raw_payload FROM active_bank_transactions t
         JOIN bank_accounts a ON a.id = t.account_id WHERE a.organization_id = :org
     """),
-        {"org": organization_id},
-    ).mappings():
+            {"org": organization_id},
+        ).mappings()
+        if check_duplicates
+        else []
+    ):
         raw = row["raw_payload"]
         seen[(str(row["account_id"]), row["fingerprint"])].append(
             {
@@ -83,8 +92,9 @@ def build_preview(connection, organization_id, payload):
         )
     stored = {
         (str(row["bank_account_id"]), row["sha256"]): dict(row)
-        for row in connection.execute(
-            text("""
+        for row in (
+            connection.execute(
+                text("""
             SELECT DISTINCT ON (f.bank_account_id, f.sha256) f.id, f.bank_account_id,
                 f.sha256, f.generation,
                 EXISTS(SELECT 1 FROM statement_rows r JOIN transaction_exclusions x
@@ -92,20 +102,30 @@ def build_preview(connection, organization_id, payload):
             FROM import_files f WHERE f.organization_id=:org
             ORDER BY f.bank_account_id, f.sha256, f.generation DESC
         """),
-            {"org": organization_id},
-        ).mappings()
+                {"org": organization_id},
+            ).mappings()
+            if check_duplicates
+            else []
+        )
     }
     provenance = {
-        (str(row["import_file_id"]), row["source_row"]): dict(row)
-        for row in connection.execute(
-            text("""
-            SELECT r.import_file_id,r.source_row,r.transaction_id,
+        (str(row["bank_account_id"]), row["sha256"], row["source_row"]): dict(row)
+        for row in (
+            connection.execute(
+                text("""
+            SELECT DISTINCT ON (f.bank_account_id,f.sha256,r.source_row)
+                f.bank_account_id,f.sha256,r.source_row,r.transaction_id,
                 x.transaction_id IS NOT NULL AS excluded
-            FROM statement_rows r LEFT JOIN transaction_exclusions x ON x.transaction_id=r.transaction_id
-            WHERE r.import_file_id=ANY(CAST(:ids AS uuid[]))
+            FROM statement_rows r JOIN import_files f ON f.id=r.import_file_id
+            LEFT JOIN transaction_exclusions x ON x.transaction_id=r.transaction_id
+            WHERE f.organization_id=:org
+            ORDER BY f.bank_account_id,f.sha256,r.source_row,f.generation DESC
         """),
-            {"ids": [value["id"] for value in stored.values()]},
-        ).mappings()
+                {"org": organization_id},
+            ).mappings()
+            if check_duplicates
+            else []
+        )
     }
     restored_refs = {}
     output, internal, total_bytes, total_rows = [], [], 0, 0
@@ -132,24 +152,60 @@ def build_preview(connection, organization_id, payload):
         account_id = str(selected["id"]) if selected else None
         file_key = (account_id, statement.digest)
         prior_file = stored.get(file_key)
-        reimported = bool(prior_file and prior_file["excluded"] and file_key not in seen_files)
-        repeated = file_key in seen_files or bool(prior_file and not prior_file["excluded"])
         rows = [movement.public() for movement in statement.movements]
         for position, row in enumerate(rows):
             row["previous_signature"] = rows[position - 1]["signature"] if position else None
             row["next_signature"] = (
                 rows[position + 1]["signature"] if position + 1 < len(rows) else None
             )
-        previous = {row["fingerprint"]: seen[(account_id, row["fingerprint"])] for row in rows}
-        rows = classify_rows(rows, previous, upload.decisions, repeated)
-        if reimported:
+        dates = sorted({row["posted_on"] for row in rows})
+        selected_dates = (
+            sorted({day.isoformat() for day in upload.selected_dates})
+            if upload.selected_dates is not None
+            else dates
+        )
+        if not set(selected_dates) <= set(dates):
+            raise HTTPException(
+                422, f"{upload.file_name}: selecione somente datas presentes no extrato."
+            )
+        daily = {day: {"count": 0, "credits": Decimal(0), "debits": Decimal(0)} for day in dates}
+        for row in rows:
+            day = daily[row["posted_on"]]
+            day["count"] += 1
+            day["credits" if row["direction"] == "CREDIT" else "debits"] += Decimal(row["amount"])
+        date_options = [
+            {
+                "date": day,
+                "count": daily[day]["count"],
+                "credits": f"{daily[day]['credits']:.2f}",
+                "debits": f"{daily[day]['debits']:.2f}",
+            }
+            for day in dates
+        ]
+        selected_set = set(selected_dates)
+        rows = [row for row in rows if row["posted_on"] in selected_set]
+        selected_count = len(rows)
+        selected_credits = sum(
+            (Decimal(row["amount"]) for row in rows if row["direction"] == "CREDIT"), Decimal(0)
+        )
+        selected_debits = sum(
+            (Decimal(row["amount"]) for row in rows if row["direction"] == "DEBIT"), Decimal(0)
+        )
+        if check_duplicates:
+            previous = {row["fingerprint"]: seen[(account_id, row["fingerprint"])] for row in rows}
+            rows = classify_rows(rows, previous, upload.decisions)
             for row in rows:
-                prior = provenance.get((str(prior_file["id"]), row["row"]))
-                if prior is None:
-                    raise HTTPException(
-                        409,
-                        "O arquivo anterior não possui rastreabilidade completa. Revise a importação.",
+                row_key = (*file_key, row["row"])
+                if row_key in batch_rows:
+                    row.update(
+                        status="duplicate",
+                        matched_ref=batch_rows[row_key],
+                        reason="Movimento já incluído neste lote.",
                     )
+                    continue
+                prior = provenance.get(row_key)
+                if prior is None:
+                    continue
                 ref = str(prior["transaction_id"]) if prior["transaction_id"] else None
                 if prior["excluded"] and ref not in restored_refs:
                     row.update(
@@ -165,6 +221,18 @@ def build_preview(connection, organization_id, payload):
                         matched_ref=restored_refs.get(ref, ref),
                         reason="Movimento já ativo ou anteriormente desconsiderado neste arquivo.",
                     )
+        else:
+            rows = []
+        reimported = any(row.get("replaces_excluded_id") for row in rows)
+        repeated = (
+            bool(rows)
+            and (prior_file is not None or file_key in seen_files)
+            and all(row["status"] == "duplicate" for row in rows)
+        )
+        generation = generations.get(file_key, prior_file["generation"] if prior_file else 0)
+        if not repeated and check_duplicates:
+            generation += 1
+            generations[file_key] = generation
         pending = sum(row["status"] == "review" for row in rows)
         for row in rows:
             if row["status"] == "new":
@@ -176,10 +244,20 @@ def build_preview(connection, organization_id, payload):
                         "next_signature": row["next_signature"],
                     }
                 )
+            batch_rows[(*file_key, row["row"])] = (
+                f"batch:{index}:{row['row']}" if row["status"] == "new" else row.get("matched_ref")
+            )
         seen_files.add(file_key)
         item = {
             "file_name": upload.file_name,
             **statement.summary(),
+            "credits": f"{selected_credits:.2f}",
+            "debits": f"{selected_debits:.2f}",
+            "date_options": date_options,
+            "selected_dates": selected_dates,
+            "selected_count": selected_count,
+            "period_start": min(selected_dates, default=None),
+            "period_end": max(selected_dates, default=None),
             "account_id": account_id,
             "account_label": selected["label"] if selected else None,
             "account_options": [
@@ -188,7 +266,7 @@ def build_preview(connection, organization_id, payload):
             "repeated": repeated,
             "reimported": reimported,
             "restored": sum(bool(row.get("replaces_excluded_id")) for row in rows),
-            "generation": prior_file["generation"] + 1 if reimported else 1,
+            "generation": generation,
             "previous_import_file_id": str(prior_file["id"]) if reimported else None,
             "rows": rows,
             "pending": pending,
@@ -201,9 +279,21 @@ def build_preview(connection, organization_id, payload):
     return {
         "files": output,
         "token": token,
-        "ready": all(item["account_id"] and not item["pending"] for item in output),
+        "stage": "duplicates" if check_duplicates else "dates",
+        "ready": check_duplicates
+        and all(
+            item["account_id"] and item["selected_count"] and not item["pending"] for item in output
+        ),
         "new": sum(item["new"] for item in output),
     }, internal
+
+
+@router.post("/inspect")
+def inspect_dates(organization_id: UUID, payload: StatementBatch, request: Request):
+    """Lê datas e contas sem consultar movimentos anteriores ou detectar repetições."""
+    with request.app.state.database.connect() as connection:
+        result, _ = build_preview(connection, organization_id, payload, check_duplicates=False)
+        return result
 
 
 @router.post("/preview")
@@ -220,7 +310,10 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
         lock_organization(connection, organization_id)
         result, files = build_preview(connection, organization_id, payload)
         if not result["ready"]:
-            raise HTTPException(422, "Vincule todas as contas e revise as possíveis duplicidades.")
+            raise HTTPException(
+                422,
+                "Selecione ao menos uma data por arquivo, vincule as contas e revise as possíveis duplicidades.",
+            )
         if not payload.token or result["token"] != payload.token:
             raise HTTPException(409, "Os dados mudaram. Confira uma nova prévia antes de importar.")
         actor_id = actor(connection)
@@ -260,8 +353,8 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
                     "hash": statement.digest,
                     "format": upload.file_name.rsplit(".", 1)[-1].upper(),
                     "storage": "database:" + statement.digest,
-                    "start": statement.summary()["period_start"],
-                    "end": statement.summary()["period_end"],
+                    "start": result["files"][file_index]["period_start"],
+                    "end": result["files"][file_index]["period_end"],
                     "generation": result["files"][file_index]["generation"],
                 },
             )
@@ -356,6 +449,14 @@ def commit(organization_id: UUID, payload: StatementBatch, request: Request):
                     {
                         "files": len(files),
                         "new_movements": result["new"],
+                        "date_selections": [
+                            {
+                                "sha256": statement.digest,
+                                "dates": result["files"][index]["selected_dates"],
+                                "selected_movements": result["files"][index]["selected_count"],
+                            }
+                            for index, (_, statement, _, _, _) in enumerate(files)
+                        ],
                         "reimports": [
                             {
                                 "previous_file_id": f["previous_import_file_id"],

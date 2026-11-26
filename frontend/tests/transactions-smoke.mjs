@@ -88,6 +88,9 @@ try {
   await page
     .getByText("Conta identificada pelo cabeçalho", { exact: true })
     .waitFor();
+  await page
+    .getByRole("button", { name: "Verificar duplicidades", exact: true })
+    .click();
   await page.screenshot({
     path: "import-layout-statement-preview.png",
     fullPage: true,
@@ -156,6 +159,9 @@ try {
     mimeType: "text/csv",
     buffer: Buffer.from(csv + "\n"),
   });
+  await page
+    .getByRole("button", { name: "Verificar duplicidades", exact: true })
+    .click();
   await page
     .getByText("2 movimentos já existentes serão mantidos, sem duplicação.", {
       exact: true,

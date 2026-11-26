@@ -9,6 +9,7 @@ type Upload = {
   content: string;
   account_id?: string;
   decisions: Record<string, "new" | "skip">;
+  selected_dates?: string[];
 };
 type Row = {
   reason: string;
@@ -38,12 +39,21 @@ type FilePreview = {
   duplicates: number;
   new: number;
   rows: Row[];
+  selected_count: number;
+  selected_dates: string[];
+  date_options: {
+    date: string;
+    count: number;
+    credits: string;
+    debits: string;
+  }[];
 };
 type Preview = {
   files: FilePreview[];
   ready: boolean;
   new: number;
   token: string;
+  stage: "dates" | "duplicates";
 };
 
 export function brl(value: string) {
@@ -70,26 +80,32 @@ export function StatementImport({
   const [stale, setStale] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [selectingDates, setSelectingDates] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const path = "/organizations/" + organizationId + "/statements";
   function working(value: boolean) {
     setBusy(value);
     onBusyChange(value);
   }
-  async function analyze(next: Upload[]) {
+  async function analyze(next: Upload[], inspect = false) {
     setError("");
     working(true);
     try {
-      const result = await api<Preview>(path + "/preview", {
-        method: "POST",
-        body: JSON.stringify({ files: next }),
-      });
+      const result = await api<Preview>(
+        path + (inspect ? "/inspect" : "/preview"),
+        {
+          method: "POST",
+          body: JSON.stringify({ files: next }),
+        },
+      );
       setPreview(result);
+      setSelectingDates(inspect);
       setStale(false);
       setFiles(
         next.map((file, index) => ({
           ...file,
           account_id: result.files[index].account_id ?? undefined,
+          selected_dates: result.files[index].selected_dates,
         })),
       );
     } catch (problem) {
@@ -127,11 +143,23 @@ export function StatementImport({
       );
       const next = [...files, ...added];
       setFiles(next);
-      await analyze(next);
+      await analyze(next, true);
     } catch (problem) {
       setError((problem as Error).message);
       working(false);
     }
+  }
+  function selectDates(index: number, dates: string[]) {
+    setFiles((previous) =>
+      previous.map((file, position) => ({
+        ...file,
+        decisions: {},
+        ...(position === index ? { selected_dates: dates } : {}),
+      })),
+    );
+    setSelectingDates(true);
+    setStale(true);
+    setError("");
   }
   async function commit() {
     working(true);
@@ -166,7 +194,8 @@ export function StatementImport({
         <div>
           <strong>Arraste seus extratos para cá</strong>
           <p>
-            Selecionamos a conta pelo cabeçalho. Você confere e importa o lote.
+            Confira a conta, escolha as datas e depois verificamos as
+            repetições.
           </p>
         </div>
         <input
@@ -217,7 +246,7 @@ export function StatementImport({
                     );
                     setFiles(next);
                     setPreview(null);
-                    if (next.length) void analyze(next);
+                    if (next.length) void analyze(next, true);
                   }}
                 />
               </header>
@@ -256,136 +285,228 @@ export function StatementImport({
                       </small>
                     )}
                   </div>
-                  <div className="statement-summary">
-                    <span>
-                      Créditos <strong>{brl(item.credits)}</strong>
-                    </span>
-                    <span>
-                      Débitos <strong>{brl(item.debits)}</strong>
-                    </span>
-                    <span>
-                      {item.repeated
-                        ? "Arquivo já importado. Não será repetido."
-                        : item.reimported
-                          ? item.restored +
-                            " movimentos excluídos serão reimportados para identificação."
-                          : item.new + " novos movimentos"}
-                    </span>
-                  </div>
-                  {item.duplicates > 0 && !item.repeated && (
-                    <p className="statement-match">
-                      {item.duplicates} movimentos já existentes serão mantidos,
-                      sem duplicação.
-                    </p>
-                  )}
-                  {item.pending > 0 && (
-                    <div className="statement-review-note">
-                      <p>
-                        A ferramenta concluiu a análise. Somente {item.pending}{" "}
-                        caso(s) ainda precisa(m) da sua confirmação.
-                      </p>
-                    </div>
-                  )}
-                  <details open={item.pending > 0}>
-                    <summary>
-                      {item.pending > 0
-                        ? "Conferir possíveis repetições"
-                        : "Ver movimentos do arquivo"}
-                    </summary>
-                    <div className="table-scroll statement-preview">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Data</th>
-                            <th>Histórico</th>
-                            <th>Documento</th>
-                            <th>Valor</th>
-                            <th>Saldo</th>
-                            <th>Conferência</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {item.rows
-                            .filter((row) =>
-                              item.pending
-                                ? row.status === "review" ||
-                                  !!file.decisions[String(row.row)]
-                                : true,
+                  <fieldset className="statement-dates">
+                    <legend>Datas para importar</legend>
+                    <div className="statement-dates-heading">
+                      <span>Selecione um ou mais dias deste arquivo.</span>
+                      <div className="statement-dates-actions">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            selectDates(
+                              index,
+                              item.date_options.map((day) => day.date),
                             )
-                            .map((row) => (
-                              <tr key={row.row}>
-                                <td>{brazilDate(row.posted_on)}</td>
-                                <td>{row.description}</td>
-                                <td>{row.document || "—"}</td>
-                                <td
-                                  className={
-                                    row.direction === "CREDIT"
-                                      ? "amount-credit"
-                                      : "amount-debit"
-                                  }
-                                >
-                                  {row.direction === "DEBIT" ? "− " : "+ "}
-                                  {brl(row.amount)}
-                                </td>
-                                <td>{brl(row.balance)}</td>
-                                <td>
-                                  {row.status === "review" && (
-                                    <small className="statement-ambiguity-reason">
-                                      {row.reason}
-                                    </small>
-                                  )}
-                                  {row.status === "review" ||
-                                  file.decisions[String(row.row)] ? (
-                                    <SearchSelect
-                                      id={"decision-" + index + "-" + row.row}
-                                      value={
-                                        file.decisions[String(row.row)] ?? ""
-                                      }
-                                      options={[
-                                        {
-                                          value: "",
-                                          label: "Confirmação necessária",
-                                        },
-                                        {
-                                          value: "skip",
-                                          label: "Já importado — ignorar",
-                                        },
-                                        {
-                                          value: "new",
-                                          label: "É outro movimento — manter",
-                                        },
-                                      ]}
-                                      onChange={(value) => {
-                                        setFiles((previous) =>
-                                          previous.map((entry, position) => {
-                                            if (position !== index)
-                                              return entry;
-                                            const decisions = {
-                                              ...entry.decisions,
-                                            };
-                                            if (value)
-                                              decisions[String(row.row)] =
-                                                value as "new" | "skip";
-                                            else
-                                              delete decisions[String(row.row)];
-                                            return { ...entry, decisions };
-                                          }),
-                                        );
-                                        setStale(true);
-                                      }}
-                                    />
-                                  ) : row.status === "duplicate" ? (
-                                    "Já importado"
-                                  ) : (
-                                    "Novo"
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
+                          }
+                        >
+                          Selecionar todas
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => selectDates(index, [])}
+                        >
+                          Limpar seleção
+                        </button>
+                      </div>
                     </div>
-                  </details>
+                    <div className="statement-dates-grid">
+                      {item.date_options.map((day) => (
+                        <label className="statement-date-choice" key={day.date}>
+                          <input
+                            type="checkbox"
+                            checked={
+                              file.selected_dates?.includes(day.date) ?? true
+                            }
+                            onChange={(event) =>
+                              selectDates(
+                                index,
+                                event.target.checked
+                                  ? [
+                                      ...(file.selected_dates ??
+                                        item.selected_dates),
+                                      day.date,
+                                    ]
+                                  : (
+                                      file.selected_dates ?? item.selected_dates
+                                    ).filter((value) => value !== day.date),
+                              )
+                            }
+                          />
+                          <span>
+                            <strong>{brazilDate(day.date)}</strong>
+                            <small>
+                              {day.count} movimentos · Créditos{" "}
+                              {brl(day.credits)} · Débitos {brl(day.debits)}
+                            </small>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <small className="statement-date-count" role="status">
+                      {(file.selected_dates ?? item.selected_dates).length} de{" "}
+                      {item.date_options.length} datas selecionadas ·{" "}
+                      {item.date_options
+                        .filter((day) =>
+                          (file.selected_dates ?? item.selected_dates).includes(
+                            day.date,
+                          ),
+                        )
+                        .reduce((total, day) => total + day.count, 0)}{" "}
+                      movimentos
+                    </small>
+                    {selectingDates && (
+                      <p className="statement-date-next">
+                        A verificação de registros repetidos será feita somente
+                        após confirmar esta seleção.
+                      </p>
+                    )}
+                  </fieldset>
+                  {!selectingDates && (
+                    <>
+                      <div className="statement-summary">
+                        <span>
+                          Créditos <strong>{brl(item.credits)}</strong>
+                        </span>
+                        <span>
+                          Débitos <strong>{brl(item.debits)}</strong>
+                        </span>
+                        <span>
+                          {item.repeated
+                            ? "Os movimentos das datas selecionadas já foram importados."
+                            : item.reimported
+                              ? item.restored +
+                                " movimentos excluídos serão reimportados para identificação."
+                              : item.new + " novos movimentos"}
+                        </span>
+                      </div>
+                      {item.duplicates > 0 && !item.repeated && (
+                        <p className="statement-match">
+                          {item.duplicates} movimentos já existentes serão
+                          mantidos, sem duplicação.
+                        </p>
+                      )}
+                      {item.pending > 0 && (
+                        <div className="statement-review-note">
+                          <p>
+                            A ferramenta concluiu a análise. Somente{" "}
+                            {item.pending} caso(s) ainda precisa(m) da sua
+                            confirmação.
+                          </p>
+                        </div>
+                      )}
+                      <details open={item.pending > 0}>
+                        <summary>
+                          {item.pending > 0
+                            ? "Conferir possíveis repetições"
+                            : "Ver movimentos do arquivo"}
+                        </summary>
+                        <div className="table-scroll statement-preview">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Data</th>
+                                <th>Histórico</th>
+                                <th>Documento</th>
+                                <th>Valor</th>
+                                <th>Saldo</th>
+                                <th>Conferência</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {item.rows
+                                .filter((row) =>
+                                  item.pending
+                                    ? row.status === "review" ||
+                                      !!file.decisions[String(row.row)]
+                                    : true,
+                                )
+                                .map((row) => (
+                                  <tr key={row.row}>
+                                    <td>{brazilDate(row.posted_on)}</td>
+                                    <td>{row.description}</td>
+                                    <td>{row.document || "—"}</td>
+                                    <td
+                                      className={
+                                        row.direction === "CREDIT"
+                                          ? "amount-credit"
+                                          : "amount-debit"
+                                      }
+                                    >
+                                      {row.direction === "DEBIT" ? "− " : "+ "}
+                                      {brl(row.amount)}
+                                    </td>
+                                    <td>{brl(row.balance)}</td>
+                                    <td>
+                                      {row.status === "review" && (
+                                        <small className="statement-ambiguity-reason">
+                                          {row.reason}
+                                        </small>
+                                      )}
+                                      {row.status === "review" ||
+                                      file.decisions[String(row.row)] ? (
+                                        <SearchSelect
+                                          id={
+                                            "decision-" + index + "-" + row.row
+                                          }
+                                          value={
+                                            file.decisions[String(row.row)] ??
+                                            ""
+                                          }
+                                          options={[
+                                            {
+                                              value: "",
+                                              label: "Confirmação necessária",
+                                            },
+                                            {
+                                              value: "skip",
+                                              label: "Já importado — ignorar",
+                                            },
+                                            {
+                                              value: "new",
+                                              label:
+                                                "É outro movimento — manter",
+                                            },
+                                          ]}
+                                          onChange={(value) => {
+                                            setFiles((previous) =>
+                                              previous.map(
+                                                (entry, position) => {
+                                                  if (position !== index)
+                                                    return entry;
+                                                  const decisions = {
+                                                    ...entry.decisions,
+                                                  };
+                                                  if (value)
+                                                    decisions[String(row.row)] =
+                                                      value as "new" | "skip";
+                                                  else
+                                                    delete decisions[
+                                                      String(row.row)
+                                                    ];
+                                                  return {
+                                                    ...entry,
+                                                    decisions,
+                                                  };
+                                                },
+                                              ),
+                                            );
+                                            setStale(true);
+                                          }}
+                                        />
+                                      ) : row.status === "duplicate" ? (
+                                        "Já importado"
+                                      ) : (
+                                        "Novo"
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </details>
+                    </>
+                  )}
                 </>
               )}
             </section>
@@ -400,17 +521,21 @@ export function StatementImport({
       {!!files.length && (
         <footer className="statement-footer">
           <span>
-            {preview
-              ? preview.new + " novos movimentos no lote"
-              : "Confira os arquivos antes de continuar."}
+            {selectingDates
+              ? "Escolha as datas de cada arquivo antes de verificar duplicidades."
+              : preview
+                ? preview.new + " novos movimentos no lote"
+                : "Confira os arquivos antes de continuar."}
           </span>
-          {!preview || stale ? (
+          {!preview || stale || selectingDates ? (
             <button
               className="primary"
-              disabled={busy}
-              onClick={() => void analyze(files)}
+              disabled={
+                busy || files.some((file) => file.selected_dates?.length === 0)
+              }
+              onClick={() => void analyze(files, !preview)}
             >
-              Conferir lote
+              {selectingDates ? "Verificar duplicidades" : "Conferir lote"}
             </button>
           ) : (
             <button

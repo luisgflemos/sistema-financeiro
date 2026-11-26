@@ -139,6 +139,9 @@ try {
     buffer: Buffer.from(content),
   });
   await page
+    .getByRole("button", { name: "Verificar duplicidades", exact: true })
+    .click();
+  await page
     .getByText(
       "105 movimentos excluídos serão reimportados para identificação.",
       { exact: true },
