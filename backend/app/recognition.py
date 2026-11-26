@@ -319,6 +319,9 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
             "id": str(row["id"]),
             "account_id": str(row["account_id"]),
             "direction": row["direction"],
+            "posted_on": str(row.get("posted_on") or ""),
+            "amount": str(row.get("amount") or ""),
+            "notes": str(row.get("notes") or "")[:1000],
             "description": re.sub(r"\d{11,14}", "[documento]", row["raw_description"])[:1000],
             "party_candidates": sorted(
                 {party for document in documents for party in party_documents[document]}

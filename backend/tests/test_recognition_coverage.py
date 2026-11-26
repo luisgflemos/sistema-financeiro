@@ -174,6 +174,11 @@ def test_every_known_description_gets_suggestion_without_auto_approval(
         monkeypatch.setenv("OPENAI_API_KEY", "synthetic-test-placeholder")
 
     def fake(_context):
+        assert _context["confirmed_examples"]
+        assert all(
+            {"description", "posted_on", "amount", "notes", *recognition.IDENT_FIELDS} <= row.keys()
+            for row in _context["confirmed_examples"]
+        )
         if provider == "fails":
             raise HTTPException(502, "Falha sintética da IA")
         if provider == "invalid":
