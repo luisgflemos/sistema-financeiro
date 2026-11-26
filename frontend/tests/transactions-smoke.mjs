@@ -518,7 +518,7 @@ try {
   await page
     .getByRole("row")
     .filter({ hasText: "TARIFA SINTETICA" })
-    .getByText("Identificado por Vínculo", { exact: true })
+    .getByText("Vinculado", { exact: true })
     .waitFor();
   await page
     .getByRole("navigation")

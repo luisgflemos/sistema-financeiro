@@ -141,7 +141,7 @@ try {
   const linkedRow = page
     .getByRole("row")
     .filter({ hasText: "PIX TESTE EXATO" });
-  const badge = linkedRow.getByText("Identificado por Vínculo", {
+  const badge = linkedRow.getByText("Vinculado", {
     exact: true,
   });
   await badge.waitFor();
@@ -149,9 +149,9 @@ try {
     await badge.evaluate((el) => getComputedStyle(el).backgroundColor),
     "rgb(219, 234, 254)",
   );
-  await page.locator("#transaction-state").fill("Identificados por Vínculo");
+  await page.locator("#transaction-state").fill("Vinculados");
   await page
-    .getByRole("option", { name: "Identificados por Vínculo", exact: true })
+    .getByRole("option", { name: "Vinculados", exact: true })
     .click();
   await page.getByText("1 resultados", { exact: true }).waitFor();
   await page.screenshot({

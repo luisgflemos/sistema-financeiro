@@ -351,7 +351,7 @@ def list_transactions(
         "description": "lower(t.raw_description)",
         "amount": "CASE WHEN t.direction='DEBIT' THEN -t.amount ELSE t.amount END",
         "identification": f"""CASE WHEN NOT t.editable THEN 'Já existente'
-            WHEN i.id IS NOT NULL AND {ACTIVE_PLANNED_LINK} THEN 'Identificado por Vínculo'
+            WHEN i.id IS NOT NULL AND {ACTIVE_PLANNED_LINK} THEN 'Vinculado'
             WHEN i.id IS NOT NULL THEN CASE i.movement_kind
                 WHEN 'AUTOMATIC_PROCESS' THEN 'Processos Automáticos'
                 WHEN 'INTERNAL_TRANSFER' THEN 'Transferência própria'

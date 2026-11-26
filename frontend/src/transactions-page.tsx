@@ -76,7 +76,7 @@ const states = [
   { value: "pending", label: "Pendentes de identificação" },
   { value: "suggested", label: "Sugestões da IA" },
   { value: "identified", label: "Identificados" },
-  { value: "linked", label: "Identificados por Vínculo" },
+  { value: "linked", label: "Vinculados" },
   { value: "all", label: "Todos os movimentos" },
 ];
 
@@ -910,7 +910,7 @@ export function TransactionsPage({
                         }
                       >
                         {row.planning_description
-                          ? "Identificado por Vínculo"
+                          ? "Vinculado"
                           : row.state === "identified"
                             ? row.movement_kind === "AUTOMATIC_PROCESS"
                               ? "Processos Automáticos"
