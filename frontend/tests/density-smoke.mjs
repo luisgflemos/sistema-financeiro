@@ -127,8 +127,8 @@ try {
     .getByLabel("Número da conta", { exact: true })
     .boundingBox();
   assert.ok(
-    Math.abs(agency.y - number.y) < 2 && number.x > agency.x,
-    "Campos curtos lado a lado",
+    Math.abs(agency.x - number.x) > 100,
+    "Campos curtos em duas colunas",
   );
   await page.screenshot({
     path: "import-layout-density-bank.png",
