@@ -122,7 +122,10 @@ try {
       .inputValue(),
     "Todos",
   );
-  await page.getByText("DESPESA SINTETICA C", { exact: true }).waitFor();
+  await page
+    .getByRole("row")
+    .filter({ hasText: "DESPESA SINTETICA C" })
+    .waitFor();
   await select("Classificação", "Todos", "Todos", 2);
   await select("Cliente / Fornecedor", "Todos", "Todos", 2);
   await select("Centro de Custos", "Todos", "Todos", 3);
