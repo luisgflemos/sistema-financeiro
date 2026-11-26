@@ -42,7 +42,6 @@ jobs:
           node tests/planning-regression.mjs
           node tests/ai-fields-smoke.mjs
           node tests/transaction-exclusion-smoke.mjs
-          node tests/payer-links-smoke.mjs
           node tests/customer-groups-smoke.mjs
       - name: Salvar prévias de layout
         if: always()

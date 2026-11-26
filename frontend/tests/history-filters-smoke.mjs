@@ -96,6 +96,12 @@ try {
   await nav.getByRole("button", { name: "Transações", exact: true }).click();
   await nav.getByRole("button", { name: "Histórico", exact: true }).click();
   await page.getByText("3 resultados", { exact: true }).waitFor();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Vincular Clientes", exact: true })
+      .count(),
+    0,
+  );
   async function select(label, search, option, total) {
     await page.getByRole("combobox", { name: label, exact: true }).fill(search);
     await page.getByRole("option", { name: option, exact: true }).click();

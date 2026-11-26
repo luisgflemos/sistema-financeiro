@@ -20,7 +20,6 @@ import { askAssistant } from "./assistant";
 import { EntryLinker } from "./entry-linker";
 import { categoryNature } from "./movement-nature";
 import { HistoricalImport } from "./historical-import";
-import { PayerLinks } from "./payer-links";
 import { ActionButton } from "./action-button";
 import { useTransactionSelection } from "./transaction-selection";
 
@@ -117,7 +116,6 @@ export function TransactionsPage({
   const [notice, setNotice] = useState("");
   const [importing, setImporting] = useState(false);
   const [historicalImport, setHistoricalImport] = useState(false);
-  const [payerLinks, setPayerLinks] = useState(false);
   const [busyImport, setBusyImport] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
@@ -582,9 +580,6 @@ export function TransactionsPage({
         </div>
         {mode === "history" && (
           <div className="actions">
-            <button type="button" onClick={() => setPayerLinks(true)}>
-              Vincular Clientes
-            </button>
             <button
               type="button"
               className="primary"
@@ -637,18 +632,6 @@ export function TransactionsPage({
             setNotice(
               `${count.toLocaleString("pt-BR")} movimentos importados da base histórica.`,
             );
-          }}
-        />
-      )}
-      {payerLinks && (
-        <PayerLinks
-          organizationId={organizationId}
-          onClose={() => setPayerLinks(false)}
-          onDone={(count) => {
-            setNotice(
-              `${count.toLocaleString("pt-BR")} vínculos de clientes gravados.`,
-            );
-            setRefresh((value) => value + 1);
           }}
         />
       )}
