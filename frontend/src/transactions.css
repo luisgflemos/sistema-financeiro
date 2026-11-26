@@ -92,7 +92,7 @@
 .statement-dates legend {
   padding: 0 0.4rem;
   font-weight: 700;
-  color: var(--navy);
+  color: var(--nav);
 }
 .statement-dates-heading,
 .statement-dates-actions {

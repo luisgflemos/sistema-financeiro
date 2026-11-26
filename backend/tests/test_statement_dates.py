@@ -31,6 +31,41 @@ def source(days=None, account="123456", name="datas-sinteticas.csv"):
     return result
 
 
+def test_date_inspection_does_not_load_previous_movements_without_database():
+    class AccountResult:
+        def mappings(self):
+            return [
+                {
+                    "id": "synthetic-account",
+                    "active": True,
+                    "label": "Conta sintética",
+                    "code": "CTA-sintético",
+                    "bank_code": "033",
+                    "branch": "0001",
+                    "account_number": "12345",
+                    "account_digit": "6",
+                    "currency": "BRL",
+                }
+            ]
+
+    class Connection:
+        def execute(self, sql, _params):
+            assert "SELECT * FROM bank_accounts" in str(sql)
+            return AccountResult()
+
+    result, _ = module.build_preview(
+        Connection(),
+        "synthetic-org",
+        module.StatementBatch(files=[source(["2026-01-25"])]),
+        check_duplicates=False,
+    )
+    assert result["stage"] == "dates" and not result["ready"]
+    assert result["files"][0]["selected_dates"] == ["2026-01-25"]
+    assert result["files"][0]["selected_count"] == 1
+    assert result["files"][0]["credits"] == "0.00"
+    assert result["files"][0]["debits"] == "30.00"
+
+
 def test_inspection_only_reads_dates_and_accounts_before_duplicate_checks(statements, monkeypatch):
     client, connection, base, _ = statements
     upload(client, base, [source(["2026-01-24"])])
