@@ -59,7 +59,7 @@ const partyB = await api(base + "/parties", {
   type: "BOTH",
 });
 const csv =
-  "AGENCIA;0001;CONTA;123456\n;;;;\nData;Histórico;Documento;Valor (R$);Saldo (R$)\n02/01/2026;RECEITA SINTETICA A;01;100;150\n02/01/2026;RECEITA SINTETICA B;02;200;350\n02/01/2026;DESPESA SINTETICA C;03;-30;320\n";
+  "AGENCIA;0001;CONTA;123456\n;;;;\nData;Histórico;Documento;Valor (R$);Saldo (R$)\n02/01/2026;DESPESA SINTETICA C;03;-30;320\n02/01/2026;RECEITA SINTETICA B;02;200;350\n02/01/2026;RECEITA SINTETICA A;01;100;150\n";
 const files = [
   { file_name: "filtros.csv", content: Buffer.from(csv).toString("base64") },
 ];
