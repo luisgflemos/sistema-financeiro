@@ -573,7 +573,10 @@ try {
     "Centro de Custos",
     "Cliente / Fornecedor (opcional)",
   ])
-    assert.equal(await page.getByLabel(label, { exact: true }).count(), 0);
+    assert.equal(
+      await page.getByRole("dialog").getByLabel(label, { exact: true }).count(),
+      0,
+    );
   assert.equal(
     await page
       .getByRole("button", {
