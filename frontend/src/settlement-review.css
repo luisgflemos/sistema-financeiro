@@ -75,15 +75,80 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.625rem 0.75rem;
 }
-.planning-state-overdue {
+.form-modal .transaction-original.settlement-original {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 0.75rem;
+  padding: 0.625rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.settlement-original > button:first-child {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 0.75rem;
+}
+.settlement-original > .transaction-overview-actions {
+  grid-column: 1;
+  grid-row: 1;
+  gap: 0.4rem;
+}
+.settlement-original > .transaction-overview-actions button {
+  font-size: 0.75rem;
+}
+.settlement-original > span {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: 0.8rem;
+}
+.settlement-original > strong:not(.amount-credit):not(.amount-debit) {
+  grid-column: 1;
+  grid-row: 3;
+}
+.settlement-original > .amount-credit,
+.settlement-original > .amount-debit {
+  grid-column: 2;
+  grid-row: 3;
+  text-align: right;
+}
+.settlement-original > small {
+  grid-column: 1 / -1;
+  grid-row: 4;
+}
+.settlement-original > .transaction-header-footer {
+  grid-column: 1 / -1;
+  grid-row: 5;
+}
+.form-modal .planning-link-controls {
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+.form-modal .settlement-summary {
+  margin: 0;
+  padding: 0.625rem 0.75rem;
+}
+.form-modal .settlement-fields {
+  margin: 0;
+}
+.settlement-difference {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: center;
+}
+.settlement-difference > strong,
+.settlement-difference > .checkbox {
+  grid-column: 1 / -1;
+}
+.settlement-difference > span {
+  font-size: 0.8rem;
+}
+.transaction-state.planning-state-overdue {
   color: #991b1b;
   background: #fee2e2;
 }
-.planning-state-upcoming {
+.transaction-state.planning-state-upcoming {
   color: #854d0e;
   background: #fef3c7;
 }
-.planning-state-paid {
+.transaction-state.planning-state-paid {
   color: #065f46;
   background: #d1fae5;
 }
@@ -102,5 +167,21 @@
   .settlement-summary,
   .settlement-fields .fields {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .form-modal .transaction-original.settlement-original,
+  .settlement-difference {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settlement-original > button:first-child,
+  .settlement-original > .transaction-overview-actions,
+  .settlement-original > span,
+  .settlement-original > strong:not(.amount-credit):not(.amount-debit),
+  .settlement-original > .amount-credit,
+  .settlement-original > .amount-debit,
+  .settlement-original > small,
+  .settlement-original > .transaction-header-footer {
+    grid-column: auto;
+    grid-row: auto;
+    text-align: left;
   }
 }

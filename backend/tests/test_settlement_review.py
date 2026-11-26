@@ -131,3 +131,41 @@ def test_due_status_filters_and_partial_badge_data(statements):
     assert overdue["total"] == upcoming["total"] == 1
     assert overdue["rows"][0]["situation"] == "overdue"
     assert upcoming["rows"][0]["situation"] == "upcoming"
+
+
+def test_supplier_suggestions_follow_current_unconfirmed_party(statements):
+    client, _, base, _ = statements
+    debit = next(r for r in imported(client, base) if r["direction"] == "DEBIT")
+    supplier = client.post(
+        base + "/parties", json={"display_name": "Fornecedor Alfa", "type": "SUPPLIER"}
+    ).json()
+    rows, _ = new_plan(
+        client, base, amount=debit["amount"], direction="DEBIT", party_id=supplier["id"]
+    )
+    path = base + "/planned-entries/suggestions/" + debit["id"]
+    result = client.get(path, params={"party_id": supplier["id"], "derive_party": False}).json()[
+        "rows"
+    ]
+    assert len(result) == 1 and result[0]["id"] == rows[0]["id"]
+    assert result[0]["confidence"] == "HIGH"
+    assert client.get(path, params={"derive_party": False}).json()["rows"] == []
+    assert all(
+        r["version"] == 0 for r in client.get(base + "/transactions?state=all").json()["rows"]
+    )
+
+
+def test_invalid_review_is_atomic_and_org_isolated(statements):
+    client, _, base, _ = statements
+    credit = next(r for r in imported(client, base) if r["direction"] == "CREDIT")
+    rows, _ = new_plan(client, base)
+    plan = rows[0]
+    other = client.post("/organizations", json={"name": "Outra organização sintética"}).json()["id"]
+    foreign = client.post(
+        f"/organizations/{other}/cost-centers", json={"name": "Centro externo"}
+    ).json()
+    assert link(client, base, plan, credit, cost_center_id=foreign["id"]).status_code == 422
+    assert client.get(base + "/planned-entries/" + plan["id"] + "/settlements").json() == []
+    assert client.get(base + "/planned-entries").json()["rows"][0]["version"] == 1
+    assert all(
+        r["version"] == 0 for r in client.get(base + "/transactions?state=all").json()["rows"]
+    )

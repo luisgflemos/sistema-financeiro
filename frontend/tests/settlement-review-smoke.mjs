@@ -155,6 +155,11 @@ try {
   await page
     .getByRole("checkbox", { name: /Confirmo a baixa com diferença/ })
     .check();
+  const saveBounds = await save.boundingBox();
+  assert.ok(
+    saveBounds.y + saveBounds.height <= 900,
+    "Baixa com diferença cabe no desktop sem esconder a ação principal",
+  );
   await page.screenshot({
     path: "import-layout-settlement-discount.png",
     fullPage: true,
@@ -202,6 +207,16 @@ try {
     .getByText("Baixado", { exact: true })
     .waitFor();
   assert.equal((await api(base + "/planned-entries?state=overdue")).total, 2);
+  const overdueColor = await partial
+    .getByText("Vencido", { exact: true })
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
+  const paidColor = await page
+    .getByRole("row")
+    .filter({ hasText: "Título exato Alfa" })
+    .getByText("Baixado", { exact: true })
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
+  assert.equal(overdueColor, "rgb(254, 226, 226)");
+  assert.equal(paidColor, "rgb(209, 250, 229)");
   await page.screenshot({
     path: "import-layout-settlement-states.png",
     fullPage: true,

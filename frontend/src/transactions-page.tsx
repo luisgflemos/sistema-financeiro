@@ -1009,7 +1009,11 @@ export function TransactionsPage({
           busy={saving}
           onClose={() => setSelected(null)}
         >
-          <div className="transaction-original">
+          <div
+            className={
+              "transaction-original" + (linkMode ? " settlement-original" : "")
+            }
+          >
             <button
               type="button"
               disabled={!selected.editable}
@@ -1071,19 +1075,21 @@ export function TransactionsPage({
                 Documento: {selected.raw_payload.documento || "Não informado"} ·
                 Saldo informado: {brl(selected.raw_payload.saldo ?? "0")}
               </small>
-              {selected.editable && draft.movement_kind === "NORMAL" && (
-                <div className="transaction-header-action">
-                  <button
-                    type="button"
-                    className="primary"
-                    aria-expanded={linkMode}
-                    aria-controls="previous-entry-panel"
-                    onClick={() => setLinkMode(true)}
-                  >
-                    Identificar com Lançamento Prévio
-                  </button>
-                </div>
-              )}
+              {!linkMode &&
+                selected.editable &&
+                draft.movement_kind === "NORMAL" && (
+                  <div className="transaction-header-action">
+                    <button
+                      type="button"
+                      className="primary"
+                      aria-expanded={linkMode}
+                      aria-controls="previous-entry-panel"
+                      onClick={() => setLinkMode(true)}
+                    >
+                      Identificar com Lançamento Prévio
+                    </button>
+                  </div>
+                )}
             </div>
           </div>
           {selected.editable && (

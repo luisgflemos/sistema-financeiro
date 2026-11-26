@@ -93,7 +93,9 @@ export function EntryLinker({
         (partyId ? "&party_id=" + encodeURIComponent(partyId) : ""),
       { signal: controller.signal },
     )
-      .then((result) => setSuggestions(result.rows))
+      .then((result) => {
+        if (!controller.signal.aborted) setSuggestions(result.rows);
+      })
       .catch((e) => {
         if (!controller.signal.aborted) setError(e.message);
       });
