@@ -26,6 +26,11 @@ LATEST = """
         WHERE i.transaction_id = t.id ORDER BY version DESC LIMIT 1
     ) i ON true
 """
+ACTIVE_PLANNED_LINK = """EXISTS (
+    SELECT 1 FROM entry_settlements l JOIN planned_entries e ON e.id=l.entry_id
+    WHERE l.transaction_id=t.id AND e.organization_id=:org
+    AND NOT EXISTS(SELECT 1 FROM settlement_reversals r WHERE r.settlement_id=l.id)
+)"""
 
 
 class Identification(BaseModel):
@@ -248,7 +253,7 @@ def list_transactions(
     subcategory_id: UUID | None = None,
     party_id: UUID | None = None,
     cost_center_id: UUID | None = None,
-    state: Literal["all", "pending", "identified", "suggested"] = "pending",
+    state: Literal["all", "pending", "identified", "suggested", "linked"] = "pending",
     query: str = Query(default="", max_length=200),
     start: str | None = None,
     end: str | None = None,
@@ -298,6 +303,8 @@ def list_transactions(
         conditions += " AND i.id IS NULL AND t.editable"
     elif state == "identified":
         conditions += " AND i.id IS NOT NULL"
+    elif state == "linked":
+        conditions += " AND i.id IS NOT NULL AND " + ACTIVE_PLANNED_LINK
     elif state == "suggested":
         conditions += " AND i.id IS NULL AND s.id IS NOT NULL"
     source_table = "(SELECT b.*, TRUE AS editable FROM active_bank_transactions b)"
@@ -343,7 +350,8 @@ def list_transactions(
         "account": "lower(a.label)",
         "description": "lower(t.raw_description)",
         "amount": "CASE WHEN t.direction='DEBIT' THEN -t.amount ELSE t.amount END",
-        "identification": """CASE WHEN NOT t.editable THEN 'Já existente'
+        "identification": f"""CASE WHEN NOT t.editable THEN 'Já existente'
+            WHEN i.id IS NOT NULL AND {ACTIVE_PLANNED_LINK} THEN 'Identificado por Vínculo'
             WHEN i.id IS NOT NULL THEN CASE i.movement_kind
                 WHEN 'AUTOMATIC_PROCESS' THEN 'Processos Automáticos'
                 WHEN 'INTERNAL_TRANSFER' THEN 'Transferência própria'

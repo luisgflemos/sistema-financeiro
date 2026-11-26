@@ -333,6 +333,10 @@
   background: #dcfce7;
   color: #166534;
 }
+.transaction-state-linked {
+  background: #dbeafe;
+  color: #1e40af;
+}
 .transaction-selection-toolbar {
   display: flex;
   align-items: center;

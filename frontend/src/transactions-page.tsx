@@ -76,6 +76,7 @@ const states = [
   { value: "pending", label: "Pendentes de identificação" },
   { value: "suggested", label: "Sugestões da IA" },
   { value: "identified", label: "Identificados" },
+  { value: "linked", label: "Identificados por Vínculo" },
   { value: "all", label: "Todos os movimentos" },
 ];
 
@@ -898,26 +899,31 @@ export function TransactionsPage({
                       <span
                         className={
                           "transaction-state transaction-state-" +
-                          (["AUTOMATIC_PROCESS", "INTERNAL_TRANSFER"].includes(
-                            row.movement_kind ?? "",
-                          )
-                            ? "neutral"
-                            : row.state)
+                          (row.planning_description
+                            ? "linked"
+                            : [
+                                  "AUTOMATIC_PROCESS",
+                                  "INTERNAL_TRANSFER",
+                                ].includes(row.movement_kind ?? "")
+                              ? "neutral"
+                              : row.state)
                         }
                       >
-                        {row.state === "identified"
-                          ? row.movement_kind === "AUTOMATIC_PROCESS"
-                            ? "Processos Automáticos"
-                            : row.movement_kind === "INTERNAL_TRANSFER"
-                              ? "Transferência própria"
-                              : row.method === "PATTERN"
-                                ? "Automático"
-                                : "Identificado"
-                          : row.state === "suggested"
-                            ? "Sugestão da IA"
-                            : row.state === "duplicate"
-                              ? "Já existente"
-                              : "Pendente"}
+                        {row.planning_description
+                          ? "Identificado por Vínculo"
+                          : row.state === "identified"
+                            ? row.movement_kind === "AUTOMATIC_PROCESS"
+                              ? "Processos Automáticos"
+                              : row.movement_kind === "INTERNAL_TRANSFER"
+                                ? "Transferência própria"
+                                : row.method === "PATTERN"
+                                  ? "Automático"
+                                  : "Identificado"
+                            : row.state === "suggested"
+                              ? "Sugestão da IA"
+                              : row.state === "duplicate"
+                                ? "Já existente"
+                                : "Pendente"}
                       </span>
                     </td>
                     <td>

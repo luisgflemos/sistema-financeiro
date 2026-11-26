@@ -137,6 +137,30 @@ try {
   assert.equal(exact.outstanding, "0.00");
   assert.equal(exact.cost_center_id, null);
   assert.equal(exact.situation, "paid");
+  await nav.getByRole("button", { name: "Histórico", exact: true }).click();
+  const linkedRow = page
+    .getByRole("row")
+    .filter({ hasText: "PIX TESTE EXATO" });
+  const badge = linkedRow.getByText("Identificado por Vínculo", {
+    exact: true,
+  });
+  await badge.waitFor();
+  assert.equal(
+    await badge.evaluate((el) => getComputedStyle(el).backgroundColor),
+    "rgb(219, 234, 254)",
+  );
+  await page.locator("#transaction-state").fill("Identificados por Vínculo");
+  await page
+    .getByRole("option", { name: "Identificados por Vínculo", exact: true })
+    .click();
+  await page.getByText("1 resultados", { exact: true }).waitFor();
+  await page.screenshot({
+    path: "import-layout-linked-status.png",
+    fullPage: true,
+  });
+  await nav
+    .getByRole("button", { name: "Importar Extrato", exact: true })
+    .click();
   await open("PIX TESTE DESCONTO");
   await select("Cliente / Fornecedor (opcional)", "Cliente Alfa");
   await page
