@@ -566,11 +566,23 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                       {row.state === "partial" && (
                         <span className="planning-partial">Baixa parcial</span>
                       )}
-                      {row.difference !== "0.00" && (
+                      {row.discount !== "0.00" && (
                         <small className="planning-meta">
-                          Diferença: {brl(row.difference)}
+                          Desconto: {brl(row.discount)}
                         </small>
                       )}
+                      {row.surcharge !== "0.00" && (
+                        <small className="planning-meta">
+                          Acréscimo: {brl(row.surcharge)}
+                        </small>
+                      )}
+                      {row.difference !== "0.00" &&
+                        row.discount === "0.00" &&
+                        row.surcharge === "0.00" && (
+                          <small className="planning-meta">
+                            Diferença: {brl(row.difference)}
+                          </small>
+                        )}
                     </td>
                     <td>
                       <div className="row-actions">

@@ -478,7 +478,7 @@ export function EntryLinker({
                   </button>
                 </>
               )}
-              {!loading && !entries.length && (
+              {!loading && !chosen && !candidates.length && (
                 <p>
                   Nenhum lançamento em aberto encontrado. Cadastre-o no menu
                   Lançamentos ou use a identificação direta.

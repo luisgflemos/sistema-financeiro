@@ -156,6 +156,10 @@ try {
     .getByRole("checkbox", { name: /Confirmo a baixa com diferença/ })
     .check();
   const saveBounds = await save.boundingBox();
+  assert.equal(
+    await page.getByText(/Nenhum lançamento em aberto encontrado/).count(),
+    0,
+  );
   assert.ok(
     saveBounds.y + saveBounds.height <= 900,
     "Baixa com diferença cabe no desktop sem esconder a ação principal",
