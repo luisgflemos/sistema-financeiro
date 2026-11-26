@@ -15,6 +15,7 @@ import { SearchSelect } from "./search-select";
 import "./style.css";
 import "./transactions.css";
 import "./sidebar-navigation.css";
+import "./density.css";
 
 type CatalogId = (typeof catalogIds)[number];
 

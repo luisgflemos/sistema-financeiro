@@ -242,7 +242,7 @@ export function CatalogPage({
       ) : (
         <form onSubmit={submit}>
           <fieldset disabled={saving}>
-            <div className="fields">
+            <div className="fields catalog-fields">
               {fields.map((field) => {
                 const value =
                   field.name === "account_number_masked" && draft.account_number
@@ -267,7 +267,10 @@ export function CatalogPage({
                     ? [...options, { value, label: value }]
                     : options;
                 return (
-                  <div className="field" key={field.name}>
+                  <div
+                    className={"field catalog-field-" + field.name}
+                    key={field.name}
+                  >
                     <label htmlFor={`${uid}-${field.name}`}>
                       {field.label}
                     </label>
