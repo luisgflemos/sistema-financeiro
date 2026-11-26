@@ -4,10 +4,11 @@ import calendar
 import hashlib
 import json
 import unicodedata
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
@@ -26,12 +27,14 @@ router = APIRouter(prefix="/organizations/{organization_id}/planned-entries", ta
 
 SUMMARY = """
     SELECT e.*, COALESCE(s.paid, 0) AS paid, COALESCE(s.finished, false) AS finished,
+        COALESCE(s.discount, 0) AS discount, COALESCE(s.surcharge, 0) AS surcharge,
         NOT EXISTS(SELECT 1 FROM entry_settlements h WHERE h.entry_id=e.id) AS can_delete,
         p.display_name AS party_name, a.label AS account_label,
         c.name AS category_name, sub.name AS subcategory_name, cc.name AS cost_center_name
     FROM planned_entries e
     LEFT JOIN LATERAL (
-        SELECT sum(l.amount) AS paid, bool_or(l.finish) AS finished
+        SELECT sum(l.amount) AS paid, bool_or(l.finish) AS finished,
+            sum(l.discount) AS discount, sum(l.surcharge) AS surcharge
         FROM entry_settlements l WHERE l.entry_id=e.id
         AND NOT EXISTS(SELECT 1 FROM settlement_reversals r WHERE r.settlement_id=l.id)
     ) s ON true
@@ -39,7 +42,7 @@ SUMMARY = """
     LEFT JOIN bank_accounts a ON a.id=e.account_id
     JOIN categories c ON c.id=e.category_id
     JOIN subcategories sub ON sub.id=e.subcategory_id
-    JOIN cost_centers cc ON cc.id=e.cost_center_id
+    LEFT JOIN cost_centers cc ON cc.id=e.cost_center_id
 """
 ACTIVE_LINK = """
     SELECT l.* FROM entry_settlements l JOIN planned_entries e ON e.id=l.entry_id
@@ -57,7 +60,7 @@ class EntryFields(BaseModel):
     account_id: UUID | None = None
     category_id: UUID
     subcategory_id: UUID
-    cost_center_id: UUID
+    cost_center_id: UUID | None = None
     party_id: UUID | None = None
     notes: str | None = Field(default=None, max_length=4000)
 
@@ -90,6 +93,11 @@ class Settlement(BaseModel):
     finish: bool = False
     confirm_difference: bool = False
     notes: str | None = Field(default=None, max_length=4000)
+    difference_treatment: Literal["KEEP_OPEN", "DISCOUNT", "SURCHARGE"] | None = None
+    category_id: UUID | None = None
+    subcategory_id: UUID | None = None
+    cost_center_id: UUID | None = None
+    party_id: UUID | None = None
 
 
 def audit(connection, org, entity, identifier, action, old=None, new=None):
@@ -111,13 +119,23 @@ def audit(connection, org, entity, identifier, action, old=None, new=None):
 def present(row):
     result = dict(row)
     expected, paid = row["expected_amount"], row["paid"]
-    closed = row["cancelled"] or row["finished"] or paid >= expected
+    principal = paid + row["discount"] - row["surcharge"]
+    closed = row["cancelled"] or row["finished"] or principal >= expected
     result["state"] = (
         "cancelled" if row["cancelled"] else "realized" if closed else "partial" if paid else "open"
     )
-    result["outstanding"] = f"{Decimal(0) if closed else max(Decimal(0), expected - paid):.2f}"
+    result["situation"] = (
+        "cancelled"
+        if row["cancelled"]
+        else "paid"
+        if closed
+        else "overdue"
+        if row["due_on"] < datetime.now(ZoneInfo("America/Sao_Paulo")).date()
+        else "upcoming"
+    )
+    result["outstanding"] = f"{Decimal(0) if closed else max(Decimal(0), expected - principal):.2f}"
     result["difference"] = f"{paid - expected:.2f}" if closed and not row["cancelled"] else "0.00"
-    for key in ("paid", "expected_amount"):
+    for key in ("paid", "expected_amount", "discount", "surcharge"):
         result[key] = f"{result[key]:.2f}"
     return result
 
@@ -153,6 +171,7 @@ def validate_fields(connection, org, payload):
                 )
             }
         ),
+        require_complete=False,
         direction=payload.direction,
     )
     if payload.account_id and not connection.scalar(
@@ -241,7 +260,9 @@ def create(organization_id: UUID, payload: NewEntry, request: Request):
 def listing(
     organization_id: UUID,
     request: Request,
-    state: Literal["all", "active", "open", "partial", "realized", "cancelled"] = "all",
+    state: Literal[
+        "all", "active", "open", "partial", "realized", "cancelled", "upcoming", "overdue", "paid"
+    ] = "all",
     direction: Literal["CREDIT", "DEBIT"] | None = None,
     query: str = Query(default="", max_length=200),
     page: int = Query(default=1, ge=1),
@@ -275,19 +296,21 @@ def listing(
             rows = [row for row in rows if row["state"] != "cancelled"]
         elif state == "open":
             rows = [row for row in rows if row["state"] in ("open", "partial")]
+        elif state in ("upcoming", "overdue", "paid"):
+            rows = [row for row in rows if row["situation"] == state]
         elif state != "all":
             rows = [row for row in rows if row["state"] == state]
-        state_labels = {
-            "open": "Em aberto",
-            "partial": "Parcialmente realizado",
-            "realized": "Realizado",
+        situation_labels = {
+            "upcoming": "A vencer",
+            "overdue": "Vencido",
+            "paid": "Baixado",
             "cancelled": "Cancelado",
         }
 
         def order_value(row):
             if sort_by in {"expected_amount", "paid", "outstanding"}:
                 return Decimal(row[sort_by])
-            value = state_labels[row["state"]] if sort_by == "state" else row[sort_by]
+            value = situation_labels[row["situation"]] if sort_by == "state" else row[sort_by]
             return "".join(
                 c
                 for c in unicodedata.normalize("NFD", str(value).casefold())
@@ -457,19 +480,85 @@ def link_info(organization_id: UUID, transaction_id: UUID, request: Request):
         )
 
 
+@router.get("/suggestions/{transaction_id}")
+def suggestions(
+    organization_id: UUID,
+    transaction_id: UUID,
+    request: Request,
+    party_id: UUID | None = None,
+    derive_party: bool = True,
+):
+    """Cliente explícito + saldo/vencimento; nunca vincula automaticamente."""
+    with request.app.state.database.connect() as connection:
+        record = transaction(connection, organization_id, transaction_id)
+        party = party_id or (record.get("party_id") if derive_party else None)
+        if not party and derive_party:
+            suggestion = connection.scalar(
+                text("""SELECT payload FROM transaction_suggestions
+                    WHERE transaction_id=:tx AND organization_id=:org
+                    ORDER BY created_at DESC LIMIT 1"""),
+                {"tx": transaction_id, "org": organization_id},
+            )
+            party = suggestion.get("party_id") if suggestion else None
+        if not party:
+            return {"rows": [], "reason": "Identifique o cliente para sugerir seus títulos."}
+        rows = [
+            present(row)
+            for row in connection.execute(
+                text(
+                    SUMMARY
+                    + """ WHERE e.organization_id=:org AND e.party_id=:party
+                    AND e.direction=:direction AND e.currency=:currency
+                    AND e.deleted_at IS NULL AND NOT e.cancelled
+                    AND (e.account_id IS NULL OR e.account_id=:account)"""
+                ),
+                {
+                    "org": organization_id,
+                    "party": party,
+                    "direction": record["direction"],
+                    "currency": record["currency"],
+                    "account": record["account_id"],
+                },
+            ).mappings()
+        ]
+        rows = [r for r in rows if r["state"] in ("open", "partial")]
+        exact = sum(Decimal(r["outstanding"]) == record["amount"] for r in rows)
+        for row in rows:
+            matches = Decimal(row["outstanding"]) == record["amount"]
+            row["confidence"] = "HIGH" if matches and exact == 1 else "MEDIUM"
+            row["reason"] = (
+                "Mesmo cliente e saldo igual ao valor do extrato. Confira o vencimento."
+                if matches
+                else "Mesmo cliente, com diferença de valor. Revise a baixa e o saldo."
+            )
+        rows.sort(
+            key=lambda r: (
+                Decimal(r["outstanding"]) != record["amount"],
+                abs((r["due_on"] - record["posted_on"]).days),
+                r["due_on"],
+                str(r["id"]),
+            )
+        )
+        return {"rows": rows, "reason": "Sugestões aguardam confirmação do operador."}
+
+
 @router.get("/{entry_id}/settlements")
 def settlements(organization_id: UUID, entry_id: UUID, request: Request):
     with request.app.state.database.connect() as connection:
         entry(connection, organization_id, entry_id)
         rows = connection.execute(
             text("""SELECT l.id,l.transaction_id,l.amount,l.finish,l.created_at,
+            l.discount,l.surcharge,l.review_json,
             t.posted_on,t.raw_description,a.label AS account_label,
             EXISTS(SELECT 1 FROM settlement_reversals r WHERE r.settlement_id=l.id) AS reversed
             FROM entry_settlements l JOIN bank_transactions t ON t.id=l.transaction_id
             JOIN bank_accounts a ON a.id=t.account_id WHERE l.entry_id=:id ORDER BY l.created_at DESC"""),
             {"id": entry_id},
         ).mappings()
-        return [{**dict(row), "amount": f"{row['amount']:.2f}"} for row in rows]
+        return [
+            {**dict(row), **{key: f"{row[key]:.2f}" for key in ("amount", "discount", "surcharge")}}
+            for row in rows
+        ]
 
 
 @router.post("/{entry_id}/settle")
@@ -486,8 +575,13 @@ def settle(organization_id: UUID, entry_id: UUID, payload: Settlement, request: 
             .mappings()
             .one_or_none()
         )
+        digest = hashlib.sha256(payload.model_dump_json().encode()).hexdigest()
         if prior:
             if prior["entry_id"] == entry_id:
+                if prior["payload_hash"] and prior["payload_hash"] != digest:
+                    raise HTTPException(
+                        409, "A baixa já foi gravada com outros dados. Atualize a tela."
+                    )
                 return {"linked": True, "repeated": True}
             raise HTTPException(409, "Este movimento já está vinculado a outro lançamento.")
         if (
@@ -508,34 +602,66 @@ def settle(organization_id: UUID, entry_id: UUID, payload: Settlement, request: 
                 "O lançamento está previsto para outra conta bancária. Revise antes de vincular.",
             )
         remaining = Decimal(old["outstanding"])
-        if (
-            record["amount"] > remaining or (payload.finish and record["amount"] != remaining)
-        ) and not payload.confirm_difference:
+        received = record["amount"]
+        treatment = payload.difference_treatment
+        if treatment is None:
+            treatment = (
+                "SURCHARGE"
+                if received > remaining
+                else "DISCOUNT"
+                if payload.finish
+                else "KEEP_OPEN"
+            )
+        if treatment == "DISCOUNT" and received >= remaining:
+            raise HTTPException(422, "Desconto exige valor recebido menor que o saldo em aberto.")
+        if treatment == "SURCHARGE" and received <= remaining:
+            raise HTTPException(422, "Acréscimo exige valor recebido maior que o saldo em aberto.")
+        if received > remaining and treatment != "SURCHARGE":
+            raise HTTPException(422, "Confirme o acréscimo comercial para quitar com valor maior.")
+        discount = remaining - received if treatment == "DISCOUNT" else Decimal(0)
+        surcharge = received - remaining if treatment == "SURCHARGE" else Decimal(0)
+        if (discount or surcharge) and not payload.confirm_difference:
             raise HTTPException(422, "Confirme a diferença de valor antes de concluir a baixa.")
+        fields = {
+            key: getattr(payload, key) if key in payload.model_fields_set else old[key]
+            for key in ("party_id", "category_id", "subcategory_id", "cost_center_id")
+        }
+        if not fields["cost_center_id"]:
+            raise HTTPException(
+                422, "Informe o centro de custos da baixa. O título original será preservado."
+            )
         identification = Identification(
-            **{
-                key: old[key]
-                for key in (
-                    "party_id",
-                    "category_id",
-                    "subcategory_id",
-                    "cost_center_id",
-                )
-            },
+            **fields,
             notes=payload.notes,
-            customer_group_id=record.get("customer_group_id") if not old["party_id"] else None,
+            customer_group_id=record.get("customer_group_id") if not fields["party_id"] else None,
             expected_version=payload.expected_transaction_version,
         )
         save_identification(connection, organization_id, record, identification)
+        review = {
+            "identification": identification.model_dump(mode="json"),
+            "original_title": {
+                key: old[key] for key in (*fields.keys(), "expected_amount", "due_on")
+            },
+            "outstanding_before": str(remaining),
+            "treatment": treatment,
+            "discount": str(discount),
+            "surcharge": str(surcharge),
+        }
         identifier = connection.scalar(
             text(
-                "INSERT INTO entry_settlements(entry_id,transaction_id,amount,finish,actor_id) VALUES(:entry,:tx,:amount,:finish,:actor) RETURNING id"
+                """INSERT INTO entry_settlements(entry_id,transaction_id,amount,finish,actor_id,
+                    discount,surcharge,review_json,payload_hash)
+                    VALUES(:entry,:tx,:amount,:finish,:actor,:discount,:surcharge,CAST(:review AS jsonb),:hash) RETURNING id"""
             ),
             {
                 "entry": entry_id,
                 "tx": payload.transaction_id,
                 "amount": record["amount"],
-                "finish": payload.finish,
+                "finish": treatment != "KEEP_OPEN",
+                "discount": discount,
+                "surcharge": surcharge,
+                "review": json.dumps(review, default=str),
+                "hash": digest,
                 "actor": actor(connection),
             },
         )
@@ -553,7 +679,7 @@ def settle(organization_id: UUID, entry_id: UUID, payload: Settlement, request: 
                 "entry_id": entry_id,
                 "transaction_id": payload.transaction_id,
                 "amount": record["amount"],
-                "finish": payload.finish,
+                "review": review,
             },
         )
         return {"linked": True, "entry": entry(connection, organization_id, entry_id)}

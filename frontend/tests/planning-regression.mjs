@@ -202,9 +202,9 @@ try {
     .click();
   await firstRow.getByText("Cancelado", { exact: true }).waitFor();
   assert.equal(await firstRow.locator(".planning-state-cancelled").count(), 1);
-  assert.equal(await page.locator(".planning-state-open").count(), 3);
+  assert.equal(await page.locator(".planning-state-upcoming").count(), 3);
   const colours = await page
-    .locator(".planning-state-cancelled, .planning-state-open")
+    .locator(".planning-state-cancelled, .planning-state-upcoming")
     .evaluateAll((items) =>
       items.map((item) => getComputedStyle(item).backgroundColor),
     );

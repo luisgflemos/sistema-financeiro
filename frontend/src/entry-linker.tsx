@@ -3,17 +3,30 @@ import { api } from "./api";
 import { SearchSelect } from "./search-select";
 import { brl, brazilDate } from "./statement-import";
 import type { PlannedEntry } from "./planning-page";
+import type { RecordData } from "./catalogs";
 import { Unlink } from "lucide-react";
 import { ActionButton } from "./action-button";
+import "./settlement-review.css";
 
 function cents(value: string) {
   const [whole, fraction = ""] = value.split(".");
   return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, "0").slice(0, 2));
 }
-
+function decimal(value: bigint) {
+  return `${value / 100n}.${(value % 100n).toString().padStart(2, "0")}`;
+}
+type Candidate = PlannedEntry & { confidence: string; reason: string };
+type Fields = {
+  category_id: string;
+  subcategory_id: string;
+  cost_center_id: string;
+  party_id: string;
+};
 export function EntryLinker({
   organizationId,
   movement,
+  partyId,
+  catalogs,
   onModeChange,
   onDone,
   notes,
@@ -28,6 +41,8 @@ export function EntryLinker({
     version: number;
     notes: string | null;
   };
+  partyId: string;
+  catalogs: Record<string, RecordData[]>;
   onModeChange: (value: boolean) => void;
   onDone: (message: string) => void;
   notes: string;
@@ -37,14 +52,20 @@ export function EntryLinker({
   const base = "/organizations/" + organizationId + "/planned-entries";
   const [linked, setLinked] = useState<{ entry: PlannedEntry } | null>(null);
   const [entries, setEntries] = useState<PlannedEntry[]>([]);
-  const [entryId, setEntryId] = useState("");
+  const [suggestions, setSuggestions] = useState<Candidate[]>([]);
   const [chosen, setChosen] = useState<PlannedEntry | null>(null);
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [finish, setFinish] = useState(false);
+  const [treatment, setTreatment] = useState("KEEP_OPEN");
   const [confirmed, setConfirmed] = useState(false);
+  const [fields, setFields] = useState<Fields>({
+    category_id: "",
+    subcategory_id: "",
+    cost_center_id: "",
+    party_id: "",
+  });
   useEffect(() => {
     const controller = new AbortController();
     api<{ entry: PlannedEntry } | null>(base + "/links/" + movement.id, {
@@ -52,15 +73,32 @@ export function EntryLinker({
     })
       .then((link) => {
         setLinked(link);
-        if (link) {
-          onModeChange(true);
-        }
+        if (link) onModeChange(true);
       })
       .catch((e) => {
         if (!controller.signal.aborted) setError(e.message);
       });
     return () => controller.abort();
   }, [base, movement.id, onModeChange]);
+  useEffect(() => {
+    const controller = new AbortController();
+    setSuggestions([]);
+    setChosen(null);
+    setConfirmed(false);
+    api<{ rows: Candidate[] }>(
+      base +
+        "/suggestions/" +
+        movement.id +
+        "?derive_party=false" +
+        (partyId ? "&party_id=" + encodeURIComponent(partyId) : ""),
+      { signal: controller.signal },
+    )
+      .then((result) => setSuggestions(result.rows))
+      .catch((e) => {
+        if (!controller.signal.aborted) setError(e.message);
+      });
+    return () => controller.abort();
+  }, [base, movement.id, partyId]);
   useEffect(() => {
     if (!enabled || linked) return;
     const controller = new AbortController();
@@ -90,30 +128,59 @@ export function EntryLinker({
       controller.abort();
     };
   }, [base, enabled, linked, movement.direction, query]);
-  const selected = entries.find((row) => row.id === entryId) ?? chosen;
-  const candidates =
-    selected && !entries.some((row) => row.id === selected.id)
-      ? [selected, ...entries]
-      : entries;
-  const difference =
-    selected && cents(movement.amount) !== cents(selected.outstanding);
-  const needsConfirmation =
-    selected &&
-    (cents(movement.amount) > cents(selected.outstanding) ||
-      (finish && difference));
+  function choose(row: PlannedEntry) {
+    setChosen(row);
+    setFields({
+      category_id: row.category_id,
+      subcategory_id: row.subcategory_id,
+      cost_center_id: row.cost_center_id ?? "",
+      party_id: row.party_id ?? "",
+    });
+    setTreatment(
+      cents(movement.amount) > cents(row.outstanding)
+        ? "SURCHARGE"
+        : "KEEP_OPEN",
+    );
+    setConfirmed(false);
+    setError("");
+    onModeChange(true);
+  }
+  const candidates = [
+    ...new Map(
+      [...suggestions, ...entries, ...(chosen ? [chosen] : [])].map((row) => [
+        row.id,
+        row,
+      ]),
+    ).values(),
+  ];
+  const received = cents(movement.amount);
+  const remaining = chosen ? cents(chosen.outstanding) : 0n;
+  const discount =
+    chosen && treatment === "DISCOUNT" && remaining > received
+      ? remaining - received
+      : 0n;
+  const surcharge = chosen && received > remaining ? received - remaining : 0n;
+  const balance =
+    chosen && treatment === "KEEP_OPEN" && remaining > received
+      ? remaining - received
+      : 0n;
+  const needsConfirmation = discount > 0n || surcharge > 0n;
   async function link() {
-    if (!selected) return;
+    if (!chosen || busy) return;
     setBusy(true);
     setError("");
     try {
-      await api(base + "/" + selected.id + "/settle", {
+      await api(base + "/" + chosen.id + "/settle", {
         method: "POST",
         body: JSON.stringify({
           transaction_id: movement.id,
           expected_transaction_version: movement.version,
-          expected_entry_version: selected.version,
-          finish,
+          expected_entry_version: chosen.version,
+          difference_treatment: treatment,
           confirm_difference: confirmed,
+          ...Object.fromEntries(
+            Object.entries(fields).map(([key, value]) => [key, value || null]),
+          ),
           notes,
         }),
       });
@@ -141,7 +208,7 @@ export function EntryLinker({
       setBusy(false);
     }
   }
-  if (!enabled && !linked && !error) return null;
+  if (!enabled && !linked && !suggestions.length && !error) return null;
   return (
     <section
       id="previous-entry-panel"
@@ -167,6 +234,37 @@ export function EntryLinker({
         </div>
       ) : (
         <>
+          {!enabled && suggestions.length > 0 && (
+            <div
+              className="settlement-suggestions"
+              aria-label="Sugestões de vínculo"
+            >
+              <strong>Títulos em aberto deste cliente</strong>
+              <span>Sugestões aguardam sua confirmação.</span>
+              {suggestions.slice(0, 3).map((row) => (
+                <button
+                  type="button"
+                  key={row.id}
+                  className={
+                    row.confidence === "HIGH"
+                      ? "settlement-suggestion-high"
+                      : "settlement-suggestion-review"
+                  }
+                  onClick={() => choose(row)}
+                >
+                  <strong>
+                    {row.description} · {brl(row.outstanding)}
+                  </strong>
+                  <span>
+                    Vencimento: {brazilDate(row.due_on)} · Confiança{" "}
+                    {row.confidence === "HIGH" ? "alta" : "média"}
+                  </span>
+                  <small>{row.reason}</small>
+                  <span>Conferir vínculo →</span>
+                </button>
+              ))}
+            </div>
+          )}
           {enabled && (
             <>
               <div className="actions">
@@ -186,13 +284,12 @@ export function EntryLinker({
                 <SearchSelect
                   id="existing-planned-entry"
                   disabled={busy}
-                  value={entryId}
+                  value={chosen?.id ?? ""}
                   onSearchChange={setQuery}
                   onChange={(value) => {
-                    setEntryId(value);
-                    setChosen(entries.find((row) => row.id === value) ?? null);
-                    setFinish(false);
-                    setConfirmed(false);
+                    const row = candidates.find((item) => item.id === value);
+                    if (row) choose(row);
+                    else setChosen(null);
                   }}
                   options={[
                     { value: "", label: "Pesquise um lançamento em aberto" },
@@ -209,52 +306,150 @@ export function EntryLinker({
                 />
               </div>
               {loading && <small role="status">Pesquisando lançamentos…</small>}
-              {selected && (
+              {chosen && (
                 <>
-                  <div className="planning-link">
-                    <strong>{selected.description}</strong>
-                    <span>
-                      Previsto: {brl(selected.expected_amount)} · Em aberto:{" "}
-                      {brl(selected.outstanding)}
-                    </span>
-                    <span>
-                      Valor do extrato para baixa: {brl(movement.amount)}
-                    </span>
-                    <small>
-                      Classificação, subclassificação e centro de custos serão
-                      copiados do lançamento.
-                    </small>
-                  </div>
-                  {difference && (
-                    <div className="planning-link-warning">
-                      {cents(movement.amount) < cents(selected.outstanding)
-                        ? "O valor menor fará uma baixa parcial; o restante continuará em aberto."
-                        : "O valor é maior que o saldo previsto. A diferença ficará registrada."}
+                  <div
+                    className="settlement-summary"
+                    aria-label="Conferência de valores"
+                  >
+                    <div>
+                      <span>Saldo do título</span>
+                      <strong>{brl(chosen.outstanding)}</strong>
                     </div>
-                  )}
-                  {cents(movement.amount) < cents(selected.outstanding) && (
-                    <label className="checkbox">
-                      <input
-                        type="checkbox"
-                        checked={finish}
-                        onChange={(e) => {
-                          setFinish(e.target.checked);
+                    <div>
+                      <span>Valor do extrato · fixo</span>
+                      <strong>{brl(movement.amount)}</strong>
+                    </div>
+                    <div>
+                      <span>Saldo após a baixa</span>
+                      <strong>{brl(decimal(balance))}</strong>
+                    </div>
+                  </div>
+                  {received !== remaining && (
+                    <div className="settlement-difference">
+                      <strong>
+                        Há diferença de valor. Escolha o tratamento.
+                      </strong>
+                      <SearchSelect
+                        ariaLabel="Tratamento da diferença"
+                        disabled={busy}
+                        value={treatment}
+                        onChange={(value) => {
+                          setTreatment(value);
                           setConfirmed(false);
                         }}
+                        options={
+                          received < remaining
+                            ? [
+                                {
+                                  value: "KEEP_OPEN",
+                                  label:
+                                    "Baixa parcial — manter saldo em aberto",
+                                },
+                                {
+                                  value: "DISCOUNT",
+                                  label: "Desconto comercial — quitar o saldo",
+                                },
+                              ]
+                            : [
+                                {
+                                  value: "SURCHARGE",
+                                  label:
+                                    "Acréscimo comercial — quitar o título",
+                                },
+                              ]
+                        }
                       />
-                      Encerrar o lançamento mesmo com a diferença
-                    </label>
+                      <span>
+                        {discount
+                          ? "Desconto comercial: " + brl(decimal(discount))
+                          : surcharge
+                            ? "Acréscimo comercial: " + brl(decimal(surcharge))
+                            : "O restante permanece em aberto para um próximo recebimento."}
+                      </span>
+                      {needsConfirmation && (
+                        <label className="checkbox">
+                          <input
+                            type="checkbox"
+                            checked={confirmed}
+                            onChange={(e) => setConfirmed(e.target.checked)}
+                          />
+                          Confirmo a baixa com diferença de valor e o{" "}
+                          {discount ? "desconto" : "acréscimo"} comercial
+                        </label>
+                      )}
+                    </div>
                   )}
-                  {needsConfirmation && (
-                    <label className="checkbox">
-                      <input
-                        type="checkbox"
-                        checked={confirmed}
-                        onChange={(e) => setConfirmed(e.target.checked)}
-                      />
-                      Confirmo a baixa com diferença de valor
-                    </label>
-                  )}
+                  <div className="settlement-fields">
+                    <h3>Identificação da baixa</h3>
+                    <small>
+                      Revise os dados abaixo. O título original será preservado.
+                    </small>
+                    <div className="fields">
+                      {(
+                        [
+                          [
+                            "category_id",
+                            "Classificação da baixa",
+                            "categories",
+                          ],
+                          [
+                            "subcategory_id",
+                            "Subclassificação da baixa",
+                            "subcategories",
+                          ],
+                          [
+                            "cost_center_id",
+                            "Centro de Custos da baixa",
+                            "cost-centers",
+                          ],
+                          [
+                            "party_id",
+                            "Cliente / Fornecedor da baixa (opcional)",
+                            "parties",
+                          ],
+                        ] as const
+                      ).map(([key, label, table]) => (
+                        <div className="field" key={key}>
+                          <label htmlFor={"settlement-" + key}>{label}</label>
+                          <SearchSelect
+                            id={"settlement-" + key}
+                            value={fields[key]}
+                            disabled={busy}
+                            onChange={(value) => {
+                              setFields((old) => ({
+                                ...old,
+                                [key]: value,
+                                ...(key === "category_id"
+                                  ? { subcategory_id: "" }
+                                  : {}),
+                              }));
+                              setConfirmed(false);
+                            }}
+                            options={[
+                              { value: "", label: "Selecione" },
+                              ...(catalogs[table] ?? [])
+                                .filter(
+                                  (row) =>
+                                    row.active &&
+                                    (table !== "categories" ||
+                                      row.kind ===
+                                        (movement.direction === "CREDIT"
+                                          ? "REVENUE"
+                                          : "EXPENSE")) &&
+                                    (table !== "subcategories" ||
+                                      row.category_id === fields.category_id),
+                                )
+                                .map((row) => ({
+                                  value: row.id,
+                                  label: String(row.display_name ?? row.name),
+                                })),
+                            ]}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <label htmlFor="linked-complementary">
                     Descrição Complementar (opcional)
                   </label>
@@ -268,7 +463,13 @@ export function EntryLinker({
                   <button
                     type="button"
                     className="primary"
-                    disabled={busy || Boolean(needsConfirmation && !confirmed)}
+                    disabled={
+                      busy ||
+                      !fields.category_id ||
+                      !fields.subcategory_id ||
+                      !fields.cost_center_id ||
+                      (needsConfirmation && !confirmed)
+                    }
                     onClick={() => void link()}
                   >
                     {busy ? "Vinculando…" : "Vincular e dar baixa"}

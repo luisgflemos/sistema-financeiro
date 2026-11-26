@@ -1091,6 +1091,8 @@ export function TransactionsPage({
               key={selected.id}
               organizationId={organizationId}
               movement={selected}
+              partyId={draft.party_id}
+              catalogs={catalogs}
               enabled={linkMode}
               notes={draft.notes}
               onNotesChange={(value) =>

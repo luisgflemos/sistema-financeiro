@@ -1,0 +1,106 @@
+.settlement-suggestions {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #93c5fd;
+  background: #eff6ff;
+  border-radius: 0.65rem;
+  margin: 0.75rem 0;
+}
+.settlement-suggestions > span {
+  font-size: 0.8rem;
+  color: #1e40af;
+}
+.settlement-suggestions button {
+  display: grid;
+  gap: 0.2rem;
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+}
+.settlement-suggestions button span,
+.settlement-suggestions button small {
+  font-size: 0.75rem;
+}
+.settlement-suggestions .settlement-suggestion-high {
+  color: #1e3a8a;
+  border-color: #93c5fd;
+  background: white;
+}
+.settlement-suggestions .settlement-suggestion-review {
+  color: #713f12;
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+.settlement-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f1f5f9;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+}
+.settlement-summary div {
+  display: grid;
+  gap: 0.25rem;
+}
+.settlement-summary span {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.settlement-difference {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  border-radius: 0.5rem;
+}
+.settlement-fields {
+  margin: 0.75rem 0;
+}
+.settlement-fields h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+.settlement-fields > small {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.settlement-fields .fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem 0.75rem;
+}
+.planning-state-overdue {
+  color: #991b1b;
+  background: #fee2e2;
+}
+.planning-state-upcoming {
+  color: #854d0e;
+  background: #fef3c7;
+}
+.planning-state-paid {
+  color: #065f46;
+  background: #d1fae5;
+}
+.planning-partial {
+  display: inline-block;
+  margin: 0.2rem 0 0 0.35rem;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid #94a3b8;
+  border-radius: 0.3rem;
+  color: #334155;
+  background: #f1f5f9;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+@media (max-width: 720px) {
+  .settlement-summary,
+  .settlement-fields .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

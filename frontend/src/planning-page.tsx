@@ -22,22 +22,25 @@ export type PlannedEntry = {
   outstanding: string;
   difference: string;
   state: string;
+  situation: string;
+  discount: string;
+  surcharge: string;
   version: number;
   party_name: string | null;
   occurrence: number;
   occurrences: number;
   category_id: string;
   subcategory_id: string;
-  cost_center_id: string;
+  cost_center_id: string | null;
   party_id: string | null;
   account_id: string | null;
   notes: string | null;
   can_delete: boolean;
 };
 const labels: Record<string, string> = {
-  open: "Em aberto",
-  partial: "Parcialmente realizado",
-  realized: "Realizado",
+  upcoming: "A vencer",
+  overdue: "Vencido",
+  paid: "Baixado",
   cancelled: "Cancelado",
 };
 type Draft = Record<string, string>;
@@ -128,6 +131,8 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
       raw_description: string;
       reversed: boolean;
       account_label: string;
+      discount: string;
+      surcharge: string;
     }[]
   >([]);
   useEffect(() => {
@@ -477,6 +482,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                 value,
                 label,
               })),
+              { value: "partial", label: "Com baixa parcial" },
             ]}
           />
           <SearchSelect
@@ -552,11 +558,14 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                     <td>
                       <span
                         className={
-                          "transaction-state planning-state-" + row.state
+                          "transaction-state planning-state-" + row.situation
                         }
                       >
-                        {labels[row.state]}
+                        {labels[row.situation]}
                       </span>
+                      {row.state === "partial" && (
+                        <span className="planning-partial">Baixa parcial</span>
+                      )}
                       {row.difference !== "0.00" && (
                         <small className="planning-meta">
                           Diferença: {brl(row.difference)}
@@ -688,11 +697,7 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                     <label htmlFor={"planned-" + key}>{label}</label>
                     <SearchSelect
                       id={"planned-" + key}
-                      required={[
-                        "category_id",
-                        "subcategory_id",
-                        "cost_center_id",
-                      ].includes(key)}
+                      required={["category_id", "subcategory_id"].includes(key)}
                       value={draft[key]}
                       onChange={(value) => update(key, value)}
                       options={[
@@ -949,6 +954,12 @@ export function PlanningPage({ organizationId }: { organizationId: string }) {
                   {brazilDate(item.posted_on)} · {brl(item.amount)}
                 </strong>
                 <p>{item.raw_description}</p>
+                {item.discount !== "0.00" && (
+                  <p>Desconto comercial: {brl(item.discount)}</p>
+                )}
+                {item.surcharge !== "0.00" && (
+                  <p>Acréscimo comercial: {brl(item.surcharge)}</p>
+                )}
                 <small>
                   {item.account_label} ·{" "}
                   {item.reversed ? "Vínculo desfeito" : "Vínculo ativo"}

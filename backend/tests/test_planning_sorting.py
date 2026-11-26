@@ -58,9 +58,11 @@ def test_paid_outstanding_and_visible_status_order(statements):
                 "rows"
             ]
             labels = {
-                "open": "Em aberto",
-                "partial": "Parcialmente realizado",
-                "realized": "Realizado",
+                "upcoming": "A vencer",
+                "overdue": "Vencido",
+                "paid": "Baixado",
             }
-            values = [labels[r["state"]] if field == "state" else Decimal(r[field]) for r in rows]
+            values = [
+                labels[r["situation"]] if field == "state" else Decimal(r[field]) for r in rows
+            ]
             assert values == sorted(values, reverse=order == "desc")

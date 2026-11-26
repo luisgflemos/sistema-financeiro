@@ -525,9 +525,7 @@ try {
     .getByRole("button", { name: "Lançamentos", exact: true })
     .click();
   const plannedRow = page.getByRole("row").filter({ hasText: "31/01/2027" });
-  await plannedRow
-    .getByText("Parcialmente realizado", { exact: true })
-    .waitFor();
+  await plannedRow.getByText("Baixa parcial", { exact: true }).waitFor();
   const protectedExclusion = plannedRow.getByRole("button", {
     name: "Excluir",
     exact: true,
@@ -550,7 +548,7 @@ try {
       { exact: true },
     )
     .waitFor();
-  await plannedRow.getByText("Em aberto", { exact: true }).waitFor();
+  await plannedRow.getByText("A vencer", { exact: true }).waitFor();
   assert.equal((await api(base + "/transactions?state=all")).total, 2);
   await page
     .getByRole("navigation")
