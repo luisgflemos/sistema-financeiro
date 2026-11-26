@@ -150,9 +150,7 @@ try {
     "rgb(219, 234, 254)",
   );
   await page.locator("#transaction-state").fill("Vinculados");
-  await page
-    .getByRole("option", { name: "Vinculados", exact: true })
-    .click();
+  await page.getByRole("option", { name: "Vinculados", exact: true }).click();
   await page.getByText("1 resultados", { exact: true }).waitFor();
   await page.screenshot({
     path: "import-layout-linked-status.png",
