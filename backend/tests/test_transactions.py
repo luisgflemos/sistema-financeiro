@@ -262,7 +262,7 @@ def test_pix_without_customer_or_group_is_partial_suggestion_only(statements, mo
     result = client.post(base + "/recognition/run", json={}).json()
     assert result["automatic"] == 0 and result["suggestions"] == 1
     suggestion = client.get(base + "/transactions?state=suggested").json()["rows"][0]
-    assert suggestion["confidence"] == "MEDIUM"
+    assert suggestion["confidence"] == "HIGH"
     assert suggestion["suggestion"]["category_id"] == values["category_id"]
     assert suggestion["suggestion"]["subcategory_id"] == values["subcategory_id"]
     assert suggestion["suggestion"]["cost_center_id"] == values["cost_center_id"]

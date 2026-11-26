@@ -28,6 +28,48 @@ def normalized(value):
     return " ".join(re.findall(r"[a-z0-9]+", value))
 
 
+def description_key(value):
+    """Preserva nomes/documentos; remove só referência variável de cobrança bancária."""
+    value = normalized(value)
+    if value.startswith("cr cob bloq comp conf recebimento "):
+        return re.sub(r"(?: \d+)+$", "", value)
+    return value
+
+
+def description_evidence(history, target, identity, candidates):
+    key = description_key(target.get("raw_description"))
+    related = [
+        row
+        for row in history
+        if key
+        and description_key(row.get("raw_description")) == key
+        and row.get("movement_kind") == "NORMAL"
+        and (not target.get("account_id") or str(row["account_id"]) == str(target["account_id"]))
+        and (not target.get("direction") or row["direction"] == target["direction"])
+        and (not target.get("id") or str(row.get("source_transaction_id")) != str(target["id"]))
+    ]
+    result = {
+        "party_candidates": sorted(candidates),
+        "customer_identity": identity,
+        "matching_records": len(related),
+        "match_basis": {"bank_description": len(related)} if related else {},
+        "same_bank_account": bool(target.get("account_id")),
+        "direction": target.get("direction"),
+        "fields": {},
+        "limitation": "Padrão da descrição bancária. Cliente não é pré-requisito; conta não determina centro de custos. Todas as sugestões exigem confirmação.",
+    }
+    for field in FIELDS:
+        counts = Counter(str(row.get(field) or "") for row in related)
+        missing = counts.pop("", 0)
+        result["fields"][field] = {
+            "observations": len(related),
+            "missing": missing,
+            "values": dict(counts),
+            "unanimous": len(counts) == 1 and sum(counts.values()) == len(related),
+        }
+    return result, related
+
+
 def load_history(connection, org):
     return [
         dict(row)
@@ -138,11 +180,13 @@ def related_evidence(history, target, catalogs, documents):
         "match_basis": {},
         "customer_identity": identity,
     }
+    description_facts, description_rows = description_evidence(
+        history, target, identity, candidates
+    )
+    if len(description_rows) >= 3:
+        return description_facts, description_rows
     if len(candidates) != 1 and not group:
-        result["limitation"] = (
-            "Cliente não identificado ou ambíguo; não atribuir histórico de outra pessoa."
-        )
-        return result, []
+        return description_facts, description_rows
     party = next(iter(candidates)) if candidates else None
     party_groups = {
         str(p["id"]): str(p.get("customer_group_id") or "") for p in catalogs.get("parties", [])
@@ -211,21 +255,12 @@ def document_index(parties):
 
 def complete_suggestion(item, evidence, catalogs):
     result = prioritize_customer(item, evidence.get("customer_identity", {}), catalogs)
-    if (
-        result.get("movement_kind") != "NORMAL"
-        or evidence["matching_records"] < 3
-        or (
-            len(evidence["party_candidates"]) != 1
-            and not evidence.get("customer_identity", {}).get("customer_group_id")
-        )
-    ):
+    if result.get("movement_kind") != "NORMAL" or evidence["matching_records"] < 1:
         return result
-    if not result.get("customer_group_id"):
+    if not result.get("customer_group_id") and len(evidence["party_candidates"]) == 1:
         candidate = evidence["party_candidates"][0]
         if not result.get("party_id"):
             result["party_id"] = candidate
-        if str(result["party_id"]) != candidate:
-            return result
     for field, table in (
         ("category_id", "categories"),
         ("subcategory_id", "subcategories"),
@@ -253,7 +288,7 @@ def complete_suggestion(item, evidence, catalogs):
             key=lambda pair: -pair[1],
         )
         # Predominância é sugestão, nunca confirmação. Empate não escolhe arbitrariamente.
-        if ranked and ranked[0][1] >= 2 and (len(ranked) == 1 or ranked[0][1] > ranked[1][1]):
+        if ranked and (len(ranked) == 1 or ranked[0][1] > ranked[1][1]):
             result[field] = ranked[0][0]
     return result
 
@@ -283,6 +318,8 @@ def evidence_reason(evidence, catalogs):
     parts = [
         f"Histórico relacionado: {evidence['matching_records']} movimentos confirmados, mesma direção e mesmo canal quando PIX."
     ]
+    if evidence.get("match_basis", {}).get("bank_description"):
+        parts.append("Padrão da própria descrição bancária; não depende de cliente vinculado.")
     if evidence.get("customer_identity", {}).get("customer_group_id"):
         group_id = evidence["customer_identity"]["customer_group_id"]
         group_name = next(
