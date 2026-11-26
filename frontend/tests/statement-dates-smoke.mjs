@@ -30,7 +30,7 @@ await api(base + "/bank-accounts", {
   active: true,
 });
 const csv =
-  "AGENCIA;0001;CONTA;123456\n;;;;\nData;Histórico;Documento;Valor (R$);Saldo (R$)\n24/01/2026;RECEBIMENTO SINTETICO A;01;100;200\n25/01/2026;DESPESA SINTETICA B;02;-30;170\n26/01/2026;RECEBIMENTO SINTETICO C;03;50;220\n";
+  "AGENCIA;0001;CONTA;123456\n;;;;\nData;Histórico;Documento;Valor (R$);Saldo (R$)\n26/01/2026;RECEBIMENTO SINTETICO C;03;50;220\n25/01/2026;DESPESA SINTETICA B;02;-30;170\n24/01/2026;RECEBIMENTO SINTETICO A;01;100;200\n";
 const file = {
   name: "varios-dias.csv",
   mimeType: "text/csv",

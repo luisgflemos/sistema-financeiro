@@ -21,9 +21,9 @@ def source(days=None, account="123456", name="datas-sinteticas.csv"):
     csv = (
         f"AGENCIA;0001;CONTA;{account}\n;;;;\n"
         "Data;Histórico;Documento;Valor (R$);Saldo (R$)\n"
-        "24/01/2026;RECEBIMENTO SINTETICO A;01;100;200\n"
-        "25/01/2026;DESPESA SINTETICA B;02;-30;170\n"
         "26/01/2026;RECEBIMENTO SINTETICO C;03;50;220\n"
+        "25/01/2026;DESPESA SINTETICA B;02;-30;170\n"
+        "24/01/2026;RECEBIMENTO SINTETICO A;01;100;200\n"
     )
     result = {"file_name": name, "content": base64.b64encode(csv.encode()).decode()}
     if days is not None:
