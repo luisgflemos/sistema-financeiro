@@ -99,8 +99,8 @@ try {
     assert.ok(await button.getAttribute("aria-label"));
     const bounds = await button.boundingBox();
     const icon = await button.locator("svg").boundingBox();
-    assert.equal(bounds.width, 40);
-    assert.equal(bounds.height, 40);
+    assert.equal(bounds.width, 32);
+    assert.equal(bounds.height, 32);
     assert.ok(
       Math.abs(bounds.x + bounds.width / 2 - icon.x - icon.width / 2) < 1,
     );
