@@ -304,6 +304,8 @@ def field_confidences(values, evidence, fallback):
         if total >= 3 and field in FIELDS[:3]:
             count = counts.get(str(values[field]), 0)
             confidence = "HIGH" if count == total else "MEDIUM" if count > total / 2 else "LOW"
+            if field == "cost_center_id" and not evidence.get("same_bank_account", True):
+                confidence = "MEDIUM" if count > total / 2 else "LOW"
         elif field == "party_id" and evidence.get("match_basis", {}).get(
             "unique_name_in_bank_text"
         ):
@@ -320,6 +322,10 @@ def evidence_reason(evidence, catalogs):
     ]
     if evidence.get("match_basis", {}).get("bank_description"):
         parts.append("Padrão da própria descrição bancária; não depende de cliente vinculado.")
+    if not evidence.get("same_bank_account", True):
+        parts.append(
+            "Exemplos de outras contas da organização; revise especialmente o centro de custos."
+        )
     if evidence.get("customer_identity", {}).get("customer_group_id"):
         group_id = evidence["customer_identity"]["customer_group_id"]
         group_name = next(
@@ -354,6 +360,8 @@ def reviewed_confidence(confidence, values, evidence):
         return confidence
     required = ("category_id", "subcategory_id", "cost_center_id")
     if any(not values.get(field) for field in required):
+        return "MEDIUM"
+    if not evidence.get("same_bank_account", True):
         return "MEDIUM"
     if evidence.get("matching_records", 0) >= 3 and any(
         not evidence.get("fields", {}).get(field, {}).get("unanimous") for field in required

@@ -329,9 +329,15 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
     evidence, prioritized = {}, []
     for row in remaining:
         facts, related = related_evidence(history, row, catalogs, party_documents)
-        facts["across_accounts"], _ = related_evidence(
+        across, across_related = related_evidence(
             history, {**row, "account_id": None}, catalogs, party_documents
         )
+        # Sem exemplos nesta conta, aproveitar o histórico de outras contas
+        # da organização como sugestão contextual, explicitamente para revisão.
+        if not facts["matching_records"] and across["matching_records"]:
+            facts, related = across, across_related
+        else:
+            facts["across_accounts"] = across
         evidence[str(row["id"])] = facts
         prioritized.extend(related[: max(1, 150 // len(remaining))])
     chosen = list(
@@ -355,7 +361,9 @@ def recognize(organization_id: UUID, payload: RecognitionBatch, request: Request
         candidate = complete_suggestion(
             {"transaction_id": tx_id, "movement_kind": "NORMAL"}, evidence[tx_id], catalogs
         )
-        if any(candidate.get(key) for key in (*IDENT_FIELDS[:4], "customer_group_id")):
+        if evidence[tx_id]["matching_records"] and any(
+            candidate.get(key) for key in (*IDENT_FIELDS[:4], "customer_group_id")
+        ):
             candidate.update(
                 confidence="HIGH" if evidence[tx_id]["matching_records"] >= 3 else "MEDIUM",
                 reason=evidence_reason(evidence[tx_id], catalogs)

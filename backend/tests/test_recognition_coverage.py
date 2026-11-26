@@ -116,6 +116,18 @@ def test_collection_references_do_not_hide_same_bank_operation():
     assert facts["matching_records"] == 5
 
 
+def test_other_accounts_remain_available_as_contextual_evidence():
+    catalogs, target, rows, _, _, center, _ = examples()
+    for row in rows:
+        row["account_id"] = "account-b"
+    assert related_evidence(rows, target, catalogs, {})[0]["matching_records"] == 0
+    facts, _ = related_evidence(rows, {**target, "account_id": None}, catalogs, {})
+    item = complete_suggestion({"movement_kind": "NORMAL"}, facts, catalogs)
+    assert item["cost_center_id"] == center
+    assert field_confidences(item, facts, "HIGH")["cost_center_id"] == "MEDIUM"
+    assert reviewed_confidence("HIGH", item, facts) == "MEDIUM"
+
+
 @pytest.mark.parametrize("provider", ["omits", "fails", "invalid", "disabled"])
 def test_every_known_description_gets_suggestion_without_auto_approval(
     statements, monkeypatch, provider
