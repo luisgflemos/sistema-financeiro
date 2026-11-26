@@ -236,6 +236,32 @@
   font-size: 0.75rem;
   margin-bottom: 0.5rem;
 }
+.history-dimension-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+}
+.history-dimension-filters > div {
+  min-width: 0;
+}
+.history-dimension-filters label {
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+}
+.history-dimension-filters .search-select input {
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .history-dimension-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .history-dimension-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .search-select > input {
   width: 100%;
 }

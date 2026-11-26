@@ -244,6 +244,10 @@ def list_transactions(
     request: Request,
     account_id: UUID | None = None,
     statement_id: UUID | None = None,
+    category_id: UUID | None = None,
+    subcategory_id: UUID | None = None,
+    party_id: UUID | None = None,
+    cost_center_id: UUID | None = None,
     state: Literal["all", "pending", "identified", "suggested"] = "pending",
     query: str = Query(default="", max_length=200),
     start: str | None = None,
@@ -267,6 +271,10 @@ def list_transactions(
         "org": organization_id,
         "account": account_id,
         "statement": statement_id,
+        "category": category_id,
+        "subcategory": subcategory_id,
+        "party": party_id,
+        "cost_center": cost_center_id,
         "query": "%" + query.strip() + "%",
         "start": start_date,
         "end": end_date,
@@ -277,6 +285,10 @@ def list_transactions(
         WHERE a.organization_id = :org
         AND (CAST(:account AS uuid) IS NULL OR a.id = :account)
         AND (CAST(:statement AS uuid) IS NULL OR t.import_file_id = :statement)
+        AND (CAST(:category AS uuid) IS NULL OR i.category_id = :category)
+        AND (CAST(:subcategory AS uuid) IS NULL OR i.subcategory_id = :subcategory)
+        AND (CAST(:party AS uuid) IS NULL OR i.party_id = :party)
+        AND (CAST(:cost_center AS uuid) IS NULL OR i.cost_center_id = :cost_center)
         AND (CAST(:start AS date) IS NULL OR t.posted_on >= :start)
         AND (CAST(:end AS date) IS NULL OR t.posted_on <= :end)
         AND (CAST(:direction AS text) IS NULL OR t.direction = :direction)

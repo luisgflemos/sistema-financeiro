@@ -107,6 +107,10 @@ export function TransactionsPage({
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [direction, setDirection] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [subcategoryFilter, setSubcategoryFilter] = useState("");
+  const [partyFilter, setPartyFilter] = useState("");
+  const [costCenterFilter, setCostCenterFilter] = useState("");
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -138,6 +142,15 @@ export function TransactionsPage({
   if (start) selectionParams.set("start", start);
   if (end) selectionParams.set("end", end);
   if (direction) selectionParams.set("direction", direction);
+  if (mode === "history") {
+    for (const [key, value] of Object.entries({
+      category_id: categoryFilter,
+      subcategory_id: subcategoryFilter,
+      party_id: partyFilter,
+      cost_center_id: costCenterFilter,
+    }))
+      if (value) selectionParams.set(key, value);
+  }
   const selection = useTransactionSelection(
     base,
     selectionParams.toString(),
@@ -258,6 +271,15 @@ export function TransactionsPage({
     if (start) params.set("start", start);
     if (end) params.set("end", end);
     if (direction) params.set("direction", direction);
+    if (mode === "history") {
+      for (const [key, value] of Object.entries({
+        category_id: categoryFilter,
+        subcategory_id: subcategoryFilter,
+        party_id: partyFilter,
+        cost_center_id: costCenterFilter,
+      }))
+        if (value) params.set(key, value);
+    }
     api<{ rows: Movement[]; total: number }>(base + "/transactions?" + params, {
       signal: controller.signal,
     })
@@ -282,6 +304,11 @@ export function TransactionsPage({
     start,
     end,
     direction,
+    mode,
+    categoryFilter,
+    subcategoryFilter,
+    partyFilter,
+    costCenterFilter,
     search,
     page,
     sort,
@@ -725,6 +752,81 @@ export function TransactionsPage({
             />
           </div>
         </div>
+        {mode === "history" && (
+          <div className="history-dimension-filters">
+            {[
+              {
+                key: "categories",
+                label: "Classificação",
+                value: categoryFilter,
+                change: (value: string) => {
+                  setCategoryFilter(value);
+                  setSubcategoryFilter("");
+                },
+              },
+              {
+                key: "subcategories",
+                label: "Subclassificação",
+                value: subcategoryFilter,
+                change: setSubcategoryFilter,
+              },
+              {
+                key: "parties",
+                label: "Cliente / Fornecedor",
+                value: partyFilter,
+                change: setPartyFilter,
+              },
+              {
+                key: "cost-centers",
+                label: "Centro de Custos",
+                value: costCenterFilter,
+                change: setCostCenterFilter,
+              },
+            ].map((filter) => (
+              <div key={filter.key}>
+                <label htmlFor={"history-filter-" + filter.key}>
+                  {filter.label}
+                </label>
+                <SearchSelect
+                  id={"history-filter-" + filter.key}
+                  value={filter.value}
+                  options={[
+                    { value: "", label: "Todos" },
+                    ...(catalogs[filter.key] ?? [])
+                      .filter(
+                        (row) =>
+                          filter.key !== "subcategories" ||
+                          !categoryFilter ||
+                          row.category_id === categoryFilter,
+                      )
+                      .map((row) => ({
+                        value: row.id,
+                        label:
+                          String(
+                            row.name ||
+                              row.display_name ||
+                              row.label ||
+                              row.code,
+                          ) +
+                          (filter.key === "subcategories" && !categoryFilter
+                            ? " · " +
+                              String(
+                                (catalogs.categories ?? []).find(
+                                  (category) => category.id === row.category_id,
+                                )?.name ?? "",
+                              )
+                            : ""),
+                      })),
+                  ]}
+                  onChange={(value) => {
+                    filter.change(value);
+                    setPage(1);
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
         {mode === "import" && selection.toolbar}
         {loading ? (
           <p className="empty" role="status">

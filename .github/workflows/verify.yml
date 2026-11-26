@@ -35,6 +35,7 @@ jobs:
           node tests/catalog-smoke.mjs
           node tests/transactions-smoke.mjs
           node tests/statement-dates-smoke.mjs
+          node tests/history-filters-smoke.mjs
           node tests/cleanup-smoke.mjs
           node tests/historical-smoke.mjs
           node tests/menu-sorting-smoke.mjs
