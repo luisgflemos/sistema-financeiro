@@ -354,7 +354,10 @@ def test_total_positions_preserve_cents_negative_unknown_currency_and_dates():
 
 
 def test_consolidated_ledger_keeps_account_balances_filters_pages_and_org_isolation(statements):
-    client, _, base, accounts = statements
+    client, connection, base, accounts = statements
+    connection.execute(
+        text("UPDATE bank_accounts SET label='Reserva sintética' WHERE id=:id"), {"id": accounts[1]}
+    )
     imported(client, base)
     path = base + "/bank-balances/" + accounts[1]
     for kind, amount in (("OPENING", "-100.00"), ("ADJUSTMENT", "10.00")):
