@@ -573,7 +573,7 @@ export function BankBalancesPage({
               </label>
               <small>
                 {isAll
-                  ? "Sem data inicial: todos os movimentos importados. Pesquise também pelo nome da conta."
+                  ? "Sem data inicial: desde a referência de abertura de cada conta. Pesquise também pelo nome da conta."
                   : "Sem data inicial: desde a referência de abertura. Totais abrangem o período completo; a busca filtra as linhas."}
               </small>
             </div>

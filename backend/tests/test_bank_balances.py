@@ -372,8 +372,28 @@ def test_consolidated_ledger_keeps_account_balances_filters_pages_and_org_isolat
             },
         )
         assert result.status_code == 201, result.text
+    connection.execute(
+        text("""
+        INSERT INTO bank_transactions
+        (account_id,import_file_id,source_row,posted_on,direction,amount,currency,raw_description,raw_payload,fingerprint)
+        SELECT account_id,import_file_id,999,'2025-01-01','CREDIT',10,'BRL',
+               'Histórico sintético anterior à referência','{"source_kind":"identified_history"}'::jsonb,'history-before-reference'
+        FROM bank_transactions WHERE account_id=:account LIMIT 1
+    """),
+        {"account": accounts[0]},
+    )
     all_path = base + "/bank-balances/all"
     result = client.get(all_path).json()
+    individual_rows = [
+        r
+        for account in accounts
+        for r in client.get(base + "/bank-balances/" + account).json()["rows"]
+    ]
+    assert {r["id"] for r in result["rows"]} == {r["id"] for r in individual_rows}
+    earlier = client.get(all_path, params={"start": "2025-01-01"}).json()
+    assert earlier["total"] == 6
+    assert earlier["rows"][0]["posted_on"] == "2025-01-01"
+    assert earlier["rows"][0]["calculated_balance"] is None
     assert result["total"] == 5
     assert {r["account_id"] for r in result["rows"]} == set(accounts[:2])
     assert all(r["account_label"] and r["currency"] == "BRL" for r in result["rows"])

@@ -384,12 +384,15 @@ def consolidated_ledger(
         for account in accounts:
             if account["currency"] != currency:
                 continue
-            _, ledger_rows = build_ledger(
+            summary, ledger_rows = build_ledger(
                 account,
                 [r for r in movements if r["account_id"] == account["id"]],
                 [dict(e) for e in events if e["account_id"] == account["id"]],
             )
+            first = start or (summary["opening"]["date"] if summary["opening"] else None)
             for row in ledger_rows:
+                if first and row["posted_on"] < first:
+                    continue
                 rows.append(
                     {
                         **row,
