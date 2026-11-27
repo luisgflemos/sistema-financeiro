@@ -115,6 +115,20 @@ def report(connection, org, filters):
         key = str(r["account_id"])
         starts[key] = min(starts.get(key, r["posted_on"]), r["posted_on"])
     patterns = learn(learned, as_of, starts)
+    active = {table: {str(r["id"]) for r in rows if r["active"]} for table, rows in names.items()}
+    patterns = [
+        p
+        for p in patterns
+        if all(
+            p["dimensions"][field] in active[table]
+            for field, table in (
+                ("account_id", "bank_accounts"),
+                ("category_id", "categories"),
+                ("subcategory_id", "subcategories"),
+                ("cost_center_id", "cost_centers"),
+            )
+        )
+    ]
     decisions = {}
     for r in connection.execute(
         text(
@@ -123,7 +137,9 @@ def report(connection, org, filters):
         {"org": org},
     ).mappings():
         decisions[(r["pattern_key"], r["period"])] = dict(r)
-    budgets, predictions = project(patterns, learned, entries, as_of, end, decisions)
+    budgets, predictions = project(
+        patterns, learned, [e for e in entries if matches(e, filters)], as_of, end, decisions
+    )
     lookups = {table: {str(r["id"]): r["name"] for r in rows} for table, rows in names.items()}
 
     def describe(row):

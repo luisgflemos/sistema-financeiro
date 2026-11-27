@@ -344,3 +344,46 @@ def test_fin_receives_calculated_cash_flow_not_invented_predictions(flow_data, m
     assert flow["totals"]["forecast_debit"] == Decimal("1000.00")
     assert flow["patterns"][0]["subcategory_name"] == "Sub sintética"
     assert "category_id" not in flow["patterns"][0]
+
+
+def test_unassigned_commitment_covers_only_consolidated_forecast(flow_data):
+    client, _, base, _, dims, filters = flow_data
+    fields = {k: v for k, v in dims.items() if k != "movement_kind"}
+    created = client.post(
+        base + "/planned-entries",
+        json={
+            **fields,
+            "description": "Compromisso sem conta",
+            "due_on": "2026-07-15",
+            "direction": "DEBIT",
+            "expected_amount": "500.00",
+            "request_key": str(uuid4()),
+        },
+    )
+    assert created.status_code == 201, created.text
+    per_account = client.get(base + "/cash-flow", params=filters).json()
+    assert per_account["totals"]["registered_debit"] == "0.00"
+    assert per_account["totals"]["forecast_debit"] == "1000.00"
+    all_accounts = client.get(
+        base + "/cash-flow", params={k: v for k, v in filters.items() if k != "account_id"}
+    ).json()
+    assert all_accounts["totals"]["registered_debit"] == "500.00"
+    assert all_accounts["totals"]["forecast_debit"] == "500.00"
+    assert all_accounts["closing"] == "6000.00"
+
+
+def test_neutral_realized_moves_bank_balance_without_becoming_expense(flow_data):
+    client, _, base, _, _, filters = flow_data
+    rows = client.get(base + "/transactions", params={"state": "all"}).json()["rows"]
+    june = next(r for r in rows if r["posted_on"] == "2026-06-15")
+    updated = client.put(
+        base + "/transactions/" + june["id"] + "/identification",
+        json={"movement_kind": "INTERNAL_TRANSFER", "expected_version": 1},
+    )
+    assert updated.status_code == 200, updated.text
+    result = client.get(base + "/cash-flow", params=filters).json()
+    assert result["anchor"] == "7000.00"
+    assert result["totals"]["realized_debit"] == "0.00"
+    assert result["totals"]["neutral_net"] == "-500.00"
+    assert next(r for r in result["daily"] if r["date"] == "2026-06-15")["balance"] == "7000.00"
+    assert result["training_records"] == 5
