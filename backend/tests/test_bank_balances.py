@@ -268,6 +268,14 @@ def test_import_without_balance_requests_manual_reference_and_preserves_zero_unk
     assert all(
         r["bank_balance"] is None and r["calculated_balance"] is None for r in result["rows"]
     )
+    repeated = client.post(base + "/statements/preview", json=payload).json()
+    assert (
+        client.post(
+            base + "/statements/commit", json={**payload, "token": repeated["token"]}
+        ).status_code
+        == 200
+    )
+    assert client.get(path).json()["total"] == 2
     response = client.post(
         path + "/events",
         json={
@@ -295,3 +303,20 @@ def test_partial_balance_reference_still_derives_opening_without_operator():
     )
     assert summary["calculated_balance"] == Decimal(120)
     assert summary["state"] == "unverified"
+
+
+def test_missing_balance_never_becomes_duplicate_evidence_and_bad_partial_chain_is_rejected():
+    from app.statement_dedup import classify_rows
+    from app.statement_parser import parse_statement
+
+    incoming = {
+        "row": 4,
+        "fingerprint": "same",
+        "signature": None,
+        "previous_signature": "neighbor",
+    }
+    previous = {"same": [{"id": "old", "signature": None, "previous_signature": "neighbor"}]}
+    assert classify_rows([incoming], previous, {})[0]["status"] == "review"
+    csv = "AGENCIA;0001;CONTA;123456\n;;;;\nData;Histórico;Documento;Valor (R$);Saldo (R$)\n02/01/2026;NOVO;1;100;500\n02/01/2026;MEIO;2;20;\n02/01/2026;ANTIGO;3;10;100\n"
+    with pytest.raises(ValueError, match="saldos não conferem"):
+        parse_statement("saldo-invalido.csv", base64.b64encode(csv.encode()).decode())
