@@ -552,10 +552,10 @@ export function CashFlowPage({ organizationId }: { organizationId: string }) {
                   <tr>
                     {[
                       ["date", "Período"],
-                      ["realized_credit", "Entradas Realizadas"],
-                      ["realized_debit", "Saídas Realizadas"],
-                      ["registered_credit", "Entradas Cadastradas"],
-                      ["registered_debit", "Saídas Cadastradas"],
+                      ["realized_credit", "Entradas Reais"],
+                      ["realized_debit", "Saídas Reais"],
+                      ["registered_credit", "A Receber"],
+                      ["registered_debit", "A Pagar"],
                       ["forecast_credit", "Entradas Fin"],
                       ["forecast_debit", "Saídas Fin"],
                       ["balance", "Saldo"],
