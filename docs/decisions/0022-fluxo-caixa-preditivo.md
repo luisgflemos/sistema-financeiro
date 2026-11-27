@@ -11,3 +11,10 @@ Para cada grupo e mês, o valor realizado no mês e o valor em aberto cadastrado
 Saldo de partida vem da última posição por conta até a data-base, com cobertura e datas explícitas. Contas sem abertura não viram zero; filtragens gerenciais não têm saldo bancário próprio. Datas-base futuras são proibidas; horizonte limitado a 12 meses. Histórico incompleto, valores não identificados e posições defasadas geram alertas. Confiança alta significa estabilidade observada, não garantia.
 
 O operador pode ajustar ou desconsiderar o orçamento estimado de um grupo/mês com justificativa; decisões são auditadas e não alteram banco nem contas a pagar/receber. A revisão otimista impede salvar sobre cálculo desatualizado. Converter uma estimativa em compromisso exige confirmação, usa o cadastro de Lançamentos e reduz o residual na próxima leitura. O Fin recebe agregados calculados e premissas para conversar sobre o fluxo, sem inventar valores nem gravar pelo chat.
+
+
+## Cenários e movimentos neutros
+
+Por orientação do usuário, movimentos neutros são integralmente desconsiderados nas entradas, saídas, composição e projeções deste módulo, inclusive na visão por conta. Permanecem no Extrato Bancário. O saldo da data-base é importado do acompanhamento bancário; a curva gerencial não reconstrói saldos passados com os neutros omitidos. Meses anteriores mostram realizados sem presumir saldo gerencial.
+
+Cenários Base, Conservador e Otimista variam somente a camada estimada. Compromissos e realizados não mudam. A faixa usa desvio histórico médio absoluto, com premissa mínima de 5% e máxima de 30%; não é intervalo estatístico de confiança nem promessa. Conservador reduz receitas e aumenta despesas; Otimista faz o inverso. Revisões são isoladas por cenário e auditadas. Sugestões recorrentes podem virar lançamentos mensais de até 12 ocorrências, somente por confirmação do operador.

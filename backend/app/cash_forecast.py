@@ -132,7 +132,11 @@ def learn(history, as_of, account_starts):
     return patterns
 
 
-def project(patterns, history, entries, as_of, until, decisions):
+def project(patterns, history, entries, as_of, until, decisions, scenario="base"):
+    realized = defaultdict(lambda: ZERO)
+    for row in history:
+        if row["posted_on"] <= as_of and row.get("movement_kind") == "NORMAL":
+            realized[(key_of(row), month(row["posted_on"]))] += row["amount"]
     budgets = []
     for pattern in patterns:
         dims = pattern["dimensions"]
@@ -147,27 +151,26 @@ def project(patterns, history, entries, as_of, until, decisions):
                     "1.50",
                 )
                 seasonal = ONE + (seasonal - ONE) / 2
-            target = cents(pattern["base"] * pattern["trend"] * seasonal)
+            spread = clamp(pattern["deviation"] / 100, ".05", ".30")
+            scenario_factor = ONE
+            if scenario != "base":
+                favorable = (scenario == "optimistic") == (dims["direction"] == "CREDIT")
+                scenario_factor = ONE + (spread if favorable else -spread)
+            target = cents(pattern["base"] * pattern["trend"] * seasonal * scenario_factor)
             decision = decisions.get((pattern["key"], period))
             if decision and decision["action"] == "ADJUST":
                 target = decision["amount"]
-            actual = sum(
-                (
-                    r["amount"]
-                    for r in history
-                    if key_of(r) == tuple(dims[k] for k in DIMS)
-                    and month(r["posted_on"]) == period
-                    and r["posted_on"] <= as_of
-                    and r.get("movement_kind") == "NORMAL"
-                ),
-                ZERO,
-            )
+            actual = realized[(tuple(dims[k] for k in DIMS), period)]
             budgets.append(
                 {
                     **pattern,
                     "period": period,
+                    "confidence": pattern["confidence"]
+                    if period <= add_month(month(as_of), 3)
+                    else "medium",
                     "target": target,
                     "seasonal": seasonal,
+                    "scenario_factor": scenario_factor,
                     "actual": actual,
                     "registered": ZERO,
                     "remaining": max(ZERO, target - actual),

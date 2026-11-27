@@ -384,6 +384,42 @@ def test_neutral_realized_moves_bank_balance_without_becoming_expense(flow_data)
     result = client.get(base + "/cash-flow", params=filters).json()
     assert result["anchor"] == "7000.00"
     assert result["totals"]["realized_debit"] == "0.00"
-    assert result["totals"]["neutral_net"] == "-500.00"
+    assert "neutral_net" not in result["totals"]
+    assert not any(i.get("neutral") for i in result["items"])
     assert next(r for r in result["daily"] if r["date"] == "2026-06-15")["balance"] == "7000.00"
     assert result["training_records"] == 5
+
+
+def test_scenarios_change_only_estimates_and_keep_decisions_isolated(flow_data):
+    client, _, base, _, _, filters = flow_data
+    baseline = client.get(base + "/cash-flow", params=filters).json()
+    conservative = client.get(
+        base + "/cash-flow", params={**filters, "scenario": "conservative"}
+    ).json()
+    optimistic = client.get(
+        base + "/cash-flow", params={**filters, "scenario": "optimistic"}
+    ).json()
+    assert conservative["totals"]["forecast_debit"] == "1050.00"
+    assert optimistic["totals"]["forecast_debit"] == "950.00"
+    assert baseline["anchor"] == conservative["anchor"] == optimistic["anchor"] == "7000.00"
+    p = baseline["patterns"][0]
+    saved = client.post(
+        base + "/cash-flow/decisions",
+        json={
+            "filters": filters,
+            "key": p["key"],
+            "period": p["period"],
+            "expected_revision": p["revision"],
+            "action": "ADJUST",
+            "amount": "700.00",
+            "reason": "Cenário base sintético",
+            "request_key": str(uuid4()),
+        },
+    )
+    assert saved.status_code == 201, saved.text
+    assert (
+        client.get(base + "/cash-flow", params={**filters, "scenario": "conservative"}).json()[
+            "patterns"
+        ][0]["target"]
+        == "525.00"
+    )

@@ -6,6 +6,7 @@ import "./assistant.css";
 
 type Message = { role: "user" | "assistant"; content: string };
 type CashFilters = {
+  scenario?: string;
   start?: string;
   end?: string;
   as_of?: string;

@@ -80,6 +80,20 @@ try {
   assert.equal((await api(base + "/planned-entries")).total, 0);
   let report = await api(base + "/cash-flow");
   assert.ok(Number(report.totals.forecast_debit) > 0);
+  await page
+    .getByRole("combobox", { name: "Cenário", exact: true })
+    .fill("Conservador");
+  await page.getByRole("option", { name: "Conservador", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "Sugestões do Fin", exact: true })
+    .waitFor();
+  await page
+    .getByRole("combobox", { name: "Cenário", exact: true })
+    .fill("Base");
+  await page.getByRole("option", { name: "Base", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "Sugestões do Fin", exact: true })
+    .waitFor();
   await page.screenshot({
     path: "import-layout-cash-flow-desktop.png",
     fullPage: true,

@@ -15,6 +15,7 @@ def upgrade():
             organization_id uuid NOT NULL REFERENCES organizations(id),
             pattern_key text NOT NULL CHECK(length(pattern_key)=64),
             period date NOT NULL CHECK(EXTRACT(DAY FROM period)=1),
+            scenario text NOT NULL DEFAULT 'base' CHECK(scenario IN ('base','conservative','optimistic')),
             action text NOT NULL CHECK(action IN ('ADJUST','EXCLUDE','RESET')),
             amount numeric(18,2) CHECK(amount >= 0),
             reason text NOT NULL CHECK(length(trim(reason))>=3),

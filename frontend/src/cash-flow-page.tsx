@@ -11,6 +11,7 @@ import { Eye, Pencil, Sparkles, Plus, RotateCcw, Ban } from "lucide-react";
 import "./cash-flow.css";
 
 type Filters = {
+  scenario?: string;
   start?: string;
   end?: string;
   as_of?: string;
@@ -28,7 +29,6 @@ type Line = {
   registered_debit: string;
   forecast_credit: string;
   forecast_debit: string;
-  neutral_net: string;
   balance: string | null;
 };
 type Item = {
@@ -47,6 +47,8 @@ type Item = {
   pending?: boolean;
 };
 type Pattern = {
+  suggested_on: string;
+  frequent: boolean;
   key: string;
   period: string;
   target: string;
@@ -177,7 +179,7 @@ function BalanceChart({ rows, asOf }: { rows: Line[]; asOf: string }) {
       </svg>
       <figcaption>
         <span className="cash-dot realized" />
-        Saldo realizado <span className="cash-dot forecast" />
+        Saldo bancário de partida <span className="cash-dot forecast" />
         Saldo projetado · Contas a pagar/receber + estimativas
       </figcaption>
     </figure>
@@ -197,6 +199,7 @@ export function CashFlowPage({ organizationId }: { organizationId: string }) {
   );
   const [detailPage, setDetailPage] = useState(1);
   const [patternPage, setPatternPage] = useState(1);
+  const [patternKind, setPatternKind] = useState("DEBIT");
   const [editing, setEditing] = useState<{
     pattern: Pattern;
     action: string;
@@ -253,9 +256,17 @@ export function CashFlowPage({ organizationId }: { organizationId: string }) {
     setEditing({ pattern, action });
     setAmount(action === "CONVERT" ? pattern.remaining : pattern.target);
     setReason("");
-    setDue(pattern.period);
-    setFrequency("ONCE");
-    setCount(1);
+    setDue(pattern.suggested_on);
+    setFrequency(
+      action === "CONVERT" && pattern.direction === "DEBIT" && !pattern.frequent
+        ? "MONTHLY"
+        : "ONCE",
+    );
+    setCount(
+      action === "CONVERT" && pattern.direction === "DEBIT" && !pattern.frequent
+        ? 12
+        : 1,
+    );
     setFormError("");
     setRequestKey(crypto.randomUUID());
   }
@@ -320,7 +331,9 @@ export function CashFlowPage({ organizationId }: { organizationId: string }) {
         : Number(av ?? 0) - Number(bv ?? 0);
     return sorting.order.direction === "desc" ? -result : result;
   });
-  const patterns = [...(data?.patterns ?? [])];
+  const patterns = (data?.patterns ?? []).filter(
+    (p) => !patternKind || p.direction === patternKind,
+  );
   patterns.sort((a, b) => {
     const f = patternsSort.order.field as keyof Pattern;
     const result = [
@@ -372,6 +385,19 @@ export function CashFlowPage({ organizationId }: { organizationId: string }) {
         </p>
       )}
       <div className="panel cash-filters">
+        <div className="field">
+          <label htmlFor="cash-scenario">Cenário</label>
+          <SearchSelect
+            id="cash-scenario"
+            value={filters.scenario ?? "base"}
+            onChange={(v) => change("scenario", v)}
+            options={[
+              { value: "base", label: "Base" },
+              { value: "conservative", label: "Conservador" },
+              { value: "optimistic", label: "Otimista" },
+            ]}
+          />
+        </div>
         {(
           [
             ["account_id", "Conta Bancária", "bank_accounts"],
@@ -616,10 +642,23 @@ export function CashFlowPage({ organizationId }: { organizationId: string }) {
                   estimativa cria obrigações automaticamente.
                 </small>
               </div>
+              <SearchSelect
+                ariaLabel="Tipo de sugestão"
+                value={patternKind}
+                onChange={(v) => {
+                  setPatternKind(v);
+                  setPatternPage(1);
+                }}
+                options={[
+                  { value: "DEBIT", label: "Despesas recorrentes" },
+                  { value: "CREDIT", label: "Receitas" },
+                  { value: "", label: "Receitas e despesas" },
+                ]}
+              />
             </div>
             {!patterns.length ? (
               <p className="empty">
-                Ainda não há padrões recentes com pelo menos três meses de
+                Nenhum padrão nesta seleção com pelo menos três meses de
                 observações suficientes para projetar.
               </p>
             ) : (
@@ -753,8 +792,8 @@ export function CashFlowPage({ organizationId }: { organizationId: string }) {
       {detail && (
         <Modal title={detail.title} onClose={() => setDetail(null)}>
           <p>
-            Valores realizados vêm do extrato. Movimentos neutros permanecem
-            separados de receitas e despesas.
+            Valores realizados vêm do extrato. Movimentos neutros não entram no
+            fluxo.
           </p>
           <div className="table-scroll">
             <table>

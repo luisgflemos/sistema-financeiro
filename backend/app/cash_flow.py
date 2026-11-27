@@ -1,7 +1,6 @@
 """Fluxo gerencial: fatos bancários, compromissos e estimativas auditáveis."""
 
 import hashlib
-from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Literal
@@ -31,6 +30,7 @@ class CashFilters(BaseModel):
     account_id: UUID | None = None
     cost_center_id: UUID | None = None
     category_id: UUID | None = None
+    scenario: Literal["base", "conservative", "optimistic"] = "base"
     focus_key: str | None = Field(default=None, max_length=64)
 
 
@@ -132,13 +132,19 @@ def report(connection, org, filters):
     decisions = {}
     for r in connection.execute(
         text(
-            "SELECT DISTINCT ON (pattern_key,period) * FROM cash_projection_decisions WHERE organization_id=:org ORDER BY pattern_key,period,created_at DESC,id DESC"
+            "SELECT DISTINCT ON (pattern_key,period) * FROM cash_projection_decisions WHERE organization_id=:org AND scenario=:scenario ORDER BY pattern_key,period,created_at DESC,id DESC"
         ),
-        {"org": org},
+        {"org": org, "scenario": filters.scenario},
     ).mappings():
         decisions[(r["pattern_key"], r["period"])] = dict(r)
     budgets, predictions = project(
-        patterns, learned, [e for e in entries if matches(e, filters)], as_of, end, decisions
+        patterns,
+        learned,
+        [e for e in entries if matches(e, filters)],
+        as_of,
+        end,
+        decisions,
+        filters.scenario,
     )
     lookups = {table: {str(r["id"]): r["name"] for r in rows} for table, rows in names.items()}
 
@@ -164,13 +170,11 @@ def report(connection, org, filters):
     ]
     movements, events = bank_data(connection, org)
     positions = []
-    opening_dates = []
-    bank_days = defaultdict(lambda: ZERO)
     start_balance = ZERO
     balance_known = 0
     missing = []
     for account in selected_accounts:
-        summary, ledger = build_ledger(
+        summary, _ = build_ledger(
             account,
             [r for r in movements if r["account_id"] == account["id"] and r["posted_on"] <= as_of],
             [
@@ -186,11 +190,7 @@ def report(connection, org, filters):
             missing.append(account["label"])
             continue
         balance_known += 1
-        opening_dates.append(summary["opening"]["date"])
         start_balance += summary["calculated_balance"]
-        for r in ledger:
-            if r["calculated_balance"] is not None:
-                bank_days[r["posted_on"]] += r["signed_amount"]
     filtered = bool(filters.cost_center_id or filters.category_id)
     anchor = None if filtered or not balance_known else start_balance
     daily = {}
@@ -204,7 +204,6 @@ def report(connection, org, filters):
                 for layer in ("realized", "registered", "forecast")
                 for side in ("credit", "debit")
             },
-            "neutral_net": ZERO,
             "balance": None,
         }
     items = []
@@ -216,9 +215,8 @@ def report(connection, org, filters):
         kind = r.get("movement_kind") or "NORMAL"
         neutral = kind in ("INTERNAL_TRANSFER", "AUTOMATIC_PROCESS")
         if neutral:
-            daily[day]["neutral_net"] += r["amount"] * (1 if r["direction"] == "CREDIT" else -1)
-        else:
-            daily[day]["realized_" + r["direction"].lower()] += r["amount"]
+            continue
+        daily[day]["realized_" + r["direction"].lower()] += r["amount"]
         if not r.get("method"):
             pending_amount += r["amount"]
         items.append(
@@ -260,24 +258,19 @@ def report(connection, org, filters):
             if p["date"] >= start:
                 items.append(item)
             daily[p["date"]]["forecast_" + p["direction"].lower()] += p["amount"]
-    # Cada dia passado usa a variação bancária; o futuro usa compromissos + estimativas.
+    # Saldo bancário é a âncora; não reconstruir saldos passados com neutros omitidos.
     running = anchor
-    if running is not None:
-        running -= sum((v for d, v in bank_days.items() if start <= d <= as_of), ZERO)
     for day, line in daily.items():
         if running is not None:
-            if day <= as_of:
-                running += bank_days[day]
-            else:
+            if day > as_of:
                 running += (
                     line["registered_credit"]
                     + line["forecast_credit"]
                     - line["registered_debit"]
                     - line["forecast_debit"]
                 )
-            line["balance"] = (
-                cents(running) if not opening_dates or day >= max(opening_dates) else None
-            )
+            if day >= as_of:
+                line["balance"] = cents(running)
     rows = [line for day, line in daily.items() if day >= start]
     monthly = {}
     for line in rows:
@@ -294,7 +287,13 @@ def report(connection, org, filters):
     for b in budgets:
         if not matches(b["dimensions"], filters):
             continue
-        why = f"{b['observed_months']} de {b['months']} meses recentes com movimento. Média ponderada R$ {b['base']:.2f}; tendência {cents((b['trend'] - 1) * 100):.2f}%; fator sazonal {b['seasonal']:.2f}."
+        scenario_name = {"base": "Base", "conservative": "Conservador", "optimistic": "Otimista"}[
+            filters.scenario
+        ]
+        base_label = f"{b['base']:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
+        why = f"{b['observed_months']} de {b['months']} meses recentes com movimento. Média ponderada R$ {base_label}; tendência {cents((b['trend'] - 1) * 100):.2f}%; fator sazonal {b['seasonal']:.2f}. Cenário {scenario_name}: fator {b['scenario_factor']:.2f}."
+        if len(b["annual"].get(b["period"].month, [])) < 2:
+            why += " Sazonalidade não aplicada: faltam duas observações do mesmo mês em anos anteriores."
         public_budgets.append(
             {
                 **{
@@ -320,13 +319,20 @@ def report(connection, org, filters):
                 **b["dimensions"],
                 **describe(b["dimensions"]),
                 "reason": why,
+                "frequent": b["frequent"],
+                "suggested_on": date(
+                    b["period"].year,
+                    b["period"].month,
+                    min(b["typical_day"], (add_month(b["period"], 1) - timedelta(days=1)).day),
+                ),
                 "timing": "Distribuição histórica por dia da semana"
                 if b["frequent"]
                 else f"Dia habitual {b['typical_day']}",
             }
         )
     warnings = [
-        "Estimativas dependem da completude do histórico e não são garantia de recebimento ou pagamento."
+        "Movimentos neutros são desconsiderados no fluxo. O saldo bancário da data-base é o ponto de partida, sem reconstrução de saldos passados.",
+        "Estimativas dependem da completude do histórico e não são garantia de recebimento ou pagamento.",
     ]
     if missing:
         warnings.append("Saldo parcial: sem referência para " + ", ".join(missing) + ".")
@@ -358,6 +364,7 @@ def report(connection, org, filters):
         else {}
     )
     return {
+        "scenario": filters.scenario,
         "as_of": as_of,
         "start": start,
         "end": end,
@@ -392,6 +399,7 @@ def get_report(
     account_id: UUID | None = None,
     cost_center_id: UUID | None = None,
     category_id: UUID | None = None,
+    scenario: Literal["base", "conservative", "optimistic"] = "base",
 ):
     filters = CashFilters(
         start=start,
@@ -400,6 +408,7 @@ def get_report(
         account_id=account_id,
         cost_center_id=cost_center_id,
         category_id=category_id,
+        scenario=scenario,
     )
     with request.app.state.database.connect() as connection:
         if not connection.in_transaction():
@@ -455,12 +464,13 @@ def decide(organization_id: UUID, payload: Decision, request: Request):
             )
         identifier = connection.scalar(
             text(
-                "INSERT INTO cash_projection_decisions(organization_id,pattern_key,period,action,amount,reason,request_key,payload_hash,actor_id) VALUES(:org,:pattern,:period,:action,:amount,:reason,:key,:hash,:actor) RETURNING id"
+                "INSERT INTO cash_projection_decisions(organization_id,pattern_key,period,scenario,action,amount,reason,request_key,payload_hash,actor_id) VALUES(:org,:pattern,:period,:scenario,:action,:amount,:reason,:key,:hash,:actor) RETURNING id"
             ),
             {
                 "org": organization_id,
                 "pattern": payload.key,
                 "period": payload.period,
+                "scenario": payload.filters.scenario,
                 "action": payload.action,
                 "amount": payload.amount,
                 "reason": payload.reason.strip(),

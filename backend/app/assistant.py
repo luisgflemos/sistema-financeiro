@@ -334,6 +334,7 @@ def chat(organization_id: UUID, payload: Conversation, request: Request):
                 **{
                     k: flow[k]
                     for k in (
+                        "scenario",
                         "as_of",
                         "start",
                         "end",
