@@ -114,8 +114,8 @@ function BalanceChart({ rows, asOf }: { rows: Line[]; asOf: string }) {
   if (!known.length)
     return (
       <p className="empty">
-        Informe os saldos de abertura em Extrato Bancário para acompanhar a
-        curva de saldo.
+        Não há saldo bancário atribuível a este recorte. Consulte as entradas e
+        saídas na tabela ou selecione uma conta com saldo de abertura.
       </p>
     );
   const low = Math.min(0, ...known.map((r) => r.n!)),
@@ -133,6 +133,12 @@ function BalanceChart({ rows, asOf }: { rows: Line[]; asOf: string }) {
         role="img"
         aria-label="Evolução do saldo: realizado em verde e projetado em azul tracejado"
       >
+        <text x="24" y="14">
+          {brl(String(high))}
+        </text>
+        <text x="24" y="142">
+          {brl(String(low))}
+        </text>
         <line
           x1="24"
           x2="976"
@@ -642,19 +648,21 @@ export function CashFlowPage({ organizationId }: { organizationId: string }) {
                   estimativa cria obrigações automaticamente.
                 </small>
               </div>
-              <SearchSelect
-                ariaLabel="Tipo de sugestão"
-                value={patternKind}
-                onChange={(v) => {
-                  setPatternKind(v);
-                  setPatternPage(1);
-                }}
-                options={[
-                  { value: "DEBIT", label: "Despesas recorrentes" },
-                  { value: "CREDIT", label: "Receitas" },
-                  { value: "", label: "Receitas e despesas" },
-                ]}
-              />
+              <div className="cash-suggestion-kind">
+                <SearchSelect
+                  ariaLabel="Tipo de sugestão"
+                  value={patternKind}
+                  onChange={(v) => {
+                    setPatternKind(v);
+                    setPatternPage(1);
+                  }}
+                  options={[
+                    { value: "DEBIT", label: "Despesas recorrentes" },
+                    { value: "CREDIT", label: "Receitas" },
+                    { value: "", label: "Receitas e despesas" },
+                  ]}
+                />
+              </div>
             </div>
             {!patterns.length ? (
               <p className="empty">
