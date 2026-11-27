@@ -41,6 +41,15 @@ type Summary = {
   movements: number;
   first_movement_date: string | null;
 };
+type TotalPosition = {
+  currency: string;
+  amount: string | null;
+  known_accounts: number;
+  missing_accounts: number;
+  first_date: string | null;
+  last_date: string | null;
+  needs_review: boolean;
+};
 type BalanceEvent = {
   id: string;
   kind: string;
@@ -96,6 +105,7 @@ export function BankBalancesPage({
 }) {
   const base = "/organizations/" + organizationId + "/bank-balances";
   const [accounts, setAccounts] = useState<Summary[]>([]);
+  const [totals, setTotals] = useState<TotalPosition[]>([]);
   const [account, setAccount] = useState("");
   const [data, setData] = useState<Ledger | null>(null);
   const [start, setStart] = useState("");
@@ -121,9 +131,12 @@ export function BankBalancesPage({
   useEffect(() => {
     const c = new AbortController();
     setError("");
-    api<{ accounts: Summary[] }>(base, { signal: c.signal })
+    api<{ accounts: Summary[]; totals: TotalPosition[] }>(base, {
+      signal: c.signal,
+    })
       .then((result) => {
         setAccounts(result.accounts);
+        setTotals(result.totals);
         setAccount((old) =>
           result.accounts.some((a) => a.account_id === old)
             ? old
@@ -279,6 +292,45 @@ export function BankBalancesPage({
         </p>
       )}
       <div className="bank-account-cards" aria-label="Saldos por conta">
+        {totals.map((total) => (
+          <div
+            className="bank-total-card"
+            key={total.currency}
+            role="group"
+            aria-label={"Saldo Total " + total.currency}
+          >
+            <strong>Saldo Total</strong>
+            <span className="bank-card-value">
+              {total.amount == null
+                ? "—"
+                : new Intl.NumberFormat("pt-BR", {
+                    style: "currency",
+                    currency: total.currency,
+                  }).format(Number(total.amount))}{" "}
+              <small>{total.currency}</small>
+            </span>
+            <small>
+              {total.first_date && total.last_date
+                ? total.first_date === total.last_date
+                  ? "Posição de " + brazilDate(total.last_date)
+                  : "Posições de " +
+                    brazilDate(total.first_date) +
+                    " a " +
+                    brazilDate(total.last_date)
+                : "Sem posição disponível"}
+            </small>
+            <span className="bank-total-coverage">
+              {total.known_accounts} de{" "}
+              {total.known_accounts + total.missing_accounts} contas com saldo
+            </span>
+            {total.missing_accounts > 0 && (
+              <small>{total.missing_accounts} sem saldo · Total parcial</small>
+            )}
+            {total.needs_review && (
+              <small>Há saldos que precisam de conferência</small>
+            )}
+          </div>
+        ))}
         {accounts.map((a) => (
           <button
             type="button"

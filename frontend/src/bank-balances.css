@@ -4,7 +4,8 @@
   gap: 0.625rem;
   margin-bottom: 0.75rem;
 }
-.bank-account-cards > button {
+.bank-account-cards > button,
+.bank-account-cards > .bank-total-card {
   display: grid;
   gap: 0.3rem;
   text-align: left;
@@ -187,4 +188,18 @@
     flex: 1;
     min-width: 8rem;
   }
+}
+
+.bank-account-cards > .bank-total-card {
+  background: #0c203b;
+  border-color: #0c203b;
+  color: white;
+}
+.bank-account-cards .bank-total-card small {
+  color: #d7e5f5;
+}
+.bank-total-coverage {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #a7f3d0;
 }

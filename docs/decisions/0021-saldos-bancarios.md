@@ -11,3 +11,8 @@ Para dias com vários arquivos, preservar ordem de cada arquivo e tentar encadea
 Somente na ausência de referência automática suficiente, pedir abertura manual: saldo no início da data escolhida, antes dos movimentos desse dia. Se uma referência suficiente passar a existir, ela prevalece e a tela informa que substituiu a referência manual; registro manual e auditoria são preservados. Ajustes anteriores à referência de abertura não são reaplicados; os posteriores são deltas no fim do dia, separados de créditos/débitos bancários. Ajuste exige motivo e não constitui receita/despesa ou lançamento bancário.
 
 Registros manuais são imutáveis e idempotentes, com ator e horário; correção por estorno auditado. Operações isoladas por organização/conta, Decimal/NUMERIC, sem alteração do extrato original. Visão por conta com abertura do período, entradas, saídas, ajustes, fechamento calculado, saldo informado e divergências. Paginação e ordenação nunca recalculam o saldo sobre apenas a página ou sobre a ordem visual escolhida.
+
+
+## Total de contas
+
+O cartão Saldo Total soma com Decimal as últimas posições calculadas de todas as contas exibidas, incluindo saldos negativos e contas inativas com posição. Cada moeda tem seu próprio total, sem conversão implícita. Contas sem referência não são presumidas como zero: o cartão informa a cobertura e sinaliza total parcial. Datas distintas são explicitadas como intervalo de posições; valores com necessidade de conferência permanecem sinalizados. O cartão independe da conta selecionada e dos filtros do detalhamento e não altera movimentos.

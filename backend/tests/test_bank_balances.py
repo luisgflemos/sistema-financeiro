@@ -9,7 +9,7 @@ from test_statements import source
 from test_statements import statements as statement_fixture  # noqa: F401
 from test_transactions import imported
 
-from app.bank_balances import build_ledger, order_day
+from app.bank_balances import build_ledger, order_day, total_positions
 
 
 @pytest.fixture
@@ -320,3 +320,34 @@ def test_missing_balance_never_becomes_duplicate_evidence_and_bad_partial_chain_
     csv = "AGENCIA;0001;CONTA;123456\n;;;;\nData;Histórico;Documento;Valor (R$);Saldo (R$)\n02/01/2026;NOVO;1;100;500\n02/01/2026;MEIO;2;20;\n02/01/2026;ANTIGO;3;10;100\n"
     with pytest.raises(ValueError, match="saldos não conferem"):
         parse_statement("saldo-invalido.csv", base64.b64encode(csv.encode()).decode())
+
+
+def test_total_positions_preserve_cents_negative_unknown_currency_and_dates():
+    def position(amount, currency="BRL", day="2026-01-02", state="consistent"):
+        return {"calculated_balance": amount, "currency": currency, "as_of": day, "state": state}
+
+    totals = total_positions(
+        [
+            position("100.10"),
+            position("-20.01", day="2026-01-03"),
+            position(None),
+            position("0.02"),
+            position("9.99", "USD", state="manual"),
+            position(None, "EUR"),
+        ]
+    )
+    by_currency = {t["currency"]: t for t in totals}
+    assert by_currency["BRL"] == {
+        "currency": "BRL",
+        "amount": Decimal("80.11"),
+        "known_accounts": 3,
+        "missing_accounts": 1,
+        "first_date": "2026-01-02",
+        "last_date": "2026-01-03",
+        "needs_review": False,
+    }
+    assert by_currency["USD"]["amount"] == Decimal("9.99")
+    assert by_currency["USD"]["needs_review"]
+    assert by_currency["EUR"]["amount"] is None
+    assert by_currency["EUR"]["first_date"] is None
+    assert total_positions([]) == []

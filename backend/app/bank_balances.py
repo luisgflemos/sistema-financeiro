@@ -309,6 +309,29 @@ def serialize(value):
     return value
 
 
+def total_positions(accounts):
+    """Somar posições conhecidas por moeda, sem presumir saldo zero nem data comum."""
+    totals = []
+    for currency in sorted({a["currency"] for a in accounts}):
+        group = [a for a in accounts if a["currency"] == currency]
+        known = [a for a in group if a["calculated_balance"] is not None]
+        dates = sorted({a["as_of"] for a in known if a["as_of"]})
+        totals.append(
+            {
+                "currency": currency,
+                "amount": sum((money(a["calculated_balance"]) for a in known), ZERO)
+                if known
+                else None,
+                "known_accounts": len(known),
+                "missing_accounts": len(group) - len(known),
+                "first_date": dates[0] if dates else None,
+                "last_date": dates[-1] if dates else None,
+                "needs_review": any(a["state"] != "consistent" for a in known),
+            }
+        )
+    return totals
+
+
 @router.get("")
 def overview(organization_id: UUID, request: Request):
     with request.app.state.database.connect() as connection:
@@ -320,18 +343,15 @@ def overview(organization_id: UUID, request: Request):
             raise HTTPException(404, "Organização não encontrada.")
         accounts = account_data(connection, organization_id)
         movements, events = data(connection, organization_id)
-        return {
-            "accounts": [
-                serialize(
-                    build_ledger(
-                        a,
-                        [r for r in movements if r["account_id"] == a["id"]],
-                        [dict(e) for e in events if e["account_id"] == a["id"]],
-                    )[0]
-                )
-                for a in accounts
-            ]
-        }
+        positions = [
+            build_ledger(
+                a,
+                [r for r in movements if r["account_id"] == a["id"]],
+                [dict(e) for e in events if e["account_id"] == a["id"]],
+            )[0]
+            for a in accounts
+        ]
+        return serialize({"accounts": positions, "totals": total_positions(positions)})
 
 
 @router.get("/{account_id}")

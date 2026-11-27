@@ -64,6 +64,13 @@ try {
     .getByRole("heading", { name: "Extrato Bancário", exact: true })
     .waitFor();
   await page.getByText("Referências conferem", { exact: true }).waitFor();
+  const totalCard = page.getByRole("group", {
+    name: "Saldo Total BRL",
+    exact: true,
+  });
+  await totalCard.getByText("Total parcial", { exact: false }).waitFor();
+  assert.ok((await totalCard.innerText()).includes("170,00"));
+  assert.ok((await totalCard.innerText()).includes("1 de 2 contas"));
   const received = page
     .getByRole("row")
     .filter({ hasText: "RECEBIMENTO SINTETICO" });
