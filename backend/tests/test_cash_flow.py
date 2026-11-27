@@ -386,7 +386,7 @@ def test_neutral_realized_moves_bank_balance_without_becoming_expense(flow_data)
     assert result["totals"]["realized_debit"] == "0.00"
     assert "neutral_net" not in result["totals"]
     assert not any(i.get("neutral") for i in result["items"])
-    assert next(r for r in result["daily"] if r["date"] == "2026-06-15")["balance"] == "7000.00"
+    assert next(r for r in result["daily"] if r["date"] == "2026-07-01")["balance"] == "7000.00"
     assert result["training_records"] == 5
 
 
