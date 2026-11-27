@@ -351,3 +351,50 @@ def test_total_positions_preserve_cents_negative_unknown_currency_and_dates():
     assert by_currency["EUR"]["amount"] is None
     assert by_currency["EUR"]["first_date"] is None
     assert total_positions([]) == []
+
+
+def test_consolidated_ledger_keeps_account_balances_filters_pages_and_org_isolation(statements):
+    client, _, base, accounts = statements
+    imported(client, base)
+    path = base + "/bank-balances/" + accounts[1]
+    for kind, amount in (("OPENING", "-100.00"), ("ADJUSTMENT", "10.00")):
+        result = client.post(
+            path + "/events",
+            json={
+                "kind": kind,
+                "amount": amount,
+                "posted_on": "2026-01-03",
+                "reason": "Referência sintética consolidada",
+                "request_key": str(uuid4()),
+            },
+        )
+        assert result.status_code == 201, result.text
+    all_path = base + "/bank-balances/all"
+    result = client.get(all_path).json()
+    assert result["total"] == 5
+    assert {r["account_id"] for r in result["rows"]} == set(accounts[:2])
+    assert all(r["account_label"] and r["currency"] == "BRL" for r in result["rows"])
+    second = [r for r in result["rows"] if r["account_id"] == accounts[1]]
+    assert second[0]["calculated_balance"] == "-90.00"
+    assert result["rows"][-1] == second[0]
+    assert client.get(all_path, params={"page_size": 1, "page": 5}).json()["rows"] == second
+    assert (
+        client.get(all_path, params={"query": second[0]["account_label"]}).json()["rows"] == second
+    )
+    assert (
+        client.get(all_path, params={"start": "2026-01-03", "end": "2026-01-03"}).json()["rows"]
+        == second
+    )
+    assert client.get(all_path, params={"currency": "USD"}).json()["total"] == 0
+    assert (
+        client.get(all_path, params={"start": "2026-02-01", "end": "2026-01-01"}).status_code == 422
+    )
+    descending = client.get(all_path, params={"sort_by": "amount", "sort_order": "desc"}).json()[
+        "rows"
+    ]
+    assert [Decimal(r["signed_amount"]) for r in descending] == sorted(
+        [Decimal(r["signed_amount"]) for r in result["rows"]], reverse=True
+    )
+    other = client.post("/organizations", json={"name": "Outra organização sintética"}).json()["id"]
+    assert client.get(f"/organizations/{other}/bank-balances/all").json()["total"] == 0
+    assert client.get(f"/organizations/{uuid4()}/bank-balances/all").status_code == 404

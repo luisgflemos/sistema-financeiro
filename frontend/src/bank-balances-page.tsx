@@ -60,6 +60,8 @@ type BalanceEvent = {
   created_at: string;
 };
 type LedgerRow = {
+  account_label?: string;
+  account_id?: string;
   id: string;
   kind: string;
   posted_on: string;
@@ -108,6 +110,12 @@ export function BankBalancesPage({
   const [totals, setTotals] = useState<TotalPosition[]>([]);
   const [account, setAccount] = useState("");
   const [data, setData] = useState<Ledger | null>(null);
+  const [allData, setAllData] = useState<{
+    currency: string;
+    rows: LedgerRow[];
+    total: number;
+  } | null>(null);
+  const isAll = account.startsWith("all:");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [query, setQuery] = useState("");
@@ -138,6 +146,8 @@ export function BankBalancesPage({
         setAccounts(result.accounts);
         setTotals(result.totals);
         setAccount((old) =>
+          (old.startsWith("all:") &&
+            result.totals.some((t) => "all:" + t.currency === old)) ||
           result.accounts.some((a) => a.account_id === old)
             ? old
             : (result.accounts.find((a) => a.movements > 0)?.account_id ??
@@ -165,13 +175,24 @@ export function BankBalancesPage({
     const params = new URLSearchParams({
       page: String(page),
       query: search,
-      sort_by: sorting.order.field,
+      sort_by:
+        !account.startsWith("all:") && sorting.order.field === "account"
+          ? "date"
+          : sorting.order.field,
       sort_order: sorting.order.direction,
     });
     if (start) params.set("start", start);
     if (end) params.set("end", end);
-    api<Ledger>(base + "/" + account + "?" + params, { signal: c.signal })
-      .then(setData)
+    const all = account.startsWith("all:");
+    if (all) params.set("currency", account.slice(4));
+    api<Ledger & { currency: string }>(
+      base + "/" + (all ? "all" : account) + "?" + params,
+      { signal: c.signal },
+    )
+      .then((result) => {
+        if (all) setAllData(result);
+        else setData(result);
+      })
       .catch((e) => {
         if (!c.signal.aborted) setError(e.message);
       })
@@ -184,10 +205,17 @@ export function BankBalancesPage({
     data?.summary.account_id === account
       ? data.summary
       : accounts.find((a) => a.account_id === account);
-  const current = data?.summary.account_id === account ? data : null;
+  const current = isAll
+    ? allData?.currency === account.slice(4)
+      ? allData
+      : null
+    : data?.summary.account_id === account
+      ? data
+      : null;
   function selectAccount(id: string) {
     setAccount(id);
     setData(null);
+    setAllData(null);
     setStart("");
     setEnd("");
     setQuery("");
@@ -257,7 +285,7 @@ export function BankBalancesPage({
           </p>
         </div>
         <div className="actions">
-          {account && (
+          {account && !isAll && (
             <>
               <button
                 type="button"
@@ -293,11 +321,13 @@ export function BankBalancesPage({
       )}
       <div className="bank-account-cards" aria-label="Saldos por conta">
         {totals.map((total) => (
-          <div
+          <button
+            type="button"
+            onClick={() => selectAccount("all:" + total.currency)}
+            aria-label={"Ver extrato de todas as contas " + total.currency}
+            aria-pressed={account === "all:" + total.currency}
             className="bank-total-card"
             key={total.currency}
-            role="group"
-            aria-label={"Saldo Total " + total.currency}
           >
             <strong>Saldo Total</strong>
             <span className="bank-card-value">
@@ -329,7 +359,7 @@ export function BankBalancesPage({
             {total.needs_review && (
               <small>Há saldos que precisam de conferência</small>
             )}
-          </div>
+          </button>
         ))}
         {accounts.map((a) => (
           <button
@@ -362,118 +392,134 @@ export function BankBalancesPage({
           Cadastre uma conta bancária para acompanhar seus saldos.
         </p>
       )}
-      {selected && (
+      {(selected || isAll) && (
         <>
-          <div className="bank-position">
-            <strong>
-              {selected.label} ·{" "}
-              {selected.as_of
-                ? "Última posição: " + brazilDate(selected.as_of)
-                : "Sem posição"}
-            </strong>
-            <span>
-              Saldo calculado: <b>{value(selected.calculated_balance)}</b>
-            </span>
-            <span>
-              Último saldo informado:{" "}
-              <b>{value(selected.last_bank_balance?.amount)}</b>
-              {selected.last_bank_balance
-                ? " · " + brazilDate(selected.last_bank_balance.date)
-                : ""}
-            </span>
-          </div>
-          {selected.state === "unverified" && (
-            <p className="bank-balance-alert">
-              Há movimentos posteriores ao último saldo informado pelo banco. O
-              saldo calculado aguarda uma nova referência para conferência.
-            </p>
-          )}
-          {selected.needs_opening && (
-            <div className="bank-balance-alert" role="status">
-              <strong>Falta uma referência de saldo.</strong>
-              <span>
-                Não há saldo suficiente no extrato para calcular a abertura com
-                segurança. Informe o saldo antes dos movimentos da data
-                escolhida.
-              </span>
-              <button className="primary" onClick={() => open("OPENING")}>
-                Informar Saldo de Abertura
-              </button>
-            </div>
-          )}
-          {selected.difference_count > 0 && (
-            <div
-              className="bank-balance-alert bank-balance-alert-danger"
-              role="status"
-            >
-              <strong>
-                {selected.difference_count} divergência(s) entre o saldo
-                calculado e o banco.
-              </strong>
-              <span>
-                Confira períodos incompletos e importações antes de registrar um
-                ajuste.
-              </span>
-              {selected.differences.slice(0, 3).map((d, i) => (
-                <small key={i}>
-                  {brazilDate(d.date)} · Diferença: {brl(d.difference)} ·{" "}
-                  {d.file_name} · Linha {d.source_row}
-                </small>
-              ))}
-            </div>
-          )}
-          {selected.ambiguous_dates.length > 0 && (
-            <p className="bank-balance-alert">
-              A ordem entre arquivos do mesmo dia precisa ser conferida:{" "}
-              {selected.ambiguous_dates.map(brazilDate).join(", ")}. Os saldos
-              calculados desse trecho são provisórios.
-            </p>
-          )}
-          {selected.unreferenced_movements > 0 && (
+          {isAll && (
             <p className="bank-balance-note">
-              {selected.unreferenced_movements} movimento(s) anteriores à
-              referência disponível. Consulte-os pelo período; os saldos
-              anteriores não foram presumidos.
+              Todas as contas · {account.slice(4)}. Os saldos exibidos em cada
+              linha pertencem à conta de origem. Inclui movimentos anteriores à
+              referência de saldo; nesses casos, o saldo permanece não
+              informado.
             </p>
           )}
-          {selected.manual_opening_superseded && (
-            <p className="bank-balance-note">
-              A referência importada passou a ser usada no lugar da abertura
-              manual. O registro manual foi preservado.
-            </p>
-          )}
-          {selected.opening && (
-            <p className="bank-balance-note">
-              Referência{" "}
-              {selected.opening.source === "statement"
-                ? "do extrato"
-                : "manual"}
-              : {brl(selected.opening.amount)} antes dos movimentos disponíveis
-              de {brazilDate(selected.opening.date)}
-              {selected.opening.file_name
-                ? " · " +
-                  selected.opening.file_name +
-                  " · Linha " +
-                  selected.opening.source_row
-                : ""}
-              . A conferência cobre os movimentos importados.
-            </p>
-          )}
-          {current && (
-            <div className="bank-period-totals" aria-label="Totais do período">
-              {[
-                ["Saldo inicial", current.totals.opening],
-                ["Créditos", current.totals.credits],
-                ["Débitos", current.totals.debits],
-                ["Ajustes", current.totals.adjustments],
-                ["Saldo final calculado", current.totals.closing],
-              ].map(([label, number]) => (
-                <div key={label}>
-                  <small>{label}</small>
-                  <strong>{value(number)}</strong>
+          {selected && (
+            <>
+              <div className="bank-position">
+                <strong>
+                  {selected.label} ·{" "}
+                  {selected.as_of
+                    ? "Última posição: " + brazilDate(selected.as_of)
+                    : "Sem posição"}
+                </strong>
+                <span>
+                  Saldo calculado: <b>{value(selected.calculated_balance)}</b>
+                </span>
+                <span>
+                  Último saldo informado:{" "}
+                  <b>{value(selected.last_bank_balance?.amount)}</b>
+                  {selected.last_bank_balance
+                    ? " · " + brazilDate(selected.last_bank_balance.date)
+                    : ""}
+                </span>
+              </div>
+              {selected.state === "unverified" && (
+                <p className="bank-balance-alert">
+                  Há movimentos posteriores ao último saldo informado pelo
+                  banco. O saldo calculado aguarda uma nova referência para
+                  conferência.
+                </p>
+              )}
+              {selected.needs_opening && (
+                <div className="bank-balance-alert" role="status">
+                  <strong>Falta uma referência de saldo.</strong>
+                  <span>
+                    Não há saldo suficiente no extrato para calcular a abertura
+                    com segurança. Informe o saldo antes dos movimentos da data
+                    escolhida.
+                  </span>
+                  <button className="primary" onClick={() => open("OPENING")}>
+                    Informar Saldo de Abertura
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+              {selected.difference_count > 0 && (
+                <div
+                  className="bank-balance-alert bank-balance-alert-danger"
+                  role="status"
+                >
+                  <strong>
+                    {selected.difference_count} divergência(s) entre o saldo
+                    calculado e o banco.
+                  </strong>
+                  <span>
+                    Confira períodos incompletos e importações antes de
+                    registrar um ajuste.
+                  </span>
+                  {selected.differences.slice(0, 3).map((d, i) => (
+                    <small key={i}>
+                      {brazilDate(d.date)} · Diferença: {brl(d.difference)} ·{" "}
+                      {d.file_name} · Linha {d.source_row}
+                    </small>
+                  ))}
+                </div>
+              )}
+              {selected.ambiguous_dates.length > 0 && (
+                <p className="bank-balance-alert">
+                  A ordem entre arquivos do mesmo dia precisa ser conferida:{" "}
+                  {selected.ambiguous_dates.map(brazilDate).join(", ")}. Os
+                  saldos calculados desse trecho são provisórios.
+                </p>
+              )}
+              {selected.unreferenced_movements > 0 && (
+                <p className="bank-balance-note">
+                  {selected.unreferenced_movements} movimento(s) anteriores à
+                  referência disponível. Consulte-os pelo período; os saldos
+                  anteriores não foram presumidos.
+                </p>
+              )}
+              {selected.manual_opening_superseded && (
+                <p className="bank-balance-note">
+                  A referência importada passou a ser usada no lugar da abertura
+                  manual. O registro manual foi preservado.
+                </p>
+              )}
+              {selected.opening && (
+                <p className="bank-balance-note">
+                  Referência{" "}
+                  {selected.opening.source === "statement"
+                    ? "do extrato"
+                    : "manual"}
+                  : {brl(selected.opening.amount)} antes dos movimentos
+                  disponíveis de {brazilDate(selected.opening.date)}
+                  {selected.opening.file_name
+                    ? " · " +
+                      selected.opening.file_name +
+                      " · Linha " +
+                      selected.opening.source_row
+                    : ""}
+                  . A conferência cobre os movimentos importados.
+                </p>
+              )}
+              {data && data.summary.account_id === account && (
+                <div
+                  className="bank-period-totals"
+                  aria-label="Totais do período"
+                >
+                  {[
+                    ["Saldo inicial", data.totals.opening],
+                    ["Créditos", data.totals.credits],
+                    ["Débitos", data.totals.debits],
+                    ["Ajustes", data.totals.adjustments],
+                    ["Saldo final calculado", data.totals.closing],
+                  ].map(([label, number]) => (
+                    <div key={label}>
+                      <small>{label}</small>
+                      <strong>{value(number)}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
           <section className="panel listing">
             <div className="catalog-toolbar bank-ledger-toolbar">
@@ -488,10 +534,16 @@ export function BankBalancesPage({
                 ariaLabel="Conta do extrato bancário"
                 value={account}
                 onChange={selectAccount}
-                options={accounts.map((a) => ({
-                  value: a.account_id,
-                  label: a.label,
-                }))}
+                options={[
+                  ...totals.map((t) => ({
+                    value: "all:" + t.currency,
+                    label: "Todas as contas · " + t.currency,
+                  })),
+                  ...accounts.map((a) => ({
+                    value: a.account_id,
+                    label: a.label,
+                  })),
+                ]}
               />
             </div>
             <div className="bank-ledger-dates">
@@ -520,8 +572,9 @@ export function BankBalancesPage({
                 />
               </label>
               <small>
-                Sem data inicial: desde a referência de abertura. Totais
-                abrangem o período completo; a busca filtra as linhas.
+                {isAll
+                  ? "Sem data inicial: todos os movimentos importados. Pesquise também pelo nome da conta."
+                  : "Sem data inicial: desde a referência de abertura. Totais abrangem o período completo; a busca filtra as linhas."}
               </small>
             </div>
             {loading ? (
@@ -538,6 +591,7 @@ export function BankBalancesPage({
                       <tr>
                         {[
                           ["date", "Data"],
+                          ...(isAll ? [["account", "Conta Bancária"]] : []),
                           ["description", "Histórico do Banco"],
                           ["amount", "Valor"],
                           ["balance", "Saldo Calculado"],
@@ -568,6 +622,7 @@ export function BankBalancesPage({
                           }
                         >
                           <td>{brazilDate(r.posted_on)}</td>
+                          {isAll && <td>{r.account_label}</td>}
                           <td>
                             {r.raw_description}
                             {r.kind === "ADJUSTMENT" && (
@@ -722,7 +777,7 @@ export function BankBalancesPage({
             auditoria.
           </p>
           {current?.events.length ? (
-            current.events.map((e) => (
+            data?.events.map((e) => (
               <div className="bank-event" key={e.id}>
                 <strong>
                   {e.kind === "OPENING" ? "Abertura manual" : "Ajuste de saldo"}{" "}

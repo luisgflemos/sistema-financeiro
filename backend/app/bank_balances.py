@@ -354,6 +354,100 @@ def overview(organization_id: UUID, request: Request):
         return serialize({"accounts": positions, "totals": total_positions(positions)})
 
 
+@router.get("/all")
+def consolidated_ledger(
+    organization_id: UUID,
+    request: Request,
+    currency: str = Query(default="BRL", min_length=3, max_length=3),
+    start: date | None = None,
+    end: date | None = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=100, ge=1, le=500),
+    query: str = Query(default="", max_length=200),
+    sort_by: Literal[
+        "date", "account", "description", "amount", "balance", "reported", "difference"
+    ] = "date",
+    sort_order: Literal["asc", "desc"] = "asc",
+):
+    if start and end and start > end:
+        raise HTTPException(422, "O fim do período deve ser igual ou posterior ao início.")
+    with request.app.state.database.connect() as connection:
+        if not connection.in_transaction():
+            connection.execution_options(isolation_level="REPEATABLE READ")
+        if not connection.scalar(
+            text("SELECT 1 FROM organizations WHERE id=:org"), {"org": organization_id}
+        ):
+            raise HTTPException(404, "Organização não encontrada.")
+        accounts = account_data(connection, organization_id)
+        movements, events = data(connection, organization_id)
+        rows = []
+        for account in accounts:
+            if account["currency"] != currency:
+                continue
+            _, ledger_rows = build_ledger(
+                account,
+                [r for r in movements if r["account_id"] == account["id"]],
+                [dict(e) for e in events if e["account_id"] == account["id"]],
+            )
+            for row in ledger_rows:
+                rows.append(
+                    {
+                        **row,
+                        "account_label": account["label"],
+                        "account_id": account["id"],
+                        "currency": currency,
+                    }
+                )
+        # Ordenação estável entre contas, preservando a sequência bancária de cada dia.
+        rows.sort(
+            key=lambda r: (r["posted_on"], r["account_label"].casefold(), str(r["account_id"]))
+        )
+        words = query.casefold().split()
+        filtered = [
+            r
+            for r in rows
+            if (not start or r["posted_on"] >= start)
+            and (not end or r["posted_on"] <= end)
+            and all(
+                w
+                in " ".join(
+                    str(r.get(k) or "")
+                    for k in ("raw_description", "account_label", "reason", "file_name")
+                ).casefold()
+                for w in words
+            )
+        ]
+        if sort_by != "date":
+            field = {
+                "account": "account_label",
+                "description": "raw_description",
+                "amount": "signed_amount",
+                "balance": "calculated_balance",
+                "reported": "bank_balance",
+                "difference": "difference",
+            }[sort_by]
+            filtered.sort(
+                key=lambda r: (
+                    r[field] is None,
+                    str(r[field]).casefold()
+                    if sort_by in ("description", "account")
+                    else r[field] or ZERO,
+                ),
+                reverse=sort_order == "desc",
+            )
+        elif sort_order == "desc":
+            filtered.reverse()
+        offset = (page - 1) * page_size
+        return serialize(
+            {
+                "currency": currency,
+                "total": len(filtered),
+                "rows": filtered[offset : offset + page_size],
+                "page": page,
+            }
+        )
+
+
 @router.get("/{account_id}")
 def ledger(
     organization_id: UUID,

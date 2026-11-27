@@ -16,3 +16,6 @@ Registros manuais são imutáveis e idempotentes, com ator e horário; correçã
 ## Total de contas
 
 O cartão Saldo Total soma com Decimal as últimas posições calculadas de todas as contas exibidas, incluindo saldos negativos e contas inativas com posição. Cada moeda tem seu próprio total, sem conversão implícita. Contas sem referência não são presumidas como zero: o cartão informa a cobertura e sinaliza total parcial. Datas distintas são explicitadas como intervalo de posições; valores com necessidade de conferência permanecem sinalizados. O cartão independe da conta selecionada e dos filtros do detalhamento e não altera movimentos.
+
+
+O cartão Saldo Total é selecionável e abre a grade de todas as contas da mesma moeda, com paginação, busca por conta/descrição/arquivo, filtros de data e ordenação. A coluna Conta Bancária identifica a origem; saldos calculados/informados continuam sendo individuais. A visão geral inclui todo o histórico importado, preservando saldos desconhecidos anteriores à referência como nulos. Não permite ajustes sem selecionar uma conta específica. Transferências próprias permanecem como linhas de extrato, sem produzir indicadores de receita/despesa consolidados.

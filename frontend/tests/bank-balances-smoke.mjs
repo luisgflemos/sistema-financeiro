@@ -64,8 +64,8 @@ try {
     .getByRole("heading", { name: "Extrato Bancário", exact: true })
     .waitFor();
   await page.getByText("Referências conferem", { exact: true }).waitFor();
-  const totalCard = page.getByRole("group", {
-    name: "Saldo Total BRL",
+  const totalCard = page.getByRole("button", {
+    name: "Ver extrato de todas as contas BRL",
     exact: true,
   });
   await totalCard.getByText("Total parcial", { exact: false }).waitFor();
@@ -179,6 +179,50 @@ try {
     (await api(base + "/bank-balances/" + b.id)).summary.calculated_balance,
     "-100.00",
   );
+  await api(base + "/bank-balances/" + b.id + "/events", {
+    kind: "ADJUSTMENT",
+    amount: "10.00",
+    posted_on: new Date().toLocaleDateString("sv-SE", {
+      timeZone: "America/Sao_Paulo",
+    }),
+    reason: "Ajuste sintético de outra conta",
+    request_key: crypto.randomUUID(),
+  });
+  await totalCard.click();
+  await page
+    .getByRole("columnheader", {
+      name: "Ordenar por Conta Bancária: crescente",
+      exact: true,
+    })
+    .waitFor();
+  await page
+    .getByRole("cell", {
+      name: "Ajuste sintético de outra conta",
+      exact: false,
+    })
+    .waitFor();
+  assert.equal(await page.getByRole("row").count(), 4);
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Ajustar Saldo", exact: true })
+      .count(),
+    0,
+  );
+  await page
+    .getByRole("searchbox", { name: "Pesquisar cadastros", exact: true })
+    .fill("Conta sem referência");
+  await page
+    .getByRole("cell", { name: "RECEBIMENTO SINTETICO", exact: false })
+    .waitFor({ state: "hidden" });
+  assert.equal(await page.getByRole("row").count(), 2);
+  await page
+    .getByRole("searchbox", { name: "Pesquisar cadastros", exact: true })
+    .fill("");
+  await received.waitFor();
+  await page.screenshot({
+    path: "import-layout-bank-all-desktop.png",
+    fullPage: true,
+  });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(
     await page.evaluate(

@@ -203,3 +203,12 @@
   font-weight: 600;
   color: #a7f3d0;
 }
+
+.bank-account-cards > button.bank-total-card[aria-pressed="true"] {
+  background: #0c203b;
+  border-color: #15803d;
+  box-shadow: inset 0 0 0 1px #15803d;
+}
+.bank-account-cards > button.bank-total-card:hover {
+  background: #163653;
+}
