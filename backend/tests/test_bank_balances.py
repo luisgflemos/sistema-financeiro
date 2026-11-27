@@ -73,6 +73,12 @@ def test_multi_file_order_is_only_confident_when_balance_chain_is_unique():
         [row("a", 10, None, file="a"), row("b", 20, None, file="b")], Decimal(100)
     )
     assert ambiguous
+    summary, _ = build_ledger(
+        ACCOUNT, [row("later", 50, 250, file="b"), row("earlier", 100, 200, file="a")], []
+    )
+    assert summary["opening"]["amount"] == Decimal(100)
+    assert summary["calculated_balance"] == Decimal(250)
+    assert summary["state"] == "consistent"
 
 
 def test_no_reference_means_unknown_not_zero():

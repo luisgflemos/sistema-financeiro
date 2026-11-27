@@ -102,6 +102,32 @@ def build_ledger(account, movements, events):
                 "source_row": first["source_row"],
             }
             break
+        if rows and all(r["bank_balance"] is not None for r in rows):
+            heads = {}
+            for row in rows:
+                file = row["import_file_id"]
+                if file not in heads or row["source_row"] > heads[file]["source_row"]:
+                    heads[file] = row
+            valid = []
+            for opening in {r["bank_balance"] - signed(r) for r in heads.values()}:
+                ordered, ambiguous = order_day(rows, opening)
+                running = opening
+                matches = True
+                for row in ordered:
+                    running += signed(row)
+                    matches = matches and running == row["bank_balance"]
+                if matches and not ambiguous:
+                    valid.append((opening, ordered[0]))
+            if len(valid) == 1:
+                opening, first = valid[0]
+                automatic = {
+                    "date": day,
+                    "amount": opening,
+                    "source": "statement",
+                    "file_name": first["file_name"],
+                    "source_row": first["source_row"],
+                }
+                break
     active = [e for e in events if not e["reversed"]]
     manual = next((e for e in active if e["kind"] == "OPENING"), None)
     anchor = automatic or (
@@ -250,9 +276,10 @@ def data(connection, org, identifier=None):
             text("""SELECT t.id,t.account_id,t.import_file_id,t.source_row,t.posted_on,
         t.direction,t.amount,t.raw_description,t.raw_payload->>'saldo' AS bank_balance,
         t.raw_payload->>'source_kind' AS source_kind,
-        f.file_name,f.created_at AS file_created_at
+        f.file_name,b.created_at AS file_created_at
         FROM active_bank_transactions t JOIN bank_accounts a ON a.id=t.account_id
         JOIN import_files f ON f.id=t.import_file_id
+        JOIN import_batches b ON b.id=f.batch_id
         WHERE a.organization_id=:org AND (CAST(:id AS uuid) IS NULL OR a.id=:id)"""),
             {"org": org, "id": identifier},
         )
