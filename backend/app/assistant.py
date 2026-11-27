@@ -19,6 +19,8 @@ from app.assistant_context import (
     readable_text,
     suggestion_diagnostic,
 )
+from app.cash_flow import CashFilters
+from app.cash_flow import report as cash_report
 from app.history_context import (
     confirmed,
     document_index,
@@ -40,6 +42,7 @@ class Message(BaseModel):
 class Conversation(BaseModel):
     model_config = ConfigDict(extra="forbid")
     messages: list[Message] = Field(min_length=1, max_length=12)
+    cash_flow: CashFilters | None = None
     transaction_id: UUID | None = None
     screen: str = Field(default="Transações", max_length=100)
 
@@ -107,7 +110,14 @@ alteram o saldo bancário. Na identificação do extrato, o usuário pode escolh
 diretamente ou vincular a uma receita/despesa já lançada. A baixa pode ser parcial;
 encerramento com diferença exige confirmação. Desvincular mantém a auditoria e recalcula
 o aberto. Não diga que uma previsão já foi paga sem baixa efetiva do extrato.
-DRE, rateios e projeções completas ainda não possuem fluxo nesta versão: não invente botões.
+Gerencial → Fluxo de Caixa tem realizado, compromissos e projeções do Fin. cash_flow contém
+os valores e premissas calculados sobre a base local: use-os como única fonte para valores,
+datas, confiança, tendências, sazonalidade e alertas do fluxo. Explique previsão, não garantia.
+Não trate um título vencido como recebimento amanhã. Não some novamente compromissos cobertos
+nas estimativas. Campos não retornados não são zero. Saldo parcial não é disponibilidade total.
+Sugestões podem ser ajustadas/desconsideradas com justificativa, ou convertidas em lançamentos
+mediante confirmação na tela. O chat não grava. DRE e Acompanhamento Financeiro ainda serão
+construídos dentro de Gerencial; não invente suas telas.
 Histórico permite Importar Base Histórica. Em Lançamentos, Cancelar encerra a previsão;
 Excluir retira previsões sem histórico de baixas, com auditoria, e permite uma ocorrência
 ou esta e as próximas. Cancelados ficam ocultos no filtro inicial Sem cancelados.
@@ -118,7 +128,11 @@ Não peça senhas, tokens, chaves de API ou credenciais bancárias.
 
 
 def generate_answer(messages, context):
-    factual_answer = historical_pattern_answer(messages[-1].content, context)
+    factual_answer = (
+        None
+        if context.get("cash_flow")
+        else historical_pattern_answer(messages[-1].content, context)
+    )
     if factual_answer:
         return factual_answer
     key = api_key()
@@ -312,6 +326,49 @@ def chat(organization_id: UUID, payload: Conversation, request: Request):
             }
             for item in examples
         ]
+        if payload.cash_flow is not None:
+            flow = cash_report(connection, organization_id, payload.cash_flow)
+            focus = payload.cash_flow.focus_key
+            patterns = [p for p in flow["patterns"] if not focus or p["key"] == focus]
+            context["cash_flow"] = {
+                **{
+                    k: flow[k]
+                    for k in (
+                        "as_of",
+                        "start",
+                        "end",
+                        "anchor",
+                        "closing",
+                        "known_accounts",
+                        "total_accounts",
+                        "history_scanned",
+                        "training_records",
+                        "warnings",
+                        "totals",
+                        "monthly",
+                        "positions",
+                    )
+                },
+                "patterns": [
+                    {
+                        k: v
+                        for k, v in p.items()
+                        if k
+                        not in (
+                            "key",
+                            "revision",
+                            "account_id",
+                            "category_id",
+                            "subcategory_id",
+                            "cost_center_id",
+                        )
+                    }
+                    for p in patterns[:80]
+                ],
+                "pattern_count": len(patterns),
+                "patterns_shown": min(80, len(patterns)),
+                "policy": "Cálculos usam toda a base; detalhe textual limitado a 80 grupos/mês. Não inventar detalhes ausentes. Nenhuma ação de gravação disponível no chat.",
+            }
         context["scope"] = (
             "Toda a base bancária desta organização foi analisada localmente. Aprendizado usa confirmações OPERATOR/AI_CONFIRMED, sem realimentação de sugestões não confirmadas ou padrões automáticos. Exemplos textuais limitados a 20; contagens e distribuições usam a base completa. O chat não grava alterações."
         )

@@ -1,0 +1,236 @@
+.cash-filters {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(8rem, 1fr)) repeat(2, minmax(8rem, 0.7fr))
+    auto;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  align-items: end;
+}
+.cash-filters label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.cash-kpis {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.65rem;
+}
+.cash-kpis > div {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: white;
+  min-width: 0;
+}
+.cash-kpis strong {
+  font-size: 1.15rem;
+}
+.cash-kpis small {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.cash-kpis > .cash-closing {
+  background: #0c203b;
+  color: white;
+}
+.cash-closing small {
+  color: #d7e5f5;
+}
+.cash-assumptions {
+  font-size: 0.75rem;
+  margin: 0.6rem 0;
+}
+.cash-assumptions p {
+  margin: 0.4rem 0;
+}
+.cash-assumptions summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.cash-overdue {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  margin: 0.65rem 0;
+  font-size: 0.8rem;
+}
+.cash-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+.cash-section-heading h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.cash-section-heading small {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.cash-section-heading > .search-select {
+  max-width: 10rem;
+}
+.cash-flow .panel.listing {
+  margin-bottom: 0.75rem;
+}
+.cash-chart {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+}
+.cash-chart svg {
+  display: block;
+  width: 100%;
+  max-height: 200px;
+}
+.cash-chart text {
+  font-size: 12px;
+  fill: #475569;
+}
+.cash-chart figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.cash-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 100%;
+  display: inline-block;
+}
+.cash-dot.realized {
+  background: #15803d;
+}
+.cash-dot.forecast {
+  background: #2563eb;
+}
+.cash-forecast {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.cash-registered {
+  color: #854d0e;
+  background: #fffbeb;
+}
+.cash-flow td small {
+  display: block;
+  font-size: 0.7rem;
+  margin-top: 0.2rem;
+  color: var(--muted);
+}
+.cash-flow td small.cash-confidence {
+  display: table;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.3rem;
+  font-weight: 600;
+}
+.cash-confidence.high,
+.cash-layer.forecast {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.cash-confidence.medium,
+.cash-layer.registered {
+  background: #fef3c7;
+  color: #854d0e;
+}
+.cash-layer.realized {
+  background: #dcfce7;
+  color: #166534;
+}
+.cash-layer {
+  display: inline-block;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.cash-row-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+.cash-flow td details {
+  max-width: 20rem;
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+}
+.cash-flow td summary {
+  cursor: pointer;
+  color: #166534;
+}
+.cash-edit .fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.cash-edit label {
+  display: grid;
+  gap: 0.25rem;
+}
+.cash-wide {
+  grid-column: 1/-1;
+}
+.cash-edit fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.cash-edit .actions {
+  margin-top: 0.75rem;
+}
+.cash-flow button.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+@media (max-width: 1200px) {
+  .cash-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .cash-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .cash-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cash-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cash-section-heading {
+    flex-wrap: wrap;
+  }
+  .cash-overdue {
+    align-items: start;
+    flex-direction: column;
+  }
+  .cash-edit .fields {
+    grid-template-columns: 1fr;
+  }
+  .cash-kpis strong {
+    font-size: 1rem;
+  }
+  .cash-chart {
+    padding: 0.5rem;
+  }
+}

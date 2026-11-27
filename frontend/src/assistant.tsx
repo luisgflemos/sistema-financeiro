@@ -5,7 +5,16 @@ import { api } from "./api";
 import "./assistant.css";
 
 type Message = { role: "user" | "assistant"; content: string };
-type Context = { id: string; label: string };
+type CashFilters = {
+  start?: string;
+  end?: string;
+  as_of?: string;
+  account_id?: string;
+  cost_center_id?: string;
+  category_id?: string;
+  focus_key?: string;
+};
+type Context = { id?: string; label: string; cash_flow?: CashFilters };
 type Position = { x: number; y: number };
 const POSITION_KEY = "finare.fin-position";
 
@@ -48,6 +57,13 @@ export function Assistant({
   screen: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [cashFilters, setCashFilters] = useState<CashFilters | null>(null);
+  useEffect(() => {
+    const listener = (event: Event) =>
+      setCashFilters((event as CustomEvent<CashFilters | null>).detail);
+    window.addEventListener("finare:cash-flow", listener);
+    return () => window.removeEventListener("finare:cash-flow", listener);
+  }, []);
   const [context, setContext] = useState<Context | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [question, setQuestion] = useState("");
@@ -163,7 +179,11 @@ export function Assistant({
           body: JSON.stringify({
             messages: recent,
             transaction_id: context?.id ?? null,
-            screen,
+            screen: context?.cash_flow ? "Fluxo de Caixa" : screen,
+            cash_flow:
+              screen === "Fluxo de Caixa" || context?.cash_flow
+                ? (context?.cash_flow ?? cashFilters ?? {})
+                : null,
           }),
         },
       );
@@ -327,7 +347,11 @@ export function Assistant({
             </header>
             <div className="assistant-context">
               <span>
-                {context ? "Sobre este lançamento" : "Orientação na Finare"}
+                {context?.cash_flow || screen === "Fluxo de Caixa"
+                  ? "Sobre o Fluxo de Caixa"
+                  : context
+                    ? "Sobre este lançamento"
+                    : "Orientação na Finare"}
               </span>
               <strong>{context?.label ?? screen}</strong>
               {context && (
@@ -358,15 +382,20 @@ export function Assistant({
                     dúvidas sobre os lançamentos.
                   </p>
                   <div className="assistant-starters">
-                    {(context
+                    {(context?.cash_flow || screen === "Fluxo de Caixa"
                       ? [
-                          "Explique a sugestão deste lançamento",
-                          "O que falta para identificar este movimento?",
+                          "Explique as premissas desta projeção",
+                          "Quais estimativas precisam de revisão?",
                         ]
-                      : [
-                          "Como identificar os movimentos do extrato?",
-                          "Como a Finare aprende com meu histórico?",
-                        ]
+                      : context
+                        ? [
+                            "Explique a sugestão deste lançamento",
+                            "O que falta para identificar este movimento?",
+                          ]
+                        : [
+                            "Como identificar os movimentos do extrato?",
+                            "Como a Finare aprende com meu histórico?",
+                          ]
                     ).map((text) => (
                       <button
                         type="button"

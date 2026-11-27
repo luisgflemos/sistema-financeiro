@@ -43,6 +43,7 @@ jobs:
           node tests/planning-regression.mjs
           node tests/settlement-review-smoke.mjs
           node tests/bank-balances-smoke.mjs
+          node tests/cash-flow-smoke.mjs
           node tests/ai-fields-smoke.mjs
           node tests/transaction-exclusion-smoke.mjs
           node tests/customer-groups-smoke.mjs
@@ -80,8 +81,3 @@ jobs:
         run: |
           docker rm -f finare-hosted || true
           docker compose down --volumes
-
-
-
-
-

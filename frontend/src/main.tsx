@@ -1,11 +1,17 @@
 import "@fontsource-variable/inter";
-import { Layers3, ArrowLeftRight, ChevronDown } from "lucide-react";
+import {
+  Layers3,
+  ArrowLeftRight,
+  ChevronDown,
+  ChartNoAxesCombined,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { api } from "./api";
 import { Modal } from "./modal";
 import { Brand } from "./brand";
+import { CashFlowPage } from "./cash-flow-page";
 import { CatalogWorkspace } from "./catalog-workspace";
 import { catalogIds, catalogs } from "./catalogs";
 import { TransactionsWorkspace } from "./transactions-workspace";
@@ -86,13 +92,13 @@ function OrganizationForm({
 function App({ onLogout }: { onLogout?: () => void }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organizationId, setOrganizationId] = useState("");
-  const [catalog, setCatalog] = useState<CatalogId | "transactions">(
-    "bank-accounts",
-  );
+  const [catalog, setCatalog] = useState<
+    CatalogId | "transactions" | "cash-flow"
+  >("bank-accounts");
   const [lastCatalog, setLastCatalog] = useState<CatalogId>("bank-accounts");
-  const [openMenu, setOpenMenu] = useState<"catalogs" | "transactions" | null>(
-    "catalogs",
-  );
+  const [openMenu, setOpenMenu] = useState<
+    "catalogs" | "transactions" | "managerial" | null
+  >("catalogs");
   const [transactionView, setTransactionView] = useState<
     "import" | "history" | "planning" | "balances"
   >("import");
@@ -223,12 +229,48 @@ function App({ onLogout }: { onLogout?: () => void }) {
               ))}
             </div>
           )}
+          <button
+            type="button"
+            className="menu-group-toggle"
+            aria-expanded={openMenu === "managerial"}
+            aria-controls="managerial-sidebar-menu"
+            disabled={!organizationId || loading}
+            onClick={() => {
+              setCatalog("cash-flow");
+              setOpenMenu((previous) =>
+                previous === "managerial" ? null : "managerial",
+              );
+              setCreating(false);
+            }}
+          >
+            <ChartNoAxesCombined size={18} aria-hidden="true" />
+            Gerencial
+            <ChevronDown size={16} aria-hidden="true" />
+          </button>
+          {openMenu === "managerial" && (
+            <div id="managerial-sidebar-menu" className="side-submenu">
+              <button
+                type="button"
+                aria-current={catalog === "cash-flow" ? "page" : undefined}
+                onClick={() => {
+                  setCatalog("cash-flow");
+                  setCreating(false);
+                }}
+              >
+                Fluxo de Caixa
+              </button>
+            </div>
+          )}
         </nav>
       </aside>
       <main>
         <header className="toolbar">
           <span className="toolbar-title">
-            {catalog === "transactions" ? "Transações" : "Cadastros"}
+            {catalog === "cash-flow"
+              ? "Gerencial"
+              : catalog === "transactions"
+                ? "Transações"
+                : "Cadastros"}
           </span>
           <div className="organization-tools">
             {organizations.length > 0 && (
@@ -295,6 +337,11 @@ function App({ onLogout }: { onLogout?: () => void }) {
                 Nova organização
               </button>
             </>
+          ) : catalog === "cash-flow" ? (
+            <CashFlowPage
+              key={organizationId}
+              organizationId={organizationId}
+            />
           ) : catalog === "transactions" ? (
             <TransactionsWorkspace
               key={organizationId}
@@ -315,7 +362,11 @@ function App({ onLogout }: { onLogout?: () => void }) {
           key={organizationId}
           organizationId={organizationId}
           screen={
-            catalog === "transactions" ? "Transações" : catalogs[catalog].label
+            catalog === "cash-flow"
+              ? "Fluxo de Caixa"
+              : catalog === "transactions"
+                ? "Transações"
+                : catalogs[catalog].label
           }
         />
       )}
