@@ -1079,7 +1079,10 @@ export function TransactionsPage({
             <div className="transaction-header-footer">
               <small>
                 Documento: {selected.raw_payload.documento || "Não informado"} ·
-                Saldo informado: {brl(selected.raw_payload.saldo ?? "0")}
+                Saldo informado:{" "}
+                {selected.raw_payload.saldo == null
+                  ? "Não informado"
+                  : brl(selected.raw_payload.saldo)}
               </small>
               {!linkMode &&
                 selected.editable &&

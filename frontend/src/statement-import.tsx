@@ -20,7 +20,7 @@ type Row = {
   amount: string;
   direction: string;
   status: string;
-  balance: string;
+  balance: string | null;
 };
 type FilePreview = {
   file_name: string;
@@ -435,7 +435,11 @@ export function StatementImport({
                                       {row.direction === "DEBIT" ? "− " : "+ "}
                                       {brl(row.amount)}
                                     </td>
-                                    <td>{brl(row.balance)}</td>
+                                    <td>
+                                      {row.balance == null
+                                        ? "Não informado"
+                                        : brl(row.balance)}
+                                    </td>
                                     <td>
                                       {row.status === "review" && (
                                         <small className="statement-ambiguity-reason">

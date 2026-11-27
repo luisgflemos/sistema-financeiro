@@ -23,7 +23,7 @@ class Movement:
     description: str
     document: str
     signed_amount: Decimal
-    balance: Decimal
+    balance: Decimal | None
 
     def fingerprint(self):
         value = [
@@ -35,6 +35,7 @@ class Movement:
         return sha256("\x1f".join(value).encode()).hexdigest()
 
     def public(self):
+        balance = f"{self.balance:.2f}" if self.balance is not None else None
         return {
             "row": self.row,
             "posted_on": self.posted_on,
@@ -42,11 +43,11 @@ class Movement:
             "document": self.document,
             "direction": "CREDIT" if self.signed_amount > 0 else "DEBIT",
             "amount": f"{abs(self.signed_amount):.2f}",
-            "balance": f"{self.balance:.2f}",
+            "balance": balance,
             "fingerprint": self.fingerprint(),
-            "signature": sha256(
-                (self.fingerprint() + "\x1f" + f"{self.balance:.2f}").encode()
-            ).hexdigest(),
+            "signature": sha256((self.fingerprint() + "\x1f" + balance).encode()).hexdigest()
+            if balance is not None
+            else None,
         }
 
 
@@ -135,7 +136,7 @@ def parse_statement(file_name, encoded):
     except Exception as error:
         raise ValueError("Não foi possível ler o extrato.") from error
 
-    if len(rows) < 4 or len(rows[0]) < 4 or len(rows[2]) < 5:
+    if len(rows) < 4 or len(rows[0]) < 4 or len(rows[2]) < 4:
         raise ValueError("O arquivo não corresponde ao layout Santander esperado.")
     first, header = rows[0], rows[2]
     if (
@@ -144,7 +145,11 @@ def parse_statement(file_name, encoded):
         or str(header[0]).strip().lower() != "data"
         or str(header[2]).strip().lower() != "documento"
         or str(header[3]).strip().lower() != "valor (r$)"
-        or str(header[4]).strip().lower() != "saldo (r$)"
+        or (
+            len(header) > 4
+            and header[4] not in (None, "")
+            and str(header[4]).strip().lower() != "saldo (r$)"
+        )
     ):
         raise ValueError("Layout não reconhecido. Use o extrato exportado do Santander.")
     branch, account = digits(first[1]), digits(first[3])
@@ -161,7 +166,10 @@ def parse_statement(file_name, encoded):
                 if isinstance(date_value, datetime)
                 else datetime.strptime(str(date_value).strip(), "%d/%m/%Y").date()
             )
-            amount, balance = money(values[3]), money(values[4])
+            amount = money(values[3])
+            balance = (
+                money(values[4]) if len(values) > 4 and values[4] not in (None, "", " ") else None
+            )
             description = str(values[1] or "")
             if not amount or not description.strip():
                 raise ValueError("Movimento sem valor ou histórico.")
@@ -185,9 +193,16 @@ def parse_statement(file_name, encoded):
     )
     if not descending:
         raise ValueError("A ordem das datas difere do layout validado. Revise o arquivo.")
-    for current, following in zip(movements, movements[1:]):
-        if current.balance - current.signed_amount != following.balance:
-            raise ValueError(
-                f"Os saldos não conferem entre as linhas {current.row} e {following.row}."
-            )
+    expected = None
+    previous = None
+    for current in reversed(movements):
+        if expected is not None:
+            expected += current.signed_amount
+        if current.balance is not None:
+            if expected is not None and current.balance != expected:
+                raise ValueError(
+                    f"Os saldos não conferem entre as linhas {current.row} e {previous.row}."
+                )
+            expected = current.balance
+            previous = current
     return Statement(raw, sha256(raw).hexdigest(), branch, account, movements)

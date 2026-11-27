@@ -10,7 +10,8 @@ def classify_rows(rows, previous, decisions, repeated=False):
         matches = [
             item
             for item in candidates
-            if item.get("signature") == row["signature"]
+            if row["signature"]
+            and item.get("signature") == row["signature"]
             and any(
                 row.get(key) and row.get(key) == item.get(key)
                 for key in ("previous_signature", "next_signature")

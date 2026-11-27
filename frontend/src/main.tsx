@@ -94,7 +94,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
     "catalogs",
   );
   const [transactionView, setTransactionView] = useState<
-    "import" | "history" | "planning"
+    "import" | "history" | "planning" | "balances"
   >("import");
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -200,6 +200,7 @@ function App({ onLogout }: { onLogout?: () => void }) {
                   ["import", "Importar Extrato"],
                   ["history", "Histórico"],
                   ["planning", "Lançamentos"],
+                  ["balances", "Extrato Bancário"],
                 ] as const
               ).map(([view, label]) => (
                 <button

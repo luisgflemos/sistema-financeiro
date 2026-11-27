@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.assistant import router as assistant_router
 from app.bank_accounts import router as bank_accounts_router
+from app.bank_balances import router as bank_balances_router
 from app.catalog_import import router as catalog_import_router
 from app.catalogs import router as catalogs_router
 from app.customer_groups import router as customer_groups_router
@@ -36,6 +37,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Finare", lifespan=lifespan)
 app.include_router(bank_accounts_router)
+app.include_router(bank_balances_router)
 app.include_router(catalogs_router)
 app.include_router(customer_groups_router)
 app.include_router(catalog_import_router)
