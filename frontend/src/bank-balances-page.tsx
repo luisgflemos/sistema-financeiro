@@ -776,7 +776,7 @@ export function BankBalancesPage({
             Registros manuais desta conta. Estornar preserva a justificativa e a
             auditoria.
           </p>
-          {current?.events.length ? (
+          {data?.events.length ? (
             data?.events.map((e) => (
               <div className="bank-event" key={e.id}>
                 <strong>
