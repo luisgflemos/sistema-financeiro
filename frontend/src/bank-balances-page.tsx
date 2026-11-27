@@ -397,9 +397,9 @@ export function BankBalancesPage({
           {isAll && (
             <p className="bank-balance-note">
               Todas as contas · {account.slice(4)}. Os saldos exibidos em cada
-              linha pertencem à conta de origem. Inclui movimentos anteriores à
-              referência de saldo; nesses casos, o saldo permanece não
-              informado.
+              linha pertencem à conta de origem. Por padrão, são exibidas
+              somente as contas que compõem o total, desde sua referência de
+              abertura.
             </p>
           )}
           {selected && (

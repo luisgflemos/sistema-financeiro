@@ -389,7 +389,10 @@ def consolidated_ledger(
                 [r for r in movements if r["account_id"] == account["id"]],
                 [dict(e) for e in events if e["account_id"] == account["id"]],
             )
-            first = start or (summary["opening"]["date"] if summary["opening"] else None)
+            # Sem referência, a conta não compõe o Saldo Total nem sua grade padrão.
+            if not start and not summary["opening"]:
+                continue
+            first = start or summary["opening"]["date"]
             for row in ledger_rows:
                 if first and row["posted_on"] < first:
                     continue

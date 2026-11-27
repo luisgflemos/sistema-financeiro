@@ -19,3 +19,6 @@ O cartão Saldo Total soma com Decimal as últimas posições calculadas de toda
 
 
 O cartão Saldo Total é selecionável e abre a grade de todas as contas da mesma moeda, com paginação, busca por conta/descrição/arquivo, filtros de data e ordenação. A coluna Conta Bancária identifica a origem; saldos calculados/informados continuam sendo individuais. A visão geral adota o mesmo período padrão da visão individual: desde a referência de abertura de cada conta. Uma data inicial explícita permite consultar períodos anteriores, mantendo saldos desconhecidos como nulos. Não permite ajustes sem selecionar uma conta específica. Transferências próprias permanecem como linhas de extrato, sem produzir indicadores de receita/despesa consolidados.
+
+
+Contas sem referência de abertura não compõem o valor consolidado nem sua grade padrão. Isso impede que uma conta exclusivamente histórica, sem saldo conhecido, introduza registros antigos na seleção Saldo Total. A consulta histórica dessas contas continua disponível mediante data inicial explícita ou seleção individual, sem presumir saldo.

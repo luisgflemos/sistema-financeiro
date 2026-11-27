@@ -1,7 +1,7 @@
 import base64
 from datetime import date
 from decimal import Decimal
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import text
@@ -421,3 +421,25 @@ def test_consolidated_ledger_keeps_account_balances_filters_pages_and_org_isolat
     other = client.post("/organizations", json={"name": "Outra organização sintética"}).json()["id"]
     assert client.get(f"/organizations/{other}/bank-balances/all").json()["total"] == 0
     assert client.get(f"/organizations/{uuid4()}/bank-balances/all").status_code == 404
+
+
+def test_total_default_excludes_history_only_account_without_opening(statements, monkeypatch):
+    from app import bank_balances
+
+    client, _, base, accounts = statements
+    historical = {
+        **row("old-history", 50, None, day="2025-01-02"),
+        "account_id": UUID(accounts[1]),
+        "source_kind": "identified_history",
+    }
+    monkeypatch.setattr(bank_balances, "data", lambda *args: ([historical], []))
+    overview = client.get(base + "/bank-balances").json()
+    assert overview["totals"][0]["known_accounts"] == 0
+    assert client.get(base + "/bank-balances/all").json()["total"] == 0
+    assert (
+        client.get(base + "/bank-balances/all", params={"end": "2026-11-26"}).json()["total"] == 0
+    )
+    explicit = client.get(base + "/bank-balances/all", params={"start": "2025-01-01"}).json()
+    assert explicit["total"] == 1
+    assert explicit["rows"][0]["account_id"] == accounts[1]
+    assert explicit["rows"][0]["calculated_balance"] is None
